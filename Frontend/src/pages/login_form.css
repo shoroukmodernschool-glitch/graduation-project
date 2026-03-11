@@ -1,0 +1,252 @@
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+.nav-links a {
+  margin-left: 25px;
+  text-decoration: none;
+  color: #fff;
+  font-weight: 500;
+}
+
+/* ================= PAGE ================= */
+
+.login-page {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100%;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+}
+
+.background-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(8px) brightness(0.7);
+  z-index: 0;
+}
+
+/* ================= CARD ================= */
+
+.login-card {
+  width: 380px;
+  max-width: 90%;
+  padding: 35px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 0 25px rgba(0,0,0,0.3);
+  color: white;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+  transition: all 0.4s ease;
+  border: 2px solid transparent;
+}
+
+/* ================= ROLE COLORS ================= */
+
+.login-card.student {
+  border-color: #3B82F6;
+  box-shadow: 0 0 30px rgba(59,130,246,0.5);
+}
+
+.login-card.teacher {
+  border-color: #22C55E;
+  box-shadow: 0 0 30px rgba(34,197,94,0.5);
+}
+
+.login-card.parent {
+  border-color: #0F766E;
+  box-shadow: 0 0 30px rgba(15,118,110,0.5);
+}
+
+/* ================= ROLE TABS ================= */
+
+.role-tabs{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:20px;
+  padding:5px;
+  border-radius:40px;
+  border:1px solid rgba(255,255,255,0.4);
+}
+
+.role-tabs button{
+  flex:1;
+  padding:8px 10px;
+  border:none;
+  background:transparent;
+  color:white;
+  border-radius:30px;
+  cursor:pointer;
+  font-size:14px;
+  transition:0.3s;
+}
+
+.role-tabs button:hover{
+  background:rgba(255,255,255,0.15);
+}
+
+/* Active tab colors */
+
+.login-card.student .role-tabs button.active{
+  background:#3B82F6;
+  color:white;
+  font-weight:bold;
+}
+
+.login-card.teacher .role-tabs button.active{
+  background:#22C55E;
+  color:black;
+  font-weight:bold;
+}
+
+.login-card.parent .role-tabs button.active{
+  background:#0F766E;
+  color:white;
+  font-weight:bold;
+}
+
+/* ================= INPUT GROUP ================= */
+
+.input-group {
+  position: relative;
+  margin-bottom: 18px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px 40px 12px 15px;
+  border-radius: 25px;
+  border: 1px solid rgba(255,255,255,0.4);
+  background: transparent;
+  color: white;
+  outline: none;
+}
+
+.input-group input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ===== Icon ===== */
+
+.icon {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* ===== Input Animation ===== */
+
+.animated-input {
+  animation: fadeSlide 0.3s ease;
+}
+
+@keyframes fadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ================= OPTIONS ================= */
+
+.options {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+.options a {
+  color: white;
+  text-decoration: none;
+}
+
+/* ================= BUTTON ================= */
+
+.submit-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 25px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.submit-btn.student {
+  background: #3B82F6;
+  color: white;
+}
+
+.submit-btn.teacher {
+  background: #22C55E;
+  color: black;
+}
+
+.submit-btn.parent {
+  background: #0F766E;
+  color: white;
+}
+
+.submit-btn:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
+/* ================= TABLET ================= */
+
+@media (max-width: 1024px) {
+
+  .login-card {
+    width: 340px;
+    padding: 30px;
+  }
+
+}
+
+/* ================= MOBILE ================= */
+
+@media (max-width: 768px) {
+
+  .nav-links {
+    display: none;
+  }
+
+  .login-card {
+    width: 90%;
+    padding: 25px;
+  }
+
+}
+
+/* ================= SMALL MOBILE ================= */
+
+@media (max-width: 480px) {
+
+  .login-card {
+    width: 95%;
+    padding: 20px;
+  }
+
+  .options {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+}

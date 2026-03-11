@@ -1,0 +1,174 @@
+/* ================= RESET ================= */
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family: Arial, sans-serif;
+}
+
+/* ================= FOOTER ================= */
+
+.footer{
+  background:linear-gradient(to right,#111,#1c1c1c);
+  color:#fff;
+  padding:60px 0 0;
+  width:100%;
+}
+
+/* container */
+
+.footer-container{
+  width:90%;
+  max-width:1200px;
+  margin:auto;
+  display:flex;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:40px;
+}
+
+/* columns */
+
+.footer-col{
+  flex:1;
+  min-width:220px;
+}
+
+/* titles */
+
+.footer-col h3{
+  color:#7fb3ff;
+  margin-bottom:20px;
+  font-size:18px;
+}
+
+/* links */
+
+.footer-col ul{
+  list-style:none;
+}
+
+.footer-col ul li{
+  margin-bottom:12px;
+}
+
+.footer-col ul li a{
+  text-decoration:none;
+  color:#ddd;
+  transition:0.3s;
+}
+
+.footer-col ul li a:hover{
+  color:#7fb3ff;
+  padding-left:6px;
+}
+
+/* ================= CONTACT ================= */
+
+.contact p{
+  margin-bottom:12px;
+  font-size:14px;
+  color:#ddd;
+}
+
+.contact i{
+  margin-right:8px;
+  color:#7fb3ff;
+}
+
+/* ================= SOCIAL ================= */
+
+.social{
+  margin-top:15px;
+}
+
+.social a{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:36px;
+  height:36px;
+  background:#fff;
+  color:#111;
+  border-radius:50%;
+  margin-right:10px;
+  text-decoration:none;
+  transition:0.3s;
+}
+
+.social a:hover{
+  background:#7fb3ff;
+  color:#fff;
+  transform:scale(1.1);
+}
+
+/* ================= BOTTOM BAR ================= */
+
+.footer-bottom{
+  background:#2d3572;
+  text-align:center;
+  padding:18px;
+  margin-top:40px;
+}
+
+.footer-bottom p{
+  font-size:14px;
+}
+
+.footer-bottom span{
+  margin-left:15px;
+  text-decoration:underline;
+  cursor:pointer;
+}
+
+/* ================= TABLET ================= */
+
+@media (max-width:900px){
+
+  .footer-container{
+    justify-content:center;
+    text-align:center;
+  }
+
+  .footer-col{
+    min-width:250px;
+  }
+
+}
+
+/* ================= MOBILE ================= */
+
+@media (max-width:600px){
+
+  .footer-container{
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    gap:30px;
+  }
+
+  .footer-col{
+    width:100%;
+  }
+
+  .footer-col ul li a:hover{
+    padding-left:0;
+  }
+
+  .social{
+    display:flex;
+    justify-content:center;
+    flex-wrap:wrap;
+  }
+
+  .social a{
+    margin:5px;
+  }
+
+  .footer-bottom span{
+    display:block;
+    margin-top:8px;
+  }
+
+}
