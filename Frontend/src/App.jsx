@@ -13,6 +13,11 @@ import SignupParent from "./pages/signup_parent";
 import SignupTeacher from "./pages/signup_Teacher";
 import Camera from "./pages/Camera";
 
+/* Dashboards */
+import StudentDashboard from "./pages/Student/StudentDashboard";
+import TeacherDashboard from "./pages/Teacher/TeacherDashboard";
+import AdminDashboard from "./pages/Admin/AdminDashboard";
+import ParentDashboard from "./pages/Parent/ParentDashboard";
 
 function App() {
 
@@ -29,8 +34,6 @@ function App() {
         {/* Home */}
         <Route path="/" element={<Home />} />
 
-       
-
         {/* Login Pages */}
         <Route path="/login" element={<Login />} />
         <Route path="/login-parent" element={<LoginParent />} />
@@ -43,6 +46,12 @@ function App() {
 
         {/* Camera */}
         <Route path="/camera" element={<Camera />} />
+
+        {/* Dashboards */}
+        <Route path="/student-dashboard" element={<StudentDashboard />} />
+        <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/parent-dashboard" element={<ParentDashboard />} />
 
         {/* Fallback */}
         <Route path="*" element={<Home />} />

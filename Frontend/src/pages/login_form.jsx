@@ -49,7 +49,8 @@ export default function Login() {
 
         localStorage.setItem("student", JSON.stringify(data.student));
 
-      navigate("/student-dashboard");
+        // التحويل للداشبورد
+        navigate("/student-dashboard");
 
       } else {
 
