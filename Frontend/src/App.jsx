@@ -2,7 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 
 import Navbar from "./components/Navbar";
-
+import About from "./pages/About/About";
 import Home from "./pages/home_page";
 import Login from "./pages/login_form";
 import LoginParent from "./pages/login-parent";
@@ -33,7 +33,7 @@ function App() {
 
         {/* Home */}
         <Route path="/" element={<Home />} />
-
+<Route path="/about" element={<About />} />
         {/* Login Pages */}
         <Route path="/login" element={<Login />} />
         <Route path="/login-parent" element={<LoginParent />} />
