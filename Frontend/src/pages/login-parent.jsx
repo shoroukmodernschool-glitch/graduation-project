@@ -51,7 +51,11 @@ export default function LoginParent() {
           >
             Teacher
           </button>
-
+  <button
+            onClick={() => navigate("/login-Admin")}
+          >
+            Admin
+          </button>
         </div>
 
         {/* Parent ID */}

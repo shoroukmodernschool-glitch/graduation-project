@@ -83,7 +83,7 @@ export default function Login() {
         playsInline
       >
         <source
-          src={`${import.meta.env.BASE_URL}videos/student.mp4`}
+          src={`${import.meta.env.BASE_URL}videos/bk.mp4`}
           type="video/mp4"
         />
       </video>
@@ -112,7 +112,11 @@ export default function Login() {
           >
             Teacher
           </button>
-
+          <button
+            onClick={() => navigate("/login-Admin")}
+          >
+            Administration
+          </button>
         </div>
 
         <div className="input-group">

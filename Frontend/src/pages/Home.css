@@ -1,3 +1,6 @@
+html{
+scroll-behavior: smooth;
+}
 /* ================= GLOBAL ================= */
 
 .nav-links a {
@@ -184,67 +187,6 @@ font-size: 20px;
 z-index: 2;
 }
 
-/* ================= STATS ================= */
-
-.stats{
-padding:80px 20px;
-color:white;
-background-image: url("/images/UPPER-SCHOOL.jpeg");
-background-size: cover;
-background-position: center;
-text-align:center;
-position:relative;
-}
-
-.stats::before{
-content:"";
-position:absolute;
-inset:0;
-background:rgba(0,0,0,0.6);
-}
-
-.stats-title{
-position:relative;
-z-index:2;
-margin-bottom:40px;
-}
-
-.stats-title h2{
-font-size:34px;
-}
-
-.stats-container{
-max-width:1200px;
-margin:auto;
-display:flex;
-justify-content:space-between;
-flex-wrap:wrap;
-gap:20px;
-position:relative;
-z-index:2;
-}
-
-.stat-box{
-flex:1;
-min-width:200px;
-}
-
-.stat-box i{
-font-size:45px;
-margin-bottom:15px;
-color:#3B82F6;
-}
-
-.stat-box h2{
-font-size:44px;
-font-weight:bold;
-}
-
-.stat-box p{
-font-size:18px;
-color:#ddd;
-}
-
 /* ================= NEWS ================= */
 
 .news-section {
@@ -427,11 +369,6 @@ grid-template-columns:1fr;
 height:220px;
 }
 
-.stats-container{
-flex-direction:column;
-gap:25px;
-}
-
 .slide img{
 height:320px;
 }
@@ -459,10 +396,6 @@ height:200px;
 .hero-btn2{
 width:100%;
 text-align:center;
-}
-
-.stat-box h2{
-font-size:32px;
 }
 
 }

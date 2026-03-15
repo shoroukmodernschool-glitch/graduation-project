@@ -1,14 +1,56 @@
-/* Section */
+/* ================= MISSION SECTION ================= */
 
 .mission-section{
+position:relative;
+min-height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
 text-align:center;
+overflow:hidden;
 padding:60px 20px;
+}
+
+/* الفيديو */
+
+.background-video{
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+object-fit:cover;
+z-index:0;
+}
+
+/* طبقة التعتيم */
+
+.mission-section::before{
+content:"";
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.55);
+z-index:1;
+}
+
+/* الكونتنت فوق الفيديو */
+
+.mission-content{
+position:relative;
+z-index:2;
+width:100%;
+max-width:1000px;
+margin:auto;
 }
 
 /* Title */
 
 .mission-section h1{
 margin-bottom:40px;
+color:white;
 }
 
 /* Tabs */
@@ -71,6 +113,84 @@ width:80%;
 
 .content-box{
 padding:20px;
+}
+
+}
+
+/* ================= STATS ================= */
+
+.stats{
+padding:80px 20px;
+color:white;
+
+/* background-image:url("/images/UPPER-SCHOOL.jpeg"); */
+background-size:cover;
+background-position:center;
+text-align:center;
+position:relative;
+}
+
+.stats::before{
+content:"";
+position:absolute;
+inset:0;
+background:rgba(0,0,0,0.55);
+
+}
+
+.stats-title{
+position:relative;
+z-index:2;
+margin-bottom:40px;
+}
+
+.stats-title h2{
+font-size:34px;
+}
+
+.stats-container{
+max-width:1200px;
+margin:auto;
+display:flex;
+justify-content:space-between;
+flex-wrap:wrap;
+gap:20px;
+position:relative;
+z-index:2;
+}
+
+.stat-box{
+flex:1;
+min-width:200px;
+}
+
+.stat-box i{
+font-size:45px;
+margin-bottom:15px;
+color:#3B82F6;
+}
+
+.stat-box h2{
+font-size:44px;
+font-weight:bold;
+}
+
+.stat-box p{
+font-size:18px;
+color:#ddd;
+}
+
+/* Responsive */
+
+@media (max-width:768px){
+
+.stats-container{
+flex-direction:column;
+gap:25px;
+}
+
+.stat-box h2{
+font-size:32px;
 }
 
 }

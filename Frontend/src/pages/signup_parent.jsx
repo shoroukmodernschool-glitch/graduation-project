@@ -8,8 +8,7 @@ export default function SignupParent() {
   // 👇 الديفولت Parent
   const [userType, setUserType] = useState("parent");
 
-  const handleUserTypeChange = (e) => {
-    const value = e.target.value;
+  const handleUserTypeChange = (value) => {
     setUserType(value);
 
     if (value === "student") {
@@ -19,6 +18,11 @@ export default function SignupParent() {
     if (value === "teacher") {
       navigate("/signup-teacher"); // تأكد إن الراوت صح
     }
+
+       if (value === "admin") {
+    navigate("/signup-admin");
+  }
+
   };
 
   return (
@@ -41,13 +45,43 @@ export default function SignupParent() {
             <h3>Parent Personal Information</h3>
           </div>
 
-          {/* User Type Select */}
+          {/* User Type Tabs */}
           <div className="user-type">
-            <select value={userType} onChange={handleUserTypeChange}>
-              <option value="student">Student</option>
-              <option value="parent">Parent</option>
-              <option value="teacher">Teacher</option>
-            </select>
+            <div className="role-tabs">
+
+              <button
+                type="button"
+                className={userType === "student" ? "active" : ""}
+                onClick={() => handleUserTypeChange("student")}
+              >
+                Student
+              </button>
+
+              <button
+                type="button"
+                className={userType === "parent" ? "active" : ""}
+                onClick={() => handleUserTypeChange("parent")}
+              >
+                Parent
+              </button>
+
+              <button
+                type="button"
+                className={userType === "teacher" ? "active" : ""}
+                onClick={() => handleUserTypeChange("teacher")}
+              >
+                Teacher
+              </button>
+
+              <button
+  type="button"
+  className={userType === "admin" ? "active" : ""}
+  onClick={() => handleUserTypeChange("admin")}
+>
+  Administration
+</button>
+
+            </div>
           </div>
 
           {/* Grid */}

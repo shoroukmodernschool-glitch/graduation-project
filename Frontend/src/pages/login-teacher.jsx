@@ -1,96 +1,84 @@
-import "./Login_form.css";
-import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import "./sign_up.css";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 
-export default function LoginTeacher() {
+export default function SignupTeacher() {
 
   const navigate = useNavigate();
-  const [role] = useState("Teacher");
 
   return (
-    <div className="login-page">
-
-      <Navbar />
-
-      <video
-        key={role}
-        className="background-video"
-        autoPlay
-        loop
-        muted
-        playsInline
-      >
-        <source
-          src={`${import.meta.env.BASE_URL}videos/teacher.mp4`}
-          type="video/mp4"
-        />
+    <>
+      <video className="background-video" autoPlay loop muted playsInline>
+        <source src="./videos/teacher.mp4" type="video/mp4" />
       </video>
 
-      <div className={`login-card ${role.toLowerCase()}`}>
+      <div className="signup-page">
+        <Navbar />
 
-        <h2>Login</h2>
+        <form className="student-form">
 
-        {/* Role Tabs */}
-        <div className="role-tabs">
+          <div className="section-title">
+            <span className="number">1</span>
+            <h3>Teacher Personal Information</h3>
+          </div>
 
-          <button
-            onClick={() => navigate("/login")}
-          >
-            Student
+          <div className="user-type">
+            <div className="role-tabs">
+
+              <button onClick={() => navigate("/signup")}>
+                Student
+              </button>
+
+              <button onClick={() => navigate("/signup-parent")}>
+                Parent
+              </button>
+
+              <button className="active">
+                Teacher
+              </button>
+
+              <button onClick={() => navigate("/signup-admin")}>
+                Administration
+              </button>
+
+            </div>
+          </div>
+
+          <div className="form-grid">
+
+            <div className="form-group">
+              <label>First name</label>
+              <input type="text" placeholder="First name" />
+            </div>
+
+            <div className="form-group">
+              <label>Last name</label>
+              <input type="text" placeholder="Last name" />
+            </div>
+
+            <div className="form-group">
+              <label>Teacher Id</label>
+              <input type="text" placeholder="Teacher Id" />
+            </div>
+
+            <div className="form-group">
+              <label>Phone</label>
+              <input type="text" placeholder="Phone" />
+            </div>
+
+            <div className="form-group">
+              <label>Email</label>
+              <input type="text" placeholder="Email" />
+            </div>
+
+          </div>
+
+          <button className="confirm" type="submit">
+            Confirm
           </button>
 
-          <button
-            onClick={() => navigate("/login-parent")}
-          >
-            Parent
-          </button>
-
-          <button
-            className="active"
-          >
-            Teacher
-          </button>
-
-        </div>
-
-        {/* Teacher ID */}
-        <div className="input-group">
-          <input
-            type="text"
-            placeholder="Teacher ID"
-            className="animated-input"
-          />
-          <span className="icon">👤</span>
-        </div>
-
-        {/* Password */}
-        <div className="input-group">
-          <input
-            type="password"
-            placeholder="Password"
-          />
-          <span className="icon">🔒</span>
-        </div>
-
-        {/* Options */}
-        <div className="options">
-          <label>
-            <input type="checkbox" /> Remember Me
-          </label>
-
-          <Link to="/forgot-password">
-            Forgot Password?
-          </Link>
-        </div>
-
-        {/* Submit */}
-        <button className={`submit-btn ${role.toLowerCase()}`}>
-          Submit
-        </button>
-
+        </form>
       </div>
-
-    </div>
+    </>
   );
 }

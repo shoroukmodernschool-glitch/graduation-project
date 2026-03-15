@@ -1,10 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import "./Home.css";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
 
 const Home = () => {
+
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash) {
+      const element = document.querySelector(location.hash);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  }, [location]);
 
   const slidesData = [
     {
@@ -50,37 +61,6 @@ const Home = () => {
     return () => clearInterval(interval);
   }, [gridMode, slidesData.length]);
 
-  /* COUNTER */
-
-  useEffect(() => {
-    const counters = document.querySelectorAll(".counter");
-
-    counters.forEach((counter) => {
-
-      counter.innerText = "0";
-
-      const updateCounter = () => {
-
-        const target = +counter.getAttribute("data-target");
-        const c = +counter.innerText;
-
-        const increment = target / 800;
-
-        if (c < target) {
-          counter.innerText = `${Math.ceil(c + increment)}`;
-          setTimeout(updateCounter, 40);
-        } else {
-          counter.innerText = target;
-        }
-
-      };
-
-      updateCounter();
-
-    });
-
-  }, []);
-
   return (
     <div>
 
@@ -110,7 +90,7 @@ const Home = () => {
 
       {/* WELCOME */}
 
-      <section className="welcome">
+      <section id="welcome" className="welcome">
 
         <div className="container">
 
@@ -139,84 +119,42 @@ const Home = () => {
       </section>
 
 
-      {/* LEVELS */}
+    <section className="levels">
 
-      <section className="levels">
+  <div className="levels-title">
+    <h2>ACADEMIC LEVELS</h2>
+    <p>Explore Our Educational Stages</p>
+  </div>
 
-        <div className="levels-title">
-          <h2>ACADEMIC LEVELS</h2>
-          <p>Explore Our Educational Stages</p>
-        </div>
+  <div className="levels-container">
 
-        <div className="levels-container">
+    <Link to="/early-childhood" className="card">
+      <img src="./images/EARLY-CHILDHOOD.jpeg" alt="" />
+      <div className="overlay"></div>
+      <h3>EARLY CHILDHOOD</h3>
+    </Link>
 
-          <div className="card">
-            <img src="./images/EARLY-CHILDHOOD.jpeg" alt="" />
-            <div className="overlay"></div>
-            <h3>EARLY CHILDHOOD</h3>
-          </div>
+    <Link to="/lower-school" className="card">
+      <img src="./images/LOWER-SCHOOL.jpeg" alt="" />
+      <div className="overlay"></div>
+      <h3>LOWER SCHOOL</h3>
+    </Link>
 
-          <div className="card">
-            <img src="./images/LOWER-SCHOOL.jpeg" alt="" />
-            <div className="overlay"></div>
-            <h3>LOWER SCHOOL</h3>
-          </div>
+    <Link to="/middle-school" className="card">
+      <img src="./images/MIDDLE-SCHOOL.jpeg" alt="" />
+      <div className="overlay"></div>
+      <h3>MIDDLE SCHOOL</h3>
+    </Link>
 
-          <div className="card">
-            <img src="./images/MIDDLE-SCHOOL.jpeg" alt="" />
-            <div className="overlay"></div>
-            <h3>MIDDLE SCHOOL</h3>
-          </div>
+    <Link to="/upper-school" className="card">
+      <img src="./images/UPPER-SCHOOL.jpeg" alt="" />
+      <div className="overlay"></div>
+      <h3>UPPER SCHOOL</h3>
+    </Link>
 
-          <div className="card">
-            <img src="./images/UPPER-SCHOOL.jpeg" alt="" />
-            <div className="overlay"></div>
-            <h3>UPPER SCHOOL</h3>
-          </div>
+  </div>
 
-        </div>
-
-      </section>
-
-
-      {/* STATS */}
-
-      <section className="stats">
-
-        <div className="stats-title">
-          <h2>Shorouk Modern School In Numbers</h2>
-          <p>Our community and achievements</p>
-        </div>
-
-        <div className="stats-container">
-
-          <div className="stat-box">
-            <i className="fas fa-school"></i>
-            <h2 className="counter" data-target="7">0</h2>
-            <p>Campuses</p>
-          </div>
-
-          <div className="stat-box">
-            <i className="fas fa-users"></i>
-            <h2 className="counter" data-target="5000">0</h2>
-            <p>Employees</p>
-          </div>
-
-          <div className="stat-box">
-            <i className="fas fa-user-graduate"></i>
-            <h2 className="counter" data-target="16000">0</h2>
-            <p>Students</p>
-          </div>
-
-          <div className="stat-box">
-            <i className="fas fa-people-group"></i>
-            <h2 className="counter" data-target="32000">0</h2>
-            <p>Parents</p>
-          </div>
-
-        </div>
-
-      </section>
+</section>
 
 
       {/* NEWS */}

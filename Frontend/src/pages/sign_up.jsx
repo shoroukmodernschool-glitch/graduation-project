@@ -6,11 +6,9 @@ import Navbar from "../components/Navbar";
 export default function SignUp() {
   const navigate = useNavigate();
 
-  
   const [userType, setUserType] = useState("student");
 
-  const handleUserTypeChange = (e) => {
-    const value = e.target.value;
+  const handleUserTypeChange = (value) => {
     setUserType(value);
 
     if (value === "parent") {
@@ -20,6 +18,11 @@ export default function SignUp() {
     if (value === "teacher") {
       navigate("/signup-teacher");
     }
+
+     if (value === "admin") {
+    navigate("/signup-admin");
+  }
+
   };
 
   return (
@@ -44,13 +47,43 @@ export default function SignUp() {
             </h3>
           </div>
 
-          {/* User Type Select */}
+          {/* User Type Tabs */}
           <div className="user-type">
-            <select value={userType} onChange={handleUserTypeChange}>
-              <option value="student">Student</option>
-              <option value="parent">Parent</option>
-              <option value="teacher">Teacher</option>
-            </select>
+            <div className="role-tabs">
+
+              <button
+                type="button"
+                className={userType === "student" ? "active" : ""}
+                onClick={() => handleUserTypeChange("student")}
+              >
+                Student
+              </button>
+
+              <button
+                type="button"
+                className={userType === "parent" ? "active" : ""}
+                onClick={() => handleUserTypeChange("parent")}
+              >
+                Parent
+              </button>
+
+              <button
+                type="button"
+                className={userType === "teacher" ? "active" : ""}
+                onClick={() => handleUserTypeChange("teacher")}
+              >
+                Teacher
+              </button>
+
+              <button
+                type="button"
+                className={userType === "admin" ? "active" : ""}
+                onClick={() => handleUserTypeChange("admin")}
+              >
+                Administration
+              </button>
+
+            </div>
           </div>
 
           {/* Grid */}
@@ -99,8 +132,8 @@ export default function SignUp() {
                 {userType === "teacher"
                   ? "Teacher Id"
                   : userType === "parent"
-                  ? "Parent Id"
-                  : "Student Id"}
+                    ? "Parent Id"
+                    : "Student Id"}
               </label>
               <div className="input-icon">
                 <input
@@ -109,8 +142,8 @@ export default function SignUp() {
                     userType === "teacher"
                       ? "Teacher Id"
                       : userType === "parent"
-                      ? "Parent Id"
-                      : "Student Id"
+                        ? "Parent Id"
+                        : "Student Id"
                   }
                 />
               </div>
@@ -155,8 +188,8 @@ export default function SignUp() {
                 {userType === "teacher"
                   ? "Teacher Information"
                   : userType === "parent"
-                  ? "Parent Information"
-                  : "Student Scholar Information"}
+                    ? "Parent Information"
+                    : "Student Scholar Information"}
               </h3>
             </div>
 
