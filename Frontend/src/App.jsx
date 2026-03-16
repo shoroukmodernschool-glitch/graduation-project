@@ -31,6 +31,9 @@ import LowerSchool from "./pages/ACADEMIC_LEVELS/LowerSchool";
 import MiddleSchool from "./pages/ACADEMIC_LEVELS/MiddleSchool";
 import UpperSchool from "./pages/ACADEMIC_LEVELS/UpperSchool";
 
+/* Student Dashboard */
+import StudentDashboard from "./pages/student/StudentDashboard";
+
 function App() {
 
   const location = useLocation();
@@ -38,7 +41,8 @@ function App() {
 
   const hideNavbar =
     location.pathname.includes("login") ||
-    location.pathname.includes("signup");
+    location.pathname.includes("signup") ||
+    location.pathname.includes("student-dashboard");
 
   useEffect(() => {
     console.log("App Loaded");
@@ -65,7 +69,6 @@ function App() {
     <>
       {!hideNavbar && <Navbar />}
 
-      {/* عرض البيانات للتجربة */}
       {students.length > 0 && (
         <div style={{ padding: "20px" }}>
           <h3>Students Data From Firebase</h3>
@@ -102,6 +105,9 @@ function App() {
         <Route path="/middle-school" element={<MiddleSchool />} />
         <Route path="/upper-school" element={<UpperSchool />} />
 
+        {/* Student Dashboard */}
+        <Route path="/student-dashboard" element={<StudentDashboard />} />
+
         {/* fallback */}
         <Route path="*" element={<Home />} />
 
@@ -111,3 +117,4 @@ function App() {
 }
 
 export default App;
+
