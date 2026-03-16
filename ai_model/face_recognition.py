@@ -1,6 +1,7 @@
 import cv2
 import json
 import os
+import time
 from typing import Dict, List, Tuple, Optional
 
 import numpy as np
@@ -9,6 +10,16 @@ from insightface.app import FaceAnalysis
 
 DB_PATH = "face_db.json"
 SIMILARITY_THRESHOLD = 0.5
+
+
+# -----------------------------------------------------
+# Performance Optimization Settings
+# -----------------------------------------------------
+
+DETECTION_FRAME_SKIP = 5
+DETECTION_INTERVAL_SEC = 1.0
+DETECTION_WIDTH = 320
+MAX_FACES = 3
 
 
 def load_face_analyzer(det_size: Tuple[int, int] = (640, 640)) -> FaceAnalysis:
@@ -98,7 +109,9 @@ def recognize_faces_in_frame(frame, face_analyzer, db):
     faces = detect_faces(frame, face_analyzer)
     embeddings, bboxes = extract_embeddings(faces)
 
-    for emb, bbox in zip(embeddings, bboxes):
+    results = []
+
+    for emb, bbox in zip(embeddings[:MAX_FACES], bboxes[:MAX_FACES]):
 
         name, sim = compare_embedding(emb, db)
 
@@ -109,24 +122,9 @@ def recognize_faces_in_frame(frame, face_analyzer, db):
             display_name = name
             color = (0, 255, 0)
 
-        x1, y1, x2, y2 = bbox
+        results.append((bbox, display_name, sim, color))
 
-        cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-
-        label = f"{display_name} {sim*100:.1f}%"
-
-        cv2.putText(
-            frame,
-            label,
-            (x1, max(y1 - 10, 0)),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.6,
-            color,
-            2,
-            cv2.LINE_AA,
-        )
-
-    return frame
+    return results
 
 
 def main():
@@ -147,6 +145,11 @@ def main():
 
     print("Press 'q' to quit.")
 
+    last_detection_time = 0
+    frame_count = 0
+
+    track_results = []
+
     while True:
 
         ret, frame = cap.read()
@@ -154,11 +157,80 @@ def main():
         if not ret:
             break
 
-        annotated_frame = recognize_faces_in_frame(
-            frame, face_analyzer, db
-        )
+        frame_count += 1
 
-        cv2.imshow("Real-time Face Recognition", annotated_frame)
+        if frame_count % DETECTION_FRAME_SKIP == 0:
+
+            current_time = time.time()
+
+            if current_time - last_detection_time >= DETECTION_INTERVAL_SEC:
+
+                h_full, w_full = frame.shape[:2]
+
+                det_w = min(DETECTION_WIDTH, w_full)
+                det_h = int(h_full * det_w / w_full)
+
+                small_frame = cv2.resize(
+                    frame,
+                    (det_w, det_h),
+                    interpolation=cv2.INTER_LINEAR
+                )
+
+                results = recognize_faces_in_frame(
+                    small_frame,
+                    face_analyzer,
+                    db
+                )
+
+                track_results = []
+
+                for bbox, label, sim, color in results:
+
+                    scale_x = w_full / det_w
+                    scale_y = h_full / det_h
+
+                    x1, y1, x2, y2 = bbox
+
+                    x1 = int(x1 * scale_x)
+                    x2 = int(x2 * scale_x)
+                    y1 = int(y1 * scale_y)
+                    y2 = int(y2 * scale_y)
+
+                    w = x2 - x1
+                    h = y2 - y1
+
+                    tracker = cv2.TrackerKCF_create()
+                    tracker.init(frame, (x1, y1, w, h))
+
+                    track_results.append((tracker, label, sim, color))
+
+                last_detection_time = current_time
+
+        for i in range(len(track_results)):
+
+            tracker, label, sim, color = track_results[i]
+
+            success, box = tracker.update(frame)
+
+            if success:
+
+                x, y, w, h = [int(v) for v in box]
+
+                cv2.rectangle(frame, (x,y), (x+w,y+h), color, 2)
+
+                text = f"{label} {sim*100:.1f}%"
+
+                cv2.putText(
+                    frame,
+                    text,
+                    (x, y-10),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    color,
+                    2
+                )
+
+        cv2.imshow("Real-time Face Recognition", frame)
 
         key = cv2.waitKey(1) & 0xFF
 

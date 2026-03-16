@@ -36,10 +36,9 @@ z-index:-1;
 pointer-events:none;
 }
 
-/* ===== USER TYPE ===== */
+/* ===== ROLE TABS ===== */
 
-.user-type{
-width:100%;
+.role-tabs{
 display:flex;
 justify-content:center;
 align-items:center;
@@ -48,16 +47,33 @@ margin-bottom:30px;
 flex-wrap:wrap;
 }
 
-.user-type label{
-font-weight:600;
+.role-tabs button{
+padding:8px 18px;
+border-radius:25px;
+border:1px solid rgba(255,255,255,0.4);
+background:transparent;
 color:white;
+cursor:pointer;
+transition:0.3s;
+font-size:14px;
+backdrop-filter:blur(2px);
 }
 
-.user-type select{
-padding:10px 15px;
-border-radius:8px;
-border:1px solid #ccc;
-min-width:200px;
+/* HOVER EFFECT */
+
+.role-tabs button:hover{
+background:rgba(255,255,255,0.15);
+backdrop-filter:blur(6px);
+}
+
+/* ACTIVE BUTTON */
+
+.role-tabs button.active{
+background:rgba(255,255,255,0.35);
+color:black;
+backdrop-filter:blur(10px);
+border:1px solid rgba(255,255,255,0.7);
+font-weight:600;
 }
 
 /* ===== FORM CONTAINER ===== */
@@ -70,18 +86,16 @@ position:relative;
 z-index:2;
 }
 
-/* ===== SECTION TITLE ===== */
-
 .section-title{
 display:flex;
 align-items:center;
 gap:10px;
-background:#3B82F6;
 color:#fff;
 padding:10px 15px;
 border-radius:8px;
 width:fit-content;
 margin-bottom:20px;
+background:#3B82F6;
 }
 
 .section-title .number{
@@ -165,7 +179,7 @@ transform:scale(1.03);
 .Scholar-info{
 max-width:1200px;
 margin:20px auto 0;
-padding:30px;
+padding:px;
 position:relative;
 z-index:2;
 }
@@ -196,7 +210,7 @@ resize:none;
 border:none;
 border-radius:10px;
 padding:14px 40px;
-background-color:#22C55E;
+background-color:#3B82F6;
 color:#fff;
 font-size:20px;
 cursor:pointer;
@@ -262,12 +276,8 @@ width:100%;
 justify-content:center;
 }
 
-.user-type{
+.role-tabs{
 flex-direction:column;
-}
-
-.user-type select{
-width:100%;
 }
 
 .confirm{

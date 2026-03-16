@@ -1,11 +1,11 @@
 import "./sign_up.css";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
+import Navbar from "../../components/Navbar";
 
 export default function SignUp() {
-  const navigate = useNavigate();
 
+  const navigate = useNavigate();
   const [userType, setUserType] = useState("student");
 
   const handleUserTypeChange = (value) => {
@@ -19,27 +19,22 @@ export default function SignUp() {
       navigate("/signup-teacher");
     }
 
-     if (value === "admin") {
-    navigate("/signup-admin");
-  }
-
+    if (value === "admin") {
+      navigate("/signup-admin");
+    }
   };
 
   return (
     <>
-      {/* ===== VIDEO BACKGROUND ===== */}
       <video className="background-video" autoPlay loop muted playsInline>
-        <source src="./videos/student.mp4" type="video/mp4" />
+        <source src="./videos/bk.mp4" type="video/mp4" />
       </video>
 
-      {/* ===== PAGE ===== */}
-      <div className="signup-page">
+      <div className={`signup-page ${userType}`}>
         <Navbar />
 
-        {/* ===== FORM ===== */}
         <form className="student-form">
 
-          {/* Section Title */}
           <div className="section-title">
             <span className="number">1</span>
             <h3>
@@ -47,13 +42,12 @@ export default function SignUp() {
             </h3>
           </div>
 
-          {/* User Type Tabs */}
           <div className="user-type">
             <div className="role-tabs">
 
               <button
                 type="button"
-                className={userType === "student" ? "active" : ""}
+                className={`${userType === "student" ? "active" : ""} student`}
                 onClick={() => handleUserTypeChange("student")}
               >
                 Student
@@ -61,7 +55,7 @@ export default function SignUp() {
 
               <button
                 type="button"
-                className={userType === "parent" ? "active" : ""}
+                className={`${userType === "parent" ? "active" : ""} parent`}
                 onClick={() => handleUserTypeChange("parent")}
               >
                 Parent
@@ -69,7 +63,7 @@ export default function SignUp() {
 
               <button
                 type="button"
-                className={userType === "teacher" ? "active" : ""}
+                className={`${userType === "teacher" ? "active" : ""} teacher`}
                 onClick={() => handleUserTypeChange("teacher")}
               >
                 Teacher
@@ -77,7 +71,7 @@ export default function SignUp() {
 
               <button
                 type="button"
-                className={userType === "admin" ? "active" : ""}
+                className={`${userType === "admin" ? "active" : ""} admin`}
                 onClick={() => handleUserTypeChange("admin")}
               >
                 Administration
@@ -86,8 +80,8 @@ export default function SignUp() {
             </div>
           </div>
 
-          {/* Grid */}
           <div className="form-grid">
+
             <div className="form-group">
               <label>First name</label>
               <div className="input-icon">
@@ -132,9 +126,12 @@ export default function SignUp() {
                 {userType === "teacher"
                   ? "Teacher Id"
                   : userType === "parent"
-                    ? "Parent Id"
-                    : "Student Id"}
+                  ? "Parent Id"
+                  : userType === "admin"
+                  ? "Admin Id"
+                  : "Student Id"}
               </label>
+
               <div className="input-icon">
                 <input
                   type="text"
@@ -142,8 +139,10 @@ export default function SignUp() {
                     userType === "teacher"
                       ? "Teacher Id"
                       : userType === "parent"
-                        ? "Parent Id"
-                        : "Student Id"
+                      ? "Parent Id"
+                      : userType === "admin"
+                      ? "Admin Id"
+                      : "Student Id"
                   }
                 />
               </div>
@@ -162,9 +161,9 @@ export default function SignUp() {
                 <input type="text" placeholder="Email" />
               </div>
             </div>
+
           </div>
 
-          {/* Face ID */}
           <div className="face-section">
             <div className="section-title">
               <span className="number">2</span>
@@ -180,20 +179,23 @@ export default function SignUp() {
             </button>
           </div>
 
-          {/* Scholar Info */}
           <div className="Scholar-info">
+
             <div className="section-title">
               <span className="number">3</span>
               <h3>
                 {userType === "teacher"
                   ? "Teacher Information"
                   : userType === "parent"
-                    ? "Parent Information"
-                    : "Student Scholar Information"}
+                  ? "Parent Information"
+                  : userType === "admin"
+                  ? "Administration Information"
+                  : "Student Scholar Information"}
               </h3>
             </div>
 
             <div className="notes-grid">
+
               <div className="form-group">
                 <label>Grade</label>
                 <div className="input-icon">
@@ -212,6 +214,7 @@ export default function SignUp() {
                 <label>Notes</label>
                 <textarea placeholder="Please mention if you have any chronic or medical conditions"></textarea>
               </div>
+
             </div>
           </div>
 

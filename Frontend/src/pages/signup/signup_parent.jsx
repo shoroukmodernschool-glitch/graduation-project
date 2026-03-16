@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
+import Navbar from "../../components/Navbar";
+import "./sign_up.css";
 
 export default function SignupParent() {
-  const navigate = useNavigate();
 
-  // 👇 الديفولت Parent
+  const navigate = useNavigate();
   const [userType, setUserType] = useState("parent");
 
   const handleUserTypeChange = (value) => {
@@ -16,42 +16,41 @@ export default function SignupParent() {
     }
 
     if (value === "teacher") {
-      navigate("/signup-teacher"); // تأكد إن الراوت صح
+      navigate("/signup-teacher");
     }
 
-       if (value === "admin") {
-    navigate("/signup-admin");
-  }
-
+    if (value === "admin") {
+      navigate("/signup-admin");
+    }
   };
 
   return (
     <>
       {/* ===== VIDEO BACKGROUND ===== */}
       <video className="background-video" autoPlay loop muted playsInline>
-        <source src="./videos/parent.mp4" type="video/mp4" />
+        <source src="./videos/bk.mp4" type="video/mp4" />
       </video>
 
       {/* ===== PAGE ===== */}
-      <div className="signup-page">
+      <div className={`signup-page ${userType}`}>
         <Navbar />
 
         {/* ===== FORM ===== */}
         <form className="student-form">
 
-          {/* Section Title */}
+          {/* ===== TITLE ===== */}
           <div className="section-title">
             <span className="number">1</span>
             <h3>Parent Personal Information</h3>
           </div>
 
-          {/* User Type Tabs */}
+          {/* ===== USER TYPE TABS ===== */}
           <div className="user-type">
             <div className="role-tabs">
 
               <button
                 type="button"
-                className={userType === "student" ? "active" : ""}
+                className={`${userType === "student" ? "active" : ""} student`}
                 onClick={() => handleUserTypeChange("student")}
               >
                 Student
@@ -59,7 +58,7 @@ export default function SignupParent() {
 
               <button
                 type="button"
-                className={userType === "parent" ? "active" : ""}
+                className={`${userType === "parent" ? "active" : ""} parent`}
                 onClick={() => handleUserTypeChange("parent")}
               >
                 Parent
@@ -67,25 +66,26 @@ export default function SignupParent() {
 
               <button
                 type="button"
-                className={userType === "teacher" ? "active" : ""}
+                className={`${userType === "teacher" ? "active" : ""} teacher`}
                 onClick={() => handleUserTypeChange("teacher")}
               >
                 Teacher
               </button>
 
               <button
-  type="button"
-  className={userType === "admin" ? "active" : ""}
-  onClick={() => handleUserTypeChange("admin")}
->
-  Administration
-</button>
+                type="button"
+                className={`${userType === "admin" ? "active" : ""} admin`}
+                onClick={() => handleUserTypeChange("admin")}
+              >
+                Administration
+              </button>
 
             </div>
           </div>
 
-          {/* Grid */}
+          {/* ===== FORM GRID ===== */}
           <div className="form-grid">
+
             <div className="form-group">
               <label>First name</label>
               <div className="input-icon">
@@ -127,21 +127,26 @@ export default function SignupParent() {
                 <input type="text" placeholder="Email" />
               </div>
             </div>
+
           </div>
 
-          {/* Additional Info */}
+          {/* ===== ADDITIONAL INFO ===== */}
           <div className="Scholar-info">
+
             <div className="section-title">
               <span className="number">2</span>
               <h3>Additional Parent Information</h3>
             </div>
 
             <div className="notes-grid">
+
               <div className="notes-field">
                 <label>Notes</label>
                 <textarea placeholder="Any additional notes you would like to add"></textarea>
               </div>
+
             </div>
+
           </div>
 
           <button className="confirm" type="submit">

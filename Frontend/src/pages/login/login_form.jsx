@@ -1,20 +1,18 @@
 import "./Login_form.css";
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
-import Navbar from "../components/Navbar";
+import Navbar from "../../components/Navbar";
 
-export default function LoginParent() {
+export default function Login() {
 
   const navigate = useNavigate();
-  const [role] = useState("Parent");
 
   return (
+
     <div className="login-page">
 
       <Navbar />
 
       <video
-        key={role}
         className="background-video"
         autoPlay
         loop
@@ -22,63 +20,47 @@ export default function LoginParent() {
         playsInline
       >
         <source
-          src={`${import.meta.env.BASE_URL}videos/parent.mp4`}
+          src={`${import.meta.env.BASE_URL}videos/bk.mp4`}
           type="video/mp4"
         />
       </video>
 
-      <div className={`login-card ${role.toLowerCase()}`}>
+      <div className="login-card student">
 
         <h2>Login</h2>
 
-        {/* Role Tabs */}
         <div className="role-tabs">
 
-          <button
-            onClick={() => navigate("/login")}
-          >
+          <button className="active">
             Student
           </button>
 
-          <button
-            className="active"
-          >
+          <button onClick={() => navigate("/login-parent")}>
             Parent
           </button>
 
-          <button
-            onClick={() => navigate("/login-teacher")}
-          >
+          <button onClick={() => navigate("/login-teacher")}>
             Teacher
           </button>
-  <button
-            onClick={() => navigate("/login-Admin")}
-          >
-            Admin
+
+          <button onClick={() => navigate("/login-admin")}>
+            Administration
           </button>
+
         </div>
 
-        {/* Parent ID */}
         <div className="input-group">
-          <input
-            type="text"
-            placeholder="Parent ID"
-            className="animated-input"
-          />
+          <input type="text" placeholder="Student ID" />
           <span className="icon">👤</span>
         </div>
 
-        {/* Password */}
         <div className="input-group">
-          <input
-            type="password"
-            placeholder="Password"
-          />
+          <input type="password" placeholder="Password" />
           <span className="icon">🔒</span>
         </div>
 
-        {/* Options */}
         <div className="options">
+
           <label>
             <input type="checkbox" /> Remember Me
           </label>
@@ -86,15 +68,16 @@ export default function LoginParent() {
           <Link to="/forgot-password">
             Forgot Password?
           </Link>
+
         </div>
 
-        {/* Submit */}
-        <button className={`submit-btn ${role.toLowerCase()}`}>
+        <button className="submit-btn student">
           Submit
         </button>
 
       </div>
 
     </div>
+
   );
 }
