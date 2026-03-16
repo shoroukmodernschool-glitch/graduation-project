@@ -3,53 +3,98 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import "./sign_up.css";
 
+import { auth, db } from "../../firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+
 export default function SignupTeacher() {
 
   const navigate = useNavigate();
   const [userType, setUserType] = useState("teacher");
 
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    teacherId: "",
+    phone: "",
+    email: "",
+    password: "",
+    specialization: "",
+    notes: ""
+  });
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
   const handleUserTypeChange = (value) => {
     setUserType(value);
 
-    if (value === "student") {
-      navigate("/signup");
-    }
+    if (value === "student") navigate("/signup");
+    if (value === "parent") navigate("/signup-parent");
+    if (value === "admin") navigate("/signup-admin");
+  };
 
-    if (value === "parent") {
-      navigate("/signup-parent");
-    }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-    if (value === "admin") {
-      navigate("/signup-admin");
+    try {
+
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
+
+      const user = userCredential.user;
+
+      await setDoc(doc(db, "teachers", user.uid), {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        teacherId: formData.teacherId,
+        phone: formData.phone,
+        email: formData.email,
+        specialization: formData.specialization,
+        notes: formData.notes,
+        role: "teacher",
+        createdAt: new Date()
+      });
+
+      alert("Teacher registered successfully");
+
+      navigate("/login");
+
+    } catch (error) {
+      console.log(error);
+      alert(error.message);
     }
   };
 
   return (
     <>
-      {/* VIDEO BACKGROUND */}
       <video className="background-video" autoPlay loop muted playsInline>
         <source src="./videos/bk.mp4" type="video/mp4" />
       </video>
 
-      {/* PAGE */}
       <div className={`signup-page ${userType}`}>
         <Navbar />
 
-        <form className="student-form">
+        <form className="student-form" onSubmit={handleSubmit}>
 
-          {/* TITLE */}
           <div className="section-title">
             <span className="number">1</span>
             <h3>Teacher Personal Information</h3>
           </div>
 
-          {/* ROLE TABS */}
           <div className="user-type">
             <div className="role-tabs">
 
               <button
                 type="button"
-                className={`${userType === "student" ? "active" : ""} student`}
+                className={`${userType === "student" ? "active" : ""}`}
                 onClick={() => handleUserTypeChange("student")}
               >
                 Student
@@ -57,7 +102,7 @@ export default function SignupTeacher() {
 
               <button
                 type="button"
-                className={`${userType === "parent" ? "active" : ""} parent`}
+                className={`${userType === "parent" ? "active" : ""}`}
                 onClick={() => handleUserTypeChange("parent")}
               >
                 Parent
@@ -65,15 +110,14 @@ export default function SignupTeacher() {
 
               <button
                 type="button"
-                className={`${userType === "teacher" ? "active" : ""} teacher`}
-                onClick={() => handleUserTypeChange("teacher")}
+                className={`${userType === "teacher" ? "active" : ""}`}
               >
                 Teacher
               </button>
 
               <button
                 type="button"
-                className={`${userType === "admin" ? "active" : ""} admin`}
+                className={`${userType === "admin" ? "active" : ""}`}
                 onClick={() => handleUserTypeChange("admin")}
               >
                 Administration
@@ -82,47 +126,74 @@ export default function SignupTeacher() {
             </div>
           </div>
 
-          {/* GRID */}
           <div className="form-grid">
 
             <div className="form-group">
               <label>First name</label>
-              <div className="input-icon">
-                <input type="text" placeholder="First name as stated in passport" />
-              </div>
+              <input
+              type="text"
+              name="firstName"
+              placeholder="First name"
+              onChange={handleChange}
+              required
+              />
             </div>
 
             <div className="form-group">
               <label>Last name</label>
-              <div className="input-icon">
-                <input type="text" placeholder="Last name as stated in passport" />
-              </div>
+              <input
+              type="text"
+              name="lastName"
+              placeholder="Last name"
+              onChange={handleChange}
+              required
+              />
             </div>
 
             <div className="form-group">
               <label>Teacher ID</label>
-              <div className="input-icon">
-                <input type="text" placeholder="Teacher ID" />
-              </div>
+              <input
+              type="text"
+              name="teacherId"
+              placeholder="Teacher ID"
+              onChange={handleChange}
+              />
             </div>
 
             <div className="form-group">
               <label>Phone</label>
-              <div className="input-icon">
-                <input type="text" placeholder="Phone" />
-              </div>
+              <input
+              type="text"
+              name="phone"
+              placeholder="Phone"
+              onChange={handleChange}
+              />
             </div>
 
             <div className="form-group">
               <label>Email</label>
-              <div className="input-icon">
-                <input type="text" placeholder="Email" />
-              </div>
+              <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              onChange={handleChange}
+              required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Password</label>
+              <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              onChange={handleChange}
+              required
+              />
             </div>
 
           </div>
 
-          {/* TEACHER INFO */}
           <div className="Scholar-info">
 
             <div className="section-title">
@@ -132,16 +203,21 @@ export default function SignupTeacher() {
 
             <div className="form-group">
               <label>Specialization</label>
-              <div className="input-icon">
-                <input type="text" placeholder="Which specialization?" />
-              </div>
+              <input
+              type="text"
+              name="specialization"
+              placeholder="Which specialization?"
+              onChange={handleChange}
+              />
             </div>
 
-            <div className="notes-grid">
-              <div className="notes-field">
-                <label>Notes</label>
-                <textarea placeholder="Any additional notes you would like to add"></textarea>
-              </div>
+            <div className="notes-field">
+              <label>Notes</label>
+              <textarea
+              name="notes"
+              placeholder="Any additional notes"
+              onChange={handleChange}
+              />
             </div>
 
           </div>

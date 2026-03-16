@@ -50,6 +50,7 @@ export default function Login() {
       >
         <source
           src={`${import.meta.env.BASE_URL}videos/bk.mp4`}
+          type="video/mp4"
         />
       </video>
 

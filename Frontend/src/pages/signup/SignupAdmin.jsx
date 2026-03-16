@@ -3,134 +3,195 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import "./sign_up.css";
 
+import { auth, db } from "../../firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+
 export default function SignupAdmin() {
 
   const navigate = useNavigate();
-
-  // 👇 الادمن هو الافتراضي
   const [userType, setUserType] = useState("admin");
+
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    address: "",
+    adminId: "",
+    phone: "",
+    email: "",
+    password: ""
+  });
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
 
   const handleUserTypeChange = (value) => {
     setUserType(value);
 
-    if (value === "student") {
-      navigate("/signup");
-    }
+    if (value === "student") navigate("/signup");
+    if (value === "parent") navigate("/signup-parent");
+    if (value === "teacher") navigate("/signup-teacher");
+    if (value === "admin") navigate("/signup-admin");
+  };
 
-    if (value === "parent") {
-      navigate("/signup-parent");
-    }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-    if (value === "teacher") {
-      navigate("/signup-teacher");
-    }
+    try {
 
-    if (value === "admin") {
-      navigate("/signup-admin");
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
+
+      const user = userCredential.user;
+
+      await setDoc(doc(db, "Admin", user.uid), {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        address: formData.address,
+        adminId: formData.adminId,
+        phone: formData.phone,
+        email: formData.email,
+        role: "admin",
+        createdAt: new Date()
+      });
+
+      alert("Admin registered successfully");
+
+      navigate("/login");
+
+    } catch (error) {
+      console.log(error);
+      alert(error.message);
     }
   };
 
   return (
     <>
-      {/* VIDEO BACKGROUND */}
       <video className="background-video" autoPlay loop muted playsInline>
         <source src="./videos/bk.mp4" type="video/mp4" />
       </video>
 
-      {/* PAGE */}
       <div className={`signup-page ${userType}`}>
         <Navbar />
 
-        <form className="student-form">
+        <form className="student-form" onSubmit={handleSubmit}>
 
-          {/* TITLE */}
           <div className="section-title">
             <span className="number">1</span>
             <h3>Administration Personal Information</h3>
           </div>
 
-          {/* USER TYPE */}
           <div className="user-type">
             <div className="role-tabs">
 
-              <button
-                type="button"
-                className={`${userType === "student" ? "active" : ""} student`}
-                onClick={() => handleUserTypeChange("student")}
-              >
+              <button type="button"
+              className={`${userType === "student" ? "active" : ""}`}
+              onClick={() => handleUserTypeChange("student")}>
                 Student
               </button>
 
-              <button
-                type="button"
-                className={`${userType === "parent" ? "active" : ""} parent`}
-                onClick={() => handleUserTypeChange("parent")}
-              >
+              <button type="button"
+              className={`${userType === "parent" ? "active" : ""}`}
+              onClick={() => handleUserTypeChange("parent")}>
                 Parent
               </button>
 
-              <button
-                type="button"
-                className={`${userType === "teacher" ? "active" : ""} teacher`}
-                onClick={() => handleUserTypeChange("teacher")}
-              >
+              <button type="button"
+              className={`${userType === "teacher" ? "active" : ""}`}
+              onClick={() => handleUserTypeChange("teacher")}>
                 Teacher
               </button>
 
-              <button
-                type="button"
-                className={`${userType === "admin" ? "active" : ""} admin`}
-                onClick={() => handleUserTypeChange("admin")}
-              >
+              <button type="button"
+              className={`${userType === "admin" ? "active" : ""}`}
+              onClick={() => handleUserTypeChange("admin")}>
                 Administration
               </button>
 
             </div>
           </div>
 
-          {/* FORM GRID */}
           <div className="form-grid">
 
             <div className="form-group">
               <label>First name</label>
-              <div className="input-icon">
-                <input type="text" placeholder="First name as stated in passport" />
-              </div>
+              <input
+              type="text"
+              name="firstName"
+              placeholder="First name"
+              onChange={handleChange}
+              required
+              />
             </div>
 
             <div className="form-group">
               <label>Last name</label>
-              <div className="input-icon">
-                <input type="text" placeholder="Last name as stated in passport" />
-              </div>
+              <input
+              type="text"
+              name="lastName"
+              placeholder="Last name"
+              onChange={handleChange}
+              required
+              />
             </div>
 
             <div className="form-group">
               <label>Address</label>
-              <div className="input-icon">
-                <input type="text" placeholder="Address" />
-              </div>
+              <input
+              type="text"
+              name="address"
+              placeholder="Address"
+              onChange={handleChange}
+              />
             </div>
 
             <div className="form-group">
               <label>Administration Id</label>
-              <div className="input-icon">
-                <input type="text" placeholder="Administration Id" />
-              </div>
+              <input
+              type="text"
+              name="adminId"
+              placeholder="Administration Id"
+              onChange={handleChange}
+              />
             </div>
 
             <div className="form-group">
               <label>Phone</label>
-              <div className="input-icon">
-                <input type="text" placeholder="Phone" />
-              </div>
+              <input
+              type="text"
+              name="phone"
+              placeholder="Phone"
+              onChange={handleChange}
+              />
             </div>
 
             <div className="form-group">
               <label>Email</label>
-              <div className="input-icon">
-                <input type="text" placeholder="Email" />
-              </div>
+              <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              onChange={handleChange}
+              required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Password</label>
+              <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              onChange={handleChange}
+              required
+              />
             </div>
 
           </div>

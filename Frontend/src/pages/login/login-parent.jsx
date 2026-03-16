@@ -1,10 +1,36 @@
 import "./Login_form.css";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
+import { useState } from "react";
+
+import { auth } from "../../firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 export default function LoginParent() {
 
   const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
+    try {
+
+      await signInWithEmailAndPassword(auth, email, password);
+
+      alert("Login successful");
+
+      navigate("/parent-dashboard");
+
+    } catch (error) {
+
+      console.log(error);
+      alert("Wrong email or password");
+
+    }
+  };
 
   return (
 
@@ -49,31 +75,47 @@ export default function LoginParent() {
 
         </div>
 
-        <div className="input-group">
-          <input type="text" placeholder="Parent ID" />
-          <span className="icon">👤</span>
-        </div>
+        <form onSubmit={handleLogin}>
 
-        <div className="input-group">
-          <input type="password" placeholder="Password" />
-          <span className="icon">🔒</span>
-        </div>
+          <div className="input-group">
+            <input
+              type="email"
+              placeholder="Parent Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <span className="icon">👤</span>
+          </div>
 
-        <div className="options">
+          <div className="input-group">
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <span className="icon">🔒</span>
+          </div>
 
-          <label>
-            <input type="checkbox" /> Remember Me
-          </label>
+          <div className="options">
 
-          <Link to="/forgot-password">
-            Forgot Password?
-          </Link>
+            <label>
+              <input type="checkbox" /> Remember Me
+            </label>
 
-        </div>
+            <Link to="/forgot-password">
+              Forgot Password?
+            </Link>
 
-        <button className="submit-btn parent">
-          Submit
-        </button>
+          </div>
+
+          <button className="submit-btn parent">
+            Submit
+          </button>
+
+        </form>
 
       </div>
 

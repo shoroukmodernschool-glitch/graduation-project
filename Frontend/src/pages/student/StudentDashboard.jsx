@@ -1,12 +1,11 @@
+
 import React from "react";
 
+/* Material Dashboard Layout */
+import Dashboard from "../../layouts/dashboard";
+
 function StudentDashboard() {
-  return (
-    <div style={{ padding: "40px" }}>
-      <h1>Student Dashboard</h1>
-      <p>Welcome Student</p>
-    </div>
-  );
+  return <Dashboard />;
 }
 
 export default StudentDashboard;

@@ -3,37 +3,99 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../../firebase";
+
 export default function SignUp() {
 
   const navigate = useNavigate();
   const [userType, setUserType] = useState("student");
 
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    address: "",
+    dob: "",
+    gender: "",
+    id: "",
+    phone: "",
+    email: "",
+    grade: "",
+    className: "",
+    notes: "",
+    password: ""
+  });
+
   const handleUserTypeChange = (value) => {
     setUserType(value);
 
-    if (value === "parent") {
-      navigate("/signup-parent");
-    }
+    if (value === "parent") navigate("/signup-parent");
+    if (value === "teacher") navigate("/signup-teacher");
+    if (value === "admin") navigate("/signup-admin");
+  };
 
-    if (value === "teacher") {
-      navigate("/signup-teacher");
-    }
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
 
-    if (value === "admin") {
-      navigate("/signup-admin");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
+
+      const user = userCredential.user;
+
+      await setDoc(doc(db, userType, user.uid), {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        address: formData.address,
+        dob: formData.dob,
+        gender: formData.gender,
+        id: formData.id,
+        phone: formData.phone,
+        email: formData.email,
+        grade: formData.grade,
+        className: formData.className,
+        notes: formData.notes,
+        role: userType,
+        createdAt: new Date()
+      });
+
+      alert("Account Created Successfully");
+
+      navigate("/login");
+
+    } catch (error) {
+      alert(error.message);
     }
   };
 
   return (
     <>
-      <video className="background-video" autoPlay loop muted playsInline>
+      <video
+        className="background-video"
+        autoPlay
+        loop
+        muted
+        playsInline
+      >
         <source src="./videos/bk.mp4" type="video/mp4" />
       </video>
 
       <div className={`signup-page ${userType}`}>
         <Navbar />
 
-        <form className="student-form">
+        <form className="student-form" onSubmit={handleSubmit}>
 
           <div className="section-title">
             <span className="number">1</span>
@@ -84,135 +146,77 @@ export default function SignUp() {
 
             <div className="form-group">
               <label>First name</label>
-              <div className="input-icon">
-                <input type="text" placeholder="First name as stated in passport" />
-              </div>
+              <input name="firstName" onChange={handleChange} type="text" placeholder="First name" />
             </div>
 
             <div className="form-group">
               <label>Last name</label>
-              <div className="input-icon">
-                <input type="text" placeholder="Last name as stated in passport" />
-              </div>
+              <input name="lastName" onChange={handleChange} type="text" placeholder="Last name" />
             </div>
 
             <div className="form-group">
               <label>Address</label>
-              <div className="input-icon">
-                <input type="text" placeholder="Address" />
-              </div>
+              <input name="address" onChange={handleChange} type="text" placeholder="Address" />
             </div>
 
             <div className="form-group">
               <label>Date of Birth</label>
-              <div className="input-icon">
-                <input type="text" placeholder="Day / Month / Year" />
-              </div>
+              <input name="dob" onChange={handleChange} type="text" placeholder="Day / Month / Year" />
             </div>
 
             <div className="form-group">
               <label>Gender</label>
-              <div className="input-icon">
-                <select>
-                  <option value="">Select gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                </select>
-              </div>
+              <select name="gender" onChange={handleChange}>
+                <option value="">Select gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
             </div>
 
             <div className="form-group">
-              <label>
-                {userType === "teacher"
-                  ? "Teacher Id"
-                  : userType === "parent"
-                  ? "Parent Id"
-                  : userType === "admin"
-                  ? "Admin Id"
-                  : "Student Id"}
-              </label>
-
-              <div className="input-icon">
-                <input
-                  type="text"
-                  placeholder={
-                    userType === "teacher"
-                      ? "Teacher Id"
-                      : userType === "parent"
-                      ? "Parent Id"
-                      : userType === "admin"
-                      ? "Admin Id"
-                      : "Student Id"
-                  }
-                />
-              </div>
+              <label>ID</label>
+              <input name="id" onChange={handleChange} type="text" placeholder="ID" />
             </div>
 
             <div className="form-group">
               <label>Phone</label>
-              <div className="input-icon">
-                <input type="text" placeholder="Phone" />
-              </div>
+              <input name="phone" onChange={handleChange} type="text" placeholder="Phone" />
             </div>
 
             <div className="form-group">
               <label>Email</label>
-              <div className="input-icon">
-                <input type="text" placeholder="Email" />
-              </div>
+              <input name="email" onChange={handleChange} type="email" placeholder="Email" />
             </div>
 
-          </div>
-
-          <div className="face-section">
-            <div className="section-title">
-              <span className="number">2</span>
-              <h3>Register Face ID</h3>
+            <div className="form-group">
+              <label>Password</label>
+              <input name="password" onChange={handleChange} type="password" placeholder="Password" />
             </div>
 
-            <button
-              type="button"
-              className="face-btn"
-              onClick={() => console.log("Open Camera Later")}
-            >
-              📷 Register Face ID
-            </button>
           </div>
 
           <div className="Scholar-info">
 
             <div className="section-title">
               <span className="number">3</span>
-              <h3>
-                {userType === "teacher"
-                  ? "Teacher Information"
-                  : userType === "parent"
-                  ? "Parent Information"
-                  : userType === "admin"
-                  ? "Administration Information"
-                  : "Student Scholar Information"}
-              </h3>
+              <h3>Scholar Information</h3>
             </div>
 
             <div className="notes-grid">
 
               <div className="form-group">
                 <label>Grade</label>
-                <div className="input-icon">
-                  <input type="text" placeholder="Which grade I'm applying to?" />
-                </div>
+                <input name="grade" onChange={handleChange} type="text" placeholder="Grade" />
               </div>
 
               <div className="form-group">
                 <label>Class</label>
-                <div className="input-icon">
-                  <input type="text" placeholder="Which class?" />
-                </div>
+                <input name="className" onChange={handleChange} type="text" placeholder="Class" />
               </div>
 
               <div className="notes-field">
                 <label>Notes</label>
-                <textarea placeholder="Please mention if you have any chronic or medical conditions"></textarea>
+                <textarea name="notes" onChange={handleChange}></textarea>
               </div>
 
             </div>

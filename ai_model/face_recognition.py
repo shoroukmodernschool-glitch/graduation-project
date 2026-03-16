@@ -11,7 +11,6 @@ from insightface.app import FaceAnalysis
 DB_PATH = "face_db.json"
 SIMILARITY_THRESHOLD = 0.5
 
-
 # -----------------------------------------------------
 # Performance Optimization Settings
 # -----------------------------------------------------
@@ -137,7 +136,7 @@ def main():
 
     print(f"Loaded database with {len(db)} person(s).")
 
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(3)
 
     if not cap.isOpened():
         print("Error: Could not open camera.")
