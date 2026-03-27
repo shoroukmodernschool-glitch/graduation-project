@@ -29,7 +29,7 @@ export default function LoginTeacher() {
 
       <div className={`login-card ${role.toLowerCase()}`}>
 
-        <h2>Login</h2>
+        <h2 className="h2login" > Teacher Login</h2>
 
         <div className="role-tabs">
 
@@ -52,11 +52,12 @@ export default function LoginTeacher() {
         </div>
 
         <div className="input-group">
-          <input
-            type="text"
-            placeholder="Teacher ID"
-            className="animated-input"
-          />
+           <input
+              type="email"
+              placeholder="Teacher Email"
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
           <span className="icon">👤</span>
         </div>
 

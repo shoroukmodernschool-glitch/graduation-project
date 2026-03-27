@@ -26,6 +26,7 @@
   justify-content:space-between;
   flex-wrap:wrap;
   gap:40px;
+  align-items:flex-start; /* 🔥 ده المهم */
 }
 
 /* columns */
@@ -33,6 +34,14 @@
 .footer-col{
   flex:1;
   min-width:220px;
+}
+
+/* 🛑 نشيل أي background جاي من بره */
+.footer-col.contact{
+  background:transparent !important;
+  padding:0 !important;
+  margin-top:0 !important;
+  box-shadow:none !important;
 }
 
 /* titles */

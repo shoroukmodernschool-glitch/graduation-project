@@ -38,12 +38,6 @@ export default function SignupParent() {
         {/* ===== FORM ===== */}
         <form className="student-form">
 
-          {/* ===== TITLE ===== */}
-          <div className="section-title">
-            <span className="number">1</span>
-            <h3>Parent Personal Information</h3>
-          </div>
-
           {/* ===== USER TYPE TABS ===== */}
           <div className="user-type">
             <div className="role-tabs">
@@ -81,6 +75,12 @@ export default function SignupParent() {
               </button>
 
             </div>
+          </div>
+
+          {/* ===== TITLE ===== */}
+          <div className="section-title">
+            <span className="number">1</span>
+            <h3>Parent Personal Information</h3>
           </div>
 
           {/* ===== FORM GRID ===== */}
@@ -129,6 +129,8 @@ export default function SignupParent() {
             </div>
 
           </div>
+
+         
 
           {/* ===== ADDITIONAL INFO ===== */}
           <div className="Scholar-info">

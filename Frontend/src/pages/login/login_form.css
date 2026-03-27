@@ -29,8 +29,8 @@ html, body, #root {
 /* ================= CARD ================= */
 
 .login-card {
-  width: 520px;
-  height: 420px;
+  width: 600px; /* 🔥 كبرنا الكارد */
+  height: 450px;
   max-width: 95%;
   padding: 35px;
   border-radius: 18px;
@@ -66,24 +66,26 @@ html, body, #root {
 
 .role-tabs{
   display:flex;
-  gap:8px;
+  gap:10px;
   margin-bottom:20px;
   padding:6px;
   border-radius:40px;
   border:1px solid rgba(255,255,255,0.4);
+  width:100%; /* 🔥 مهم */
 }
 
 .role-tabs button{
-  flex:1;
-  padding:8px 6px;
+  flex:1; /* 🔥 كلهم نفس العرض */
+  padding:10px;
   border:none;
   background:transparent;
   color:white;
   border-radius:25px;
   cursor:pointer;
-  font-size:13px;
+  font-size:14px; /* رجعنا الحجم الطبيعي */
   transition:0.3s;
-  white-space:nowrap;
+  text-align:center;
+  white-space:nowrap; /* يمنع النزول */
 }
 
 .role-tabs button:hover{
@@ -179,4 +181,7 @@ html, body, #root {
 .submit-btn.admin{
   background:#ef4444;
   color:white;
+}
+.h2login{
+  font-size: 25px;
 }

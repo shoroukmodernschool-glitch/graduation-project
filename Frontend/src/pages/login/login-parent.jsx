@@ -53,7 +53,7 @@ export default function LoginParent() {
 
       <div className="login-card parent">
 
-        <h2>Login</h2>
+        <h2 className="h2login" > Parent Login</h2>
 
         <div className="role-tabs">
 

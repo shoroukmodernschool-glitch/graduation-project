@@ -5,11 +5,11 @@ import "./Footer.css";
 const Footer = () => {
 
   const goTop = () => {
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
-};
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  };
 
   return (
     <footer className="footer">
@@ -19,48 +19,27 @@ const Footer = () => {
         <div className="footer-col">
           <h3>ABOUT SHOROUK MODERN SCHOOL</h3>
           <ul>
-            <li><Link to="/#welcome">Welcome Message</Link></li>
+            <li>
+              <Link to="/#welcome">Welcome Message</Link>
+            </li>
 
             <li>
               <Link to="/about" onClick={goTop}>
                 Mission & Vision
               </Link>
             </li>
-
-          
           </ul>
         </div>
 
         <div className="footer-col">
-  <h3>ACADEMICS</h3>
-  <ul>
-
-    <li>
-      <Link to="/early-childhood" onClick={goTop}>
-        Early Childhood
-      </Link>
-    </li>
-
-    <li>
-      <Link to="/lower-school" onClick={goTop}>
-        Lower School
-      </Link>
-    </li>
-
-    <li>
-      <Link to="/middle-school" onClick={goTop}>
-        Middle School
-      </Link>
-    </li>
-
-    <li>
-      <Link to="/upper-school" onClick={goTop}>
-        Upper School
-      </Link>
-    </li>
-
-  </ul>
-</div>
+          <h3>ACADEMICS</h3>
+          <ul>
+            <li><Link to="/early-childhood" onClick={goTop}>Early Childhood</Link></li>
+            <li><Link to="/lower-school" onClick={goTop}>Lower School</Link></li>
+            <li><Link to="/middle-school" onClick={goTop}>Middle School</Link></li>
+            <li><Link to="/upper-school" onClick={goTop}>Upper School</Link></li>
+          </ul>
+        </div>
 
         <div className="footer-col">
           <h3>QUICK LINKS</h3>
@@ -79,14 +58,10 @@ const Footer = () => {
             shoroukmodernschool@gmail.com
           </p>
 
-         
-
           <div className="social">
             <a href="#"><i className="fab fa-facebook-f"></i></a>
-           
             <a href="#"><i className="fab fa-instagram"></i></a>
           </div>
-
         </div>
 
       </div>

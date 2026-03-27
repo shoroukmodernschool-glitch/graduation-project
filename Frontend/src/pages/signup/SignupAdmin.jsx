@@ -83,11 +83,6 @@ export default function SignupAdmin() {
 
         <form className="student-form" onSubmit={handleSubmit}>
 
-          <div className="section-title">
-            <span className="number">1</span>
-            <h3>Administration Personal Information</h3>
-          </div>
-
           <div className="user-type">
             <div className="role-tabs">
 
@@ -116,6 +111,11 @@ export default function SignupAdmin() {
               </button>
 
             </div>
+          </div>
+
+          <div className="section-title">
+            <span className="number">1</span>
+            <h3>Administration Personal Information</h3>
           </div>
 
           <div className="form-grid">
@@ -195,6 +195,7 @@ export default function SignupAdmin() {
             </div>
 
           </div>
+
 
           <button className="confirm" type="submit">
             Confirm
