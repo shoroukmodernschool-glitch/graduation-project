@@ -1,1 +1,8 @@
 node_modules/
+vendor/
+backend/vendor/
+node_modules/
+.env
+backend/.env
+backend/storage/firebase/
+__pycache__/

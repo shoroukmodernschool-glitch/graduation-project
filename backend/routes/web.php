@@ -23,3 +23,17 @@ Route::post('/login', function (Request $request) {
     ]);
 
 });
+use App\Http\Controllers\FirebaseController;
+
+Route::get('/firebase-test', [FirebaseController::class, 'test']);
+
+use Kreait\Firebase\Factory;
+
+Route::get('/firebase-test', function () {
+    $factory = (new Factory)
+        ->withServiceAccount(config('firebase.credentials'));
+
+    $auth = $factory->createAuth();
+
+    return "Firebase connected successfully 🚀";
+});
