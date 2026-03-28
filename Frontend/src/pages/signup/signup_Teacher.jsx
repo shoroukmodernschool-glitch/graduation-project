@@ -84,11 +84,6 @@ export default function SignupTeacher() {
 
         <form className="student-form" onSubmit={handleSubmit}>
 
-          <div className="section-title">
-            <span className="number">1</span>
-            <h3>Teacher Personal Information</h3>
-          </div>
-
           <div className="user-type">
             <div className="role-tabs">
 
@@ -124,6 +119,11 @@ export default function SignupTeacher() {
               </button>
 
             </div>
+          </div>
+
+          <div className="section-title">
+            <span className="number">1</span>
+            <h3>Teacher Personal Information</h3>
           </div>
 
           <div className="form-grid">
@@ -194,6 +194,7 @@ export default function SignupTeacher() {
 
           </div>
 
+
           <div className="Scholar-info">
 
             <div className="section-title">
@@ -211,14 +212,7 @@ export default function SignupTeacher() {
               />
             </div>
 
-            <div className="notes-field">
-              <label>Notes</label>
-              <textarea
-              name="notes"
-              placeholder="Any additional notes"
-              onChange={handleChange}
-              />
-            </div>
+            
 
           </div>
 

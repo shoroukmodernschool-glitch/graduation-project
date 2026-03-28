@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\TestFirebaseController;
+use App\Http\Controllers\FirebaseController;
+use Kreait\Firebase\Factory;
 
 /*
 |--------------------------------------
@@ -27,10 +29,21 @@ Route::get('/test-file', function () {
 
 /*
 |--------------------------------------
-| Firebase Test Route
+| Firebase Test Routes
 |--------------------------------------
 */
+// باستخدام TestFirebaseController
 Route::get('/firebase-test', [TestFirebaseController::class, 'test']);
+
+// باستخدام Factory مباشرة
+Route::get('/firebase-factory', function () {
+    $factory = (new Factory)
+        ->withServiceAccount(config('firebase.credentials'));
+
+    $auth = $factory->createAuth();
+
+    return "Firebase connected successfully 🚀";
+});
 
 /*
 |--------------------------------------
@@ -44,19 +57,14 @@ Route::post('/verify-token', [TestFirebaseController::class, 'verifyToken']);
 | Test Login Route (for React)
 |--------------------------------------
 */
-
 Route::post('/login', function (Request $request) {
-
-    // هنا ممكن تحط authentication حقيقي بعدين
-    // دلوقتي مجرد محاكاة للـ login
-    session(['student_id' => $request->student_id]); // حفظ session
+    session(['student_id' => $request->student_id]); 
     return response()->json([
         "status" => "success",
         "student" => [
             "id" => $request->student_id
         ]
     ]);
-
 });
 
 /*
@@ -65,10 +73,10 @@ Route::post('/login', function (Request $request) {
 |--------------------------------------
 */
 Route::get('/logout', function (Request $request) {
-    Auth::logout();                    // لو عندك Auth
-    $request->session()->invalidate(); // يمسح session
-    $request->session()->regenerateToken(); // يجدد CSRF token
-    return redirect('/');              // رجوع للـ home
+    Auth::logout();                    
+    $request->session()->invalidate(); 
+    $request->session()->regenerateToken(); 
+    return redirect('/');              
 });
 
 /*
@@ -79,7 +87,6 @@ Route::get('/logout', function (Request $request) {
 Route::group(['middleware' => ['noBackHistory']], function () {
 
     Route::get('/dashboard', function () {
-        // هنا تحط view بتاعت dashboard
         return view('dashboard');
     });
 

@@ -32,7 +32,11 @@ import MiddleSchool from "./pages/ACADEMIC_LEVELS/MiddleSchool";
 import UpperSchool from "./pages/ACADEMIC_LEVELS/UpperSchool";
 
 /* Student Dashboard */
-import StudentDashboard from "./pages/student/StudentDashboard";
+import Dashboard from "./dashboard/layouts/dashboard/student";
+import Profile from "./dashboard/layouts/profile";
+import Tables from "./dashboard/layouts/tables";
+import Billing from "./dashboard/layouts/billing";
+import Notifications from "./dashboard/layouts/notifications";
 
 function App() {
 
@@ -42,7 +46,11 @@ function App() {
   const hideNavbar =
     location.pathname.includes("login") ||
     location.pathname.includes("signup") ||
-    location.pathname.includes("student-dashboard");
+    location.pathname.includes("student-dashboard") ||
+    location.pathname.includes("/profile") ||
+    location.pathname.includes("/tables") ||
+    location.pathname.includes("/billing") ||
+    location.pathname.includes("/notifications");
 
   useEffect(() => {
     console.log("App Loaded");
@@ -106,7 +114,11 @@ function App() {
         <Route path="/upper-school" element={<UpperSchool />} />
 
         {/* Student Dashboard */}
-        <Route path="/student-dashboard" element={<StudentDashboard />} />
+        <Route path="/student-dashboard" element={<Dashboard />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/tables" element={<Tables />} />
+        <Route path="/billing" element={<Billing />} />
+        <Route path="/notifications" element={<Notifications />} />
 
         {/* fallback */}
         <Route path="*" element={<Home />} />

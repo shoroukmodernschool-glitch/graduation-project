@@ -1,6 +1,6 @@
 import "./Login_form.css";
 import { Link, useNavigate } from "react-router-dom";
-
+import Navbar from "../../components/Navbar";
 export default function LoginAdmin() {
 
   const navigate = useNavigate();
@@ -8,7 +8,7 @@ export default function LoginAdmin() {
   return (
 
     <div className="login-page">
-
+ <Navbar />
       <video
         className="background-video"
         autoPlay
@@ -24,7 +24,7 @@ export default function LoginAdmin() {
 
       <div className="login-card admin">
 
-        <h2>Admin Login</h2>
+        <h2 className="h2login" >Administration Login</h2>
 
         <div className="role-tabs">
 
@@ -47,7 +47,12 @@ export default function LoginAdmin() {
         </div>
 
         <div className="input-group">
-          <input type="text" placeholder="Admin ID" />
+         <input
+              type="email"
+              placeholder="Administration Email"
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
           <span className="icon">👤</span>
         </div>
 

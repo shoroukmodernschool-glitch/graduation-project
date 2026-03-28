@@ -3,7 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../firebase";
+import { auth, db } from "../../firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 export default function Login() {
 
@@ -22,17 +23,46 @@ export default function Login() {
         password
       );
 
-      console.log("Logged in user:", userCredential.user);
+      const user = userCredential.user;
+
+      // 🔥 نحاول نجيب اليوزر من كل collection
+      const collections = ["student", "teachers", "parents", "Admin"];
+
+      let userData = null;
+      let userRole = "";
+
+      for (let col of collections) {
+        const docRef = doc(db, col, user.uid);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          userData = docSnap.data();
+          userRole = col;
+          break;
+        }
+      }
+
+      if (!userData) {
+        alert("User data not found!");
+        return;
+      }
 
       alert("Login Successful");
 
-      navigate("/student-dashboard");
+      // 🔥 تحويل حسب النوع
+      if (userRole === "student") {
+        navigate("/student-dashboard");
+      } else if (userRole === "teachers") {
+        navigate("/teacher-dashboard");
+      } else if (userRole === "parents") {
+        navigate("/parent-dashboard");
+      } else if (userRole === "Admin") {
+        navigate("/admin");
+      }
 
     } catch (error) {
-
       console.error(error);
       alert(error.message);
-
     }
   };
 
@@ -48,20 +78,16 @@ export default function Login() {
         muted
         playsInline
       >
-        <source
-          src={`${import.meta.env.BASE_URL}videos/bk.mp4`}
-        />
+        <source src={`${import.meta.env.BASE_URL}videos/bk.mp4`} />
       </video>
 
       <div className="login-card student">
 
-        <h2>Login</h2>
+        <h2 className="h2login" > Student Login</h2>
 
         <div className="role-tabs">
 
-          <button className="active">
-            Student
-          </button>
+          <button className="active">Student</button>
 
           <button onClick={() => navigate("/login-parent")}>
             Parent
@@ -82,7 +108,7 @@ export default function Login() {
           <div className="input-group">
             <input
               type="email"
-              placeholder="Email"
+              placeholder="Student Email"
               onChange={(e) => setEmail(e.target.value)}
               required
             />
@@ -100,7 +126,6 @@ export default function Login() {
           </div>
 
           <div className="options">
-
             <label>
               <input type="checkbox" /> Remember Me
             </label>
@@ -108,7 +133,6 @@ export default function Login() {
             <Link to="/forgot-password">
               Forgot Password?
             </Link>
-
           </div>
 
           <button className="submit-btn student">
