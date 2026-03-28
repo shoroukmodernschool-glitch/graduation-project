@@ -1,5 +1,6 @@
 import Grid from "@mui/material/Grid";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom"; // 🔥 جديد
 
 import { db, auth } from "../../../../firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
@@ -20,8 +21,11 @@ import Projects from "../components/Projects";
 import OrdersOverview from "../components/OrdersOverview";
 
 function Dashboard() {
-  const [student, setStudent] = useState(null); // 👈 بدل array
+  const [student, setStudent] = useState(null);
+  const [subjectsCount, setSubjectsCount] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  const navigate = useNavigate(); // 🔥 جديد
 
   const { sales, tasks } = reportsLineChartData;
 
@@ -34,19 +38,28 @@ function Dashboard() {
       }
 
       try {
-        // 👇 Query بالـ uid
         const q = query(
           collection(db, "student"),
           where("uid", "==", user.uid)
         );
 
         const querySnapshot = await getDocs(q);
-
         const data = querySnapshot.docs.map((doc) => doc.data());
+        const currentStudent = data[0] || null;
 
-        console.log("User Data:", data);
+        setStudent(currentStudent);
 
-        setStudent(data[0] || null); // 👈 طالب واحد بس
+        if (currentStudent?.grade) {
+          const subjectQuery = query(
+            collection(db, "subject"),
+            where("grade", "==", currentStudent.grade)
+          );
+
+          const subjectSnapshot = await getDocs(subjectQuery);
+
+          setSubjectsCount(subjectSnapshot.size);
+        }
+
       } catch (error) {
         console.error("Error:", error);
       } finally {
@@ -84,9 +97,13 @@ function Dashboard() {
             </MDBox>
           </Grid>
 
-          {/* Subjects */}
+          {/* 🔥 Subjects (CLICKABLE) */}
           <Grid size={{ xs: 12, md: 6, lg: 3 }}>
-            <MDBox mb={1.5}>
+            <MDBox
+              mb={1.5}
+              onClick={() => navigate("/subjects")} // 🔥 أهم سطر
+              sx={{ cursor: "pointer" }}
+            >
               <ComplexStatisticsCard
                 color="info"
                 icon="menu_book"
@@ -94,7 +111,7 @@ function Dashboard() {
                 count={
                   loading
                     ? "..."
-                    : student?.subjects?.length ?? 0
+                    : subjectsCount
                 }
                 percentage={{
                   color: "info",

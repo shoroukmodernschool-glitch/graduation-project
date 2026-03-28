@@ -29,7 +29,7 @@ html, body, #root {
 /* ================= CARD ================= */
 
 .login-card {
-  width: 600px; /* 🔥 كبرنا الكارد */
+  width: 600px;
   height: 450px;
   max-width: 95%;
   padding: 35px;

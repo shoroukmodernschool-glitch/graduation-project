@@ -12,8 +12,9 @@ export default function Navbar() {
       <div className="nav-links">
         <Link to="/">Home</Link>
         <Link to="/about">About</Link>
-        <Link to="/admission">Admission</Link>
         <Link to="/contact">Contact</Link>
+        <Link to="/admission">Chatbot</Link>
+        
       </div>
 
     </div>

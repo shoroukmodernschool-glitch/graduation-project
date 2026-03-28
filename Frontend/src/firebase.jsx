@@ -1,8 +1,12 @@
+// Import الأساسيات
 import { initializeApp } from "firebase/app";
+
+// Services
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { getStorage } from "firebase/storage"; // 🔥 ضيفنا دي
+import { getStorage } from "firebase/storage";
 
+// Config بتاع مشروعك
 const firebaseConfig = {
   apiKey: "AIzaSyCWI4Ghjq1ODp1zosDQg3ZVWXbkHFRCCso",
   authDomain: "shorouk-modern-school.firebaseapp.com",
@@ -13,13 +17,13 @@ const firebaseConfig = {
   measurementId: "G-QFJN6DTDT7"
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-/* Firestore */
-export const db = getFirestore(app);
+// Initialize Services
+const db = getFirestore(app);
+const auth = getAuth(app);
+const storage = getStorage(app);
 
-/* Authentication */
-export const auth = getAuth(app);
-
-/* 🔥 Storage */
-export const storage = getStorage(app);
+// Export them
+export { db, auth, storage };

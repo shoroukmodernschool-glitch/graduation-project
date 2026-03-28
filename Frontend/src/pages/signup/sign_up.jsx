@@ -10,9 +10,7 @@ import { auth, db } from "../../firebase";
 
 export default function SignUp() {
   const navigate = useNavigate();
-  const [userType, setUserType] = useState("student");
-
-  const [imageFile, setImageFile] = useState(null); // 👈 نخزن الصورة هنا
+  const [imageFile, setImageFile] = useState(null);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -29,14 +27,6 @@ export default function SignUp() {
     password: ""
   });
 
-  const handleUserTypeChange = (value) => {
-    setUserType(value);
-
-    if (value === "parent") navigate("/signup-parent");
-    if (value === "teacher") navigate("/signup-teacher");
-    if (value === "admin") navigate("/signup-admin");
-  };
-
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -44,20 +34,16 @@ export default function SignUp() {
     });
   };
 
-  // 🔥 نخزن الصورة بس (من غير رفع)
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     setImageFile(file);
-    alert("Image Selected ✅");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      // 1️⃣ Create Account
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         formData.email,
@@ -68,7 +54,6 @@ export default function SignUp() {
 
       let imageURL = "";
 
-      // 2️⃣ Upload to Cloudinary بعد ما بقى عندنا user
       if (imageFile) {
         const formDataUpload = new FormData();
         formDataUpload.append("file", imageFile);
@@ -86,26 +71,26 @@ export default function SignUp() {
         imageURL = data.secure_url;
       }
 
-      // 3️⃣ تحديد الكولكشن
-      const collectionName =
-        userType === "student"
-          ? "student"
-          : userType === "teacher"
-          ? "teachers"
-          : userType === "parent"
-          ? "parents"
-          : "Admin";
-
-      // 4️⃣ حفظ كل البيانات + الصورة
-      await setDoc(doc(db, collectionName, user.uid), {
-        uid: user.uid,
-        ...formData,
-        faceImage: imageURL, // 👈 هنا اللينك
-        role: userType,
+      // 🔥 خليها student زي عندك
+      await setDoc(doc(db, "student", user.uid), {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        address: formData.address,
+        dob: formData.dob,
+        gender: formData.gender,
+        studentId: formData.id,
+        phone: formData.phone,
+        email: formData.email,
+        grade: formData.grade,
+        className: formData.className,
+        notes: formData.notes,
+        faceImage: imageURL,
+        role: "student",
         createdAt: serverTimestamp()
       });
 
-      alert("Account Created Successfully ✅");
+      alert("Account Created ✅");
+      navigate("/profile");
 
     } catch (error) {
       alert(error.message);
@@ -118,123 +103,33 @@ export default function SignUp() {
         <source src="./videos/bk.mp4" type="video/mp4" />
       </video>
 
-      <div className={`signup-page ${userType}`}>
+      <div className="signup-page">
         <Navbar />
 
         <form className="student-form" onSubmit={handleSubmit}>
+          <input name="firstName" onChange={handleChange} placeholder="First name" />
+          <input name="lastName" onChange={handleChange} placeholder="Last name" />
+          <input name="address" onChange={handleChange} placeholder="Address" />
+          <input type="date" name="dob" onChange={handleChange} />
 
-          <div className="role-tabs">
-            <button type="button" className={userType === "student" ? "active" : ""} onClick={() => handleUserTypeChange("student")}>Student</button>
-            <button type="button" className={userType === "parent" ? "active" : ""} onClick={() => handleUserTypeChange("parent")}>Parent</button>
-            <button type="button" className={userType === "teacher" ? "active" : ""} onClick={() => handleUserTypeChange("teacher")}>Teacher</button>
-            <button type="button" className={userType === "admin" ? "active" : ""} onClick={() => handleUserTypeChange("admin")}>Administration</button>
-          </div>
+          <select name="gender" onChange={handleChange}>
+            <option value="">Gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
 
-          <div className="section-title">
-            <span className="number">1</span>
-            <h3>Student Personal Information</h3>
-          </div>
+          <input name="id" onChange={handleChange} placeholder="Student ID" />
+          <input name="phone" onChange={handleChange} placeholder="Phone" />
+          <input name="email" onChange={handleChange} type="email" placeholder="Email" />
+          <input name="password" onChange={handleChange} type="password" placeholder="Password" />
 
-          <div className="form-grid">
+          <input type="file" onChange={handleImageUpload} />
 
-            <div className="form-group">
-              <label>First name</label>
-              <input name="firstName" onChange={handleChange} placeholder="First name" />
-            </div>
+          <input name="grade" onChange={handleChange} placeholder="Grade" />
+          <input name="className" onChange={handleChange} placeholder="Class" />
+          <textarea name="notes" onChange={handleChange} placeholder="Notes"></textarea>
 
-            <div className="form-group">
-              <label>Last name</label>
-              <input name="lastName" onChange={handleChange} placeholder="Last name" />
-            </div>
-
-            <div className="form-group">
-              <label>Address</label>
-              <input name="address" onChange={handleChange} placeholder="Address" />
-            </div>
-
-            <div className="form-group">
-              <label>Date of Birth</label>
-              <input name="dob" onChange={handleChange} placeholder="Date of Birth" />
-            </div>
-
-            <div className="form-group">
-              <label>Gender</label>
-              <select name="gender" onChange={handleChange}>
-                <option value="">Select gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>Student ID</label>
-              <input name="id" onChange={handleChange} placeholder="Student ID" />
-            </div>
-
-            <div className="form-group">
-              <label>Phone</label>
-              <input name="phone" onChange={handleChange} placeholder="Phone" />
-            </div>
-
-            <div className="form-group">
-              <label>Email</label>
-              <input name="email" onChange={handleChange} type="email" placeholder="Email" />
-            </div>
-
-            <div className="form-group">
-              <label>Password</label>
-              <input name="password" onChange={handleChange} type="password" placeholder="Password" />
-            </div>
-
-          </div>
-
-          <div className="section-title">
-            <span className="number">2</span>
-            <h3>Register Face ID</h3>
-          </div>
-
-          <input
-            type="file"
-            accept="image/*"
-            id="faceUpload"
-            style={{ display: "none" }}
-            onChange={handleImageUpload}
-          />
-
-          <button
-            type="button"
-            className="confirm"
-            onClick={() => document.getElementById("faceUpload").click()}
-          >
-            📷 Register Face ID
-          </button>
-
-          <div className="Scholar-info">
-
-            <div className="section-title">
-              <span className="number">3</span>
-              <h3>Scholar Information</h3>
-            </div>
-
-            <div className="form-group">
-              <label>Grade</label>
-              <input name="grade" onChange={handleChange} placeholder="Grade" />
-            </div>
-
-            <div className="form-group">
-              <label>Class</label>
-              <input name="className" onChange={handleChange} placeholder="Class" />
-            </div>
-
-            <div className="form-group notes-full">
-              <label>Notes</label>
-              <textarea name="notes" onChange={handleChange} placeholder="Notes"></textarea>
-            </div>
-
-          </div>
-
-          <button className="confirm" type="submit">Confirm</button>
-
+          <button type="submit">Confirm</button>
         </form>
       </div>
     </>
