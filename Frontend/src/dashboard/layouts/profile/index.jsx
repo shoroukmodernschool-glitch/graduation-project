@@ -1,16 +1,13 @@
 import { useEffect, useState } from "react";
 import { auth, db } from "../../../firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 
-// @mui material components
 import Grid from "@mui/material/Grid";
 
-// Material Dashboard components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 
-// Layout
 import DashboardLayout from "../../examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "../../examples/Navbars/DashboardNavbar";
 import Footer from "../../examples/Footer";
@@ -20,19 +17,19 @@ function Profile() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) return;
+      if (!user) {
+        console.log("No user logged in");
+        return;
+      }
 
       try {
-        const q = query(
-          collection(db, "student"),
-          where("uid", "==", user.uid)
-        );
+        const docRef = doc(db, "student", user.uid); // 🔥 نفس الاسم
+        const docSnap = await getDoc(docRef);
 
-        const querySnapshot = await getDocs(q);
-
-        if (!querySnapshot.empty) {
-          const data = querySnapshot.docs[0].data();
-          setUserData(data);
+        if (docSnap.exists()) {
+          setUserData(docSnap.data());
+        } else {
+          console.log("No data found");
         }
       } catch (error) {
         console.error(error);
@@ -46,18 +43,14 @@ function Profile() {
     <DashboardLayout>
       <DashboardNavbar />
 
-      {/* 🔥 Cover FULL WIDTH */}
       <MDBox
         height="300px"
         sx={{
           backgroundImage: `url(https://images.unsplash.com/photo-1501785888041-af3ef285b470)`,
           backgroundSize: "cover",
-          backgroundPosition: "center",
-          width: "100%",
         }}
       />
 
-      {/* 🔥 Profile Card */}
       <MDBox mt={-12} px={2} display="flex" justifyContent="center">
         <MDBox
           width="100%"
@@ -65,58 +58,61 @@ function Profile() {
           p={4}
           bgColor="white"
           borderRadius="xl"
-          shadow="lg"
         >
-          {/* Top Section */}
           <MDBox display="flex" alignItems="center" gap={3}>
-            {/* ✅ Avatar من Cloudinary */}
             <MDBox
               component="img"
-              src={
-                userData?.faceImage ||
-                `${import.meta.env.BASE_URL}images/dolla.jpeg`
-              }
-              width="100px"
-              height="100px"
-              borderRadius="50%"
-              sx={{ objectFit: "cover" }}
+              src={userData?.faceImage || "https://i.imgur.com/6VBx3io.png"}
+              sx={{
+                width: "100px",
+                height: "100px",
+                borderRadius: "50%",
+                objectFit: "cover", // 🔥 أهم سطر
+              }}
             />
 
-            {/* Name */}
             <MDBox>
               <MDTypography variant="h4">
-                {!userData
-                  ? "Loading..."
-                  : `${userData.firstName} ${userData.lastName}`}
+                {userData
+                  ? `${userData.firstName} ${userData.lastName}`
+                  : "No Data"}
               </MDTypography>
 
-              <MDTypography variant="button" color="text">
-                {userData?.role || "Student"}
-              </MDTypography>
+              <MDTypography>{userData?.role || ""}</MDTypography>
             </MDBox>
           </MDBox>
 
-          {/* Info */}
           <MDBox mt={4}>
-            <MDTypography variant="h5" mb={2}>
-              Profile Information
-            </MDTypography>
-
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
-                <MDTypography>Email: {userData?.email || "..."}</MDTypography>
+                <MDTypography>Email: {userData?.email || "-"}</MDTypography>
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <MDTypography>Grade: {userData?.grade || "..."}</MDTypography>
+                <MDTypography>Grade: {userData?.grade || "-"}</MDTypography>
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <MDTypography>Phone: {userData?.phone || "..."}</MDTypography>
+                <MDTypography>Phone: {userData?.phone || "-"}</MDTypography>
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <MDTypography>Gender: {userData?.gender || "..."}</MDTypography>
+                <MDTypography>Gender: {userData?.gender || "-"}</MDTypography>
+              </Grid>
+
+              {/* 🔥 الجديد */}
+              <Grid item xs={12} md={6}>
+                <MDTypography>
+                  Date of Birth: {userData?.dob || "-"}
+                </MDTypography>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <MDTypography>Address: {userData?.address || "-"}</MDTypography>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <MDTypography>ID: {userData?.id || "-"}</MDTypography>
               </Grid>
             </Grid>
           </MDBox>
