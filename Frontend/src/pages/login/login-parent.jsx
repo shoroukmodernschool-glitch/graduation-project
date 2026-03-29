@@ -18,22 +18,58 @@ export default function LoginParent() {
 
     try {
 
-      await signInWithEmailAndPassword(auth, email, password);
+      console.log("🔥 Start Login...");
 
-      alert("Login successful");
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
 
-      navigate("/parent-dashboard");
+      console.log("✅ Firebase login success");
+
+      const user = userCredential.user;
+
+      console.log("🔥 قبل token");
+
+      const token = await user.getIdToken();
+
+      console.log("🔥 بعد token");
+      console.log("🟢 TOKEN:", token);
+
+      console.log("🚀 قبل fetch");
+
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/test", { // ✅ التعديل هنا
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        console.log("📡 بعد fetch");
+        console.log("📡 Laravel status:", res.status);
+
+        const data = await res.json();
+        console.log("🟣 Laravel Response:", data);
+
+      } catch (err) {
+        console.log("❌ FETCH ERROR:", err);
+      }
+
+      alert("Login successful ✅");
+
+      // navigate("/parent-dashboard");
 
     } catch (error) {
-
-      console.log(error);
-      alert("Wrong email or password");
-
+      console.error("❌ Login Error FULL:", error);
+      alert("Error حصل ❌ بصي الـ console");
     }
   };
 
   return (
-
     <div className="login-page">
 
       <Navbar />
@@ -53,7 +89,7 @@ export default function LoginParent() {
 
       <div className="login-card parent">
 
-        <h2 className="h2login" > Parent Login</h2>
+        <h2 className="h2login">Parent Login</h2>
 
         <div className="role-tabs">
 
@@ -120,6 +156,5 @@ export default function LoginParent() {
       </div>
 
     </div>
-
   );
 }
