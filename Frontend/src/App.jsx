@@ -1,7 +1,7 @@
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Navbar from "./components/Navbar";
-
+import ProtectedRoute from "./ProtectedRoute";
 /* Firebase */
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "./firebase";
@@ -113,13 +113,51 @@ function App() {
         <Route path="/middle-school" element={<MiddleSchool />} />
         <Route path="/upper-school" element={<UpperSchool />} />
 
-        {/* Student Dashboard */}
-        <Route path="/student-dashboard" element={<Dashboard />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/tables" element={<Tables />} />
-        <Route path="/billing" element={<Billing />} />
-        <Route path="/notifications" element={<Notifications />} />
+      {/* Student Dashboard */}
+<Route
+  path="/student-dashboard"
+  element={
+    <ProtectedRoute>
+      <Dashboard />
+    </ProtectedRoute>
+  }
+/>
 
+<Route
+  path="/profile"
+  element={
+    <ProtectedRoute>
+      <Profile />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/tables"
+  element={
+    <ProtectedRoute>
+      <Tables />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/billing"
+  element={
+    <ProtectedRoute>
+      <Billing />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/notifications"
+  element={
+    <ProtectedRoute>
+      <Notifications />
+    </ProtectedRoute>
+  }
+/>
         {/* fallback */}
         <Route path="*" element={<Home />} />
 

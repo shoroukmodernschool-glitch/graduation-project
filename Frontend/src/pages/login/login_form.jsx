@@ -25,6 +25,9 @@ export default function Login() {
 
       const user = userCredential.user;
 
+      // 🔥 مهم جدًا: نخزن التوكن
+      localStorage.setItem("token", user.uid);
+
       // 🔥 نحاول نجيب اليوزر من كل collection
       const collections = ["student", "teachers", "parents", "Admin"];
 
@@ -44,20 +47,21 @@ export default function Login() {
 
       if (!userData) {
         alert("User data not found!");
+        localStorage.removeItem("token"); // مهم
         return;
       }
 
       alert("Login Successful");
 
-      // 🔥 تحويل حسب النوع
+      // 🔥 redirect باستخدام window عشان يكسر الكاش
       if (userRole === "student") {
-        navigate("/student-dashboard");
+        window.location.href = "/student-dashboard";
       } else if (userRole === "teachers") {
-        navigate("/teacher-dashboard");
+        window.location.href = "/teacher-dashboard";
       } else if (userRole === "parents") {
-        navigate("/parent-dashboard");
+        window.location.href = "/parent-dashboard";
       } else if (userRole === "Admin") {
-        navigate("/admin");
+        window.location.href = "/admin";
       }
 
     } catch (error) {
@@ -83,7 +87,7 @@ export default function Login() {
 
       <div className="login-card student">
 
-        <h2 className="h2login" > Student Login</h2>
+        <h2 className="h2login">Student Login</h2>
 
         <div className="role-tabs">
 
