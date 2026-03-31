@@ -1,6 +1,7 @@
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Navbar from "./components/Navbar";
+import ProtectedRoute from "./ProtectedRoute";
 
 /* Firebase */
 import { collection, getDocs } from "firebase/firestore";
@@ -38,7 +39,7 @@ import Tables from "./dashboard/layouts/tables";
 import Billing from "./dashboard/layouts/billing";
 import Notifications from "./dashboard/layouts/notifications";
 
-/* ✅ FIXED SUBJECTS IMPORT */
+/* Subjects */
 import Subjects from "./pages/subjects/Subjects";
 
 function App() {
@@ -115,14 +116,54 @@ function App() {
         <Route path="/upper-school" element={<UpperSchool />} />
 
         {/* Student Dashboard */}
-        <Route path="/student-dashboard" element={<Dashboard />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/tables" element={<Tables />} />
-        <Route path="/billing" element={<Billing />} />
-        <Route path="/notifications" element={<Notifications />} />
+        <Route
+          path="/student-dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
 
-        {/* ✅ Subjects Page */}
+        {/* Subjects */}
         <Route path="/subjects" element={<Subjects />} />
+
+        {/* Protected Pages */}
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/tables"
+          element={
+            <ProtectedRoute>
+              <Tables />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/billing"
+          element={
+            <ProtectedRoute>
+              <Billing />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/notifications"
+          element={
+            <ProtectedRoute>
+              <Notifications />
+            </ProtectedRoute>
+          }
+        />
 
         {/* fallback */}
         <Route path="*" element={<Home />} />

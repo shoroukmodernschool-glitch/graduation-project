@@ -6,3 +6,4 @@ node_modules/
 backend/.env
 backend/storage/firebase/
 __pycache__/
+backend/storage/firebase/firebase_credentials.json

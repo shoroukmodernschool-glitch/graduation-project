@@ -70,6 +70,7 @@ export default function Login() {
 
       if (!userData) {
         alert("User data not found!");
+        localStorage.removeItem("token"); // مهم
         return;
       }
 
@@ -77,13 +78,13 @@ export default function Login() {
 
       // 🔥 Routing
       if (userRole === "student") {
-        navigate("/student-dashboard");
+        window.location.href = "/student-dashboard";
       } else if (userRole === "teachers") {
-        navigate("/teacher-dashboard");
+        window.location.href = "/teacher-dashboard";
       } else if (userRole === "parents") {
-        navigate("/parent-dashboard");
+        window.location.href = "/parent-dashboard";
       } else if (userRole === "Admin") {
-        navigate("/admin");
+        window.location.href = "/admin";
       }
 
     } catch (error) {
