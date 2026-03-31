@@ -38,8 +38,10 @@ import Tables from "./dashboard/layouts/tables";
 import Billing from "./dashboard/layouts/billing";
 import Notifications from "./dashboard/layouts/notifications";
 
-function App() {
+/* ✅ FIXED SUBJECTS IMPORT */
+import Subjects from "./pages/subjects/Subjects";
 
+function App() {
   const location = useLocation();
   const [students, setStudents] = useState([]);
 
@@ -87,7 +89,6 @@ function App() {
       )}
 
       <Routes>
-
         {/* Home */}
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
@@ -120,9 +121,11 @@ function App() {
         <Route path="/billing" element={<Billing />} />
         <Route path="/notifications" element={<Notifications />} />
 
+        {/* ✅ Subjects Page */}
+        <Route path="/subjects" element={<Subjects />} />
+
         {/* fallback */}
         <Route path="*" element={<Home />} />
-
       </Routes>
     </>
   );

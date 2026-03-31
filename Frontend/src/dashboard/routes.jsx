@@ -18,17 +18,10 @@ const routes = [
     route: "/student-dashboard",
     component: <StudentDashboard />,
   },
+  
   {
     type: "collapse",
-    name: "Profile",
-    key: "profile",
-    icon: <Icon>person</Icon>,
-    route: "/profile",
-    component: <Profile />,
-  },
-  {
-    type: "collapse",
-    name: "Tables",
+    name: "class",
     key: "tables",
     icon: <Icon>table_view</Icon>,
     route: "/tables",
@@ -36,7 +29,7 @@ const routes = [
   },
   {
     type: "collapse",
-    name: "Billing",
+    name: "Attendance",
     key: "billing",
     icon: <Icon>receipt_long</Icon>,
     route: "/billing",
@@ -49,6 +42,15 @@ const routes = [
     icon: <Icon>notifications</Icon>,
     route: "/notifications",
     component: <Notifications />,
+  },
+
+  {
+    type: "collapse",
+    name: "Profile",
+    key: "profile",
+    icon: <Icon>person</Icon>,
+    route: "/profile",
+    component: <Profile />,
   },
 ];
 

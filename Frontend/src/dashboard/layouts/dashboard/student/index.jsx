@@ -1,6 +1,6 @@
 import Grid from "@mui/material/Grid";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom"; // 🔥 جديد
+import { useNavigate } from "react-router-dom";
 
 import { db, auth } from "../../../../firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
@@ -23,16 +23,16 @@ import OrdersOverview from "../components/OrdersOverview";
 function Dashboard() {
   const [student, setStudent] = useState(null);
   const [subjectsCount, setSubjectsCount] = useState(0);
+  const [attendance, setAttendance] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const navigate = useNavigate(); // 🔥 جديد
+  const navigate = useNavigate();
 
   const { sales, tasks } = reportsLineChartData;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        console.log("No user logged in");
         setLoading(false);
         return;
       }
@@ -44,11 +44,15 @@ function Dashboard() {
         );
 
         const querySnapshot = await getDocs(q);
-        const data = querySnapshot.docs.map((doc) => doc.data());
-        const currentStudent = data[0] || null;
+        const data = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
+        const currentStudent = data[0] || null;
         setStudent(currentStudent);
 
+        // Subjects Count
         if (currentStudent?.grade) {
           const subjectQuery = query(
             collection(db, "subject"),
@@ -56,8 +60,22 @@ function Dashboard() {
           );
 
           const subjectSnapshot = await getDocs(subjectQuery);
-
           setSubjectsCount(subjectSnapshot.size);
+        }
+
+        // 🔥 Attendance Data
+        if (currentStudent?.id) {
+          const attendanceQuery = query(
+            collection(db, "attendance"),
+            where("student_id", "==", currentStudent.id)
+          );
+
+          const attendanceSnapshot = await getDocs(attendanceQuery);
+          const attendanceData = attendanceSnapshot.docs.map((doc) =>
+            doc.data()
+          );
+
+          setAttendance(attendanceData);
         }
 
       } catch (error) {
@@ -69,6 +87,16 @@ function Dashboard() {
 
     return () => unsubscribe();
   }, []);
+
+  // 🔥 حساب النسبة الصح
+  const presentCount = attendance.filter(
+    (a) => a.status === "present"
+  ).length;
+
+  const attendancePercentage =
+    attendance.length > 0
+      ? Math.round((presentCount / attendance.length) * 100)
+      : 0;
 
   return (
     <DashboardLayout>
@@ -97,11 +125,11 @@ function Dashboard() {
             </MDBox>
           </Grid>
 
-          {/* 🔥 Subjects (CLICKABLE) */}
+          {/* Subjects */}
           <Grid size={{ xs: 12, md: 6, lg: 3 }}>
             <MDBox
               mb={1.5}
-              onClick={() => navigate("/subjects")} // 🔥 أهم سطر
+              onClick={() => navigate("/subjects")}
               sx={{ cursor: "pointer" }}
             >
               <ComplexStatisticsCard
@@ -122,7 +150,7 @@ function Dashboard() {
             </MDBox>
           </Grid>
 
-          {/* Attendance */}
+          {/* 🔥 Attendance (متعدل صح) */}
           <Grid size={{ xs: 12, md: 6, lg: 3 }}>
             <MDBox mb={1.5}>
               <ComplexStatisticsCard
@@ -132,12 +160,14 @@ function Dashboard() {
                 count={
                   loading
                     ? "Loading..."
-                    : student?.attendance ?? "No Data"
+                    : attendance.length > 0
+                      ? attendancePercentage + "%"
+                      : "No Data"
                 }
                 percentage={{
                   color: "success",
-                  amount: "+2%",
-                  label: "than last week",
+                  amount: `${presentCount}/${attendance.length}`,
+                  label: "days present",
                 }}
               />
             </MDBox>
