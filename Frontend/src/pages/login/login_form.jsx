@@ -17,18 +17,41 @@ export default function Login() {
     e.preventDefault();
 
     try {
+      console.log("🔥 Start Student Login...");
+
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
         password
       );
 
+      console.log("✅ Firebase login success");
+
       const user = userCredential.user;
 
-      // 🔥 مهم جدًا: نخزن التوكن
-      localStorage.setItem("token", user.uid);
+      // 🔥 TOKEN
+      const token = await user.getIdToken();
+      console.log("🟢 TOKEN:", token);
 
-      // 🔥 نحاول نجيب اليوزر من كل collection
+      console.log("🚀 قبل fetch");
+
+      // ✅ FIX هنا
+      const res = await fetch("http://127.0.0.1:8000/api/test", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log("📡 بعد fetch");
+      console.log("📡 Laravel status:", res.status);
+
+      const apiData = await res.json();
+      console.log("🟣 Laravel Response:", apiData);
+
+      // 🔥 Firestore
       const collections = ["student", "teachers", "parents", "Admin"];
 
       let userData = null;
@@ -51,9 +74,9 @@ export default function Login() {
         return;
       }
 
-      alert("Login Successful");
+      alert("Login Successful ✅");
 
-      // 🔥 redirect باستخدام window عشان يكسر الكاش
+      // 🔥 Routing
       if (userRole === "student") {
         window.location.href = "/student-dashboard";
       } else if (userRole === "teachers") {
@@ -65,7 +88,7 @@ export default function Login() {
       }
 
     } catch (error) {
-      console.error(error);
+      console.error("❌ Login Error:", error);
       alert(error.message);
     }
   };

@@ -5,17 +5,30 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FirebaseController;
 
-// 🔐 Login (حماية قوية ضد السبام)
-Route::post('/login', [AuthController::class, 'login'])
-    ->middleware('throttle:2,1'); // 2 requests في الدقيقة
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
 
-// 🔐 Verify Token (حماية أخف شوية)
-Route::post('/verify-token', [FirebaseController::class, 'verifyToken'])
-    ->middleware('throttle:5,1'); // 5 requests في الدقيقة
-
-// 🧪 Endpoint للتجربة من المتصفح
-Route::get('/test', function () {
+// ✅ Route للتجربة (بيأكد إن التوكن واصل)
+Route::get('/test', function (Request $request) {
     return response()->json([
-        'message' => 'API is working 🔥'
+        'full_header' => $request->header('Authorization'),
+        'bearer_token' => $request->bearerToken(),
     ]);
-})->middleware('throttle:2,1'); // 2 requests بس
+});
+
+// ✅ Login (لو محتاجه بعدين)
+Route::post('/login', [AuthController::class, 'login']);
+
+// ✅ Verify Firebase Token
+Route::post('/verify-token', [FirebaseController::class, 'verifyToken']);
+
+// 🔥 Route محمي بالـ Firebase (ده المهم)
+Route::middleware('firebase.auth')->get('/protected', function (Request $request) {
+    return response()->json([
+        'message' => 'Authorized ✅',
+        'uid' => $request->attributes->get('firebase_uid')
+    ]);
+});
