@@ -17,9 +17,12 @@ export default function LoginParent() {
     e.preventDefault();
 
     try {
-
       console.log("🔥 Start Login...");
 
+      // ✅ امسح أي user قديم (عشان مشكلة اليوزر اللي اتمسح)
+      await auth.signOut();
+
+      // ✅ تسجيل الدخول
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
@@ -30,42 +33,34 @@ export default function LoginParent() {
 
       const user = userCredential.user;
 
-      console.log("🔥 قبل token");
+      // 🔥 هات توكن جديد دايمًا
+      const token = await user.getIdToken(true);
 
-      const token = await user.getIdToken();
-
-      console.log("🔥 بعد token");
       console.log("🟢 TOKEN:", token);
 
-      console.log("🚀 قبل fetch");
+      // 🚀 ابعت التوكن للباك
+      const res = await fetch("http://127.0.0.1:8000/api/protected", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+      });
 
-      try {
-        const res = await fetch("http://127.0.0.1:8000/api/test", { // ✅ التعديل هنا
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
+      console.log("📡 Laravel status:", res.status);
 
-        console.log("📡 بعد fetch");
-        console.log("📡 Laravel status:", res.status);
-
-        const data = await res.json();
-        console.log("🟣 Laravel Response:", data);
-
-      } catch (err) {
-        console.log("❌ FETCH ERROR:", err);
-      }
+      const data = await res.json();
+      console.log("🟣 Laravel Response:", data);
 
       alert("Login successful ✅");
 
+      // ✅ روح للداشبورد
       // navigate("/parent-dashboard");
 
     } catch (error) {
-      console.error("❌ Login Error FULL:", error);
-      alert("Error حصل ❌ بصي الـ console");
+      console.error("❌ Login Error:", error);
+      alert("Error حصل ❌ بص الـ console");
     }
   };
 
