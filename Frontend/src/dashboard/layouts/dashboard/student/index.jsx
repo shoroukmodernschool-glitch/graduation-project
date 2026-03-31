@@ -63,7 +63,7 @@ function Dashboard() {
           setSubjectsCount(subjectSnapshot.size);
         }
 
-        // 🔥 Attendance Data
+        // Attendance
         if (currentStudent?.id) {
           const attendanceQuery = query(
             collection(db, "attendance"),
@@ -77,7 +77,6 @@ function Dashboard() {
 
           setAttendance(attendanceData);
         }
-
       } catch (error) {
         console.error("Error:", error);
       } finally {
@@ -88,7 +87,6 @@ function Dashboard() {
     return () => unsubscribe();
   }, []);
 
-  // 🔥 حساب النسبة الصح
   const presentCount = attendance.filter(
     (a) => a.status === "present"
   ).length;
@@ -100,22 +98,20 @@ function Dashboard() {
 
   return (
     <DashboardLayout>
+
+      {/* ✅ Navbar بس */}
       <DashboardNavbar />
+
       <MDBox py={3}>
         <Grid container spacing={3}>
 
-          {/* Grades */}
           <Grid size={{ xs: 12, md: 6, lg: 3 }}>
             <MDBox mb={1.5}>
               <ComplexStatisticsCard
                 color="dark"
                 icon="school"
                 title="Grades"
-                count={
-                  loading
-                    ? "Loading..."
-                    : student?.grade ?? "No Data"
-                }
+                count={loading ? "Loading..." : student?.grade ?? "No Data"}
                 percentage={{
                   color: "success",
                   amount: "+10%",
@@ -125,7 +121,6 @@ function Dashboard() {
             </MDBox>
           </Grid>
 
-          {/* Subjects */}
           <Grid size={{ xs: 12, md: 6, lg: 3 }}>
             <MDBox
               mb={1.5}
@@ -136,11 +131,7 @@ function Dashboard() {
                 color="info"
                 icon="menu_book"
                 title="Subjects"
-                count={
-                  loading
-                    ? "..."
-                    : subjectsCount
-                }
+                count={loading ? "..." : subjectsCount}
                 percentage={{
                   color: "info",
                   amount: "Active",
@@ -150,7 +141,6 @@ function Dashboard() {
             </MDBox>
           </Grid>
 
-          {/* 🔥 Attendance (متعدل صح) */}
           <Grid size={{ xs: 12, md: 6, lg: 3 }}>
             <MDBox mb={1.5}>
               <ComplexStatisticsCard
@@ -161,8 +151,8 @@ function Dashboard() {
                   loading
                     ? "Loading..."
                     : attendance.length > 0
-                      ? attendancePercentage + "%"
-                      : "No Data"
+                    ? attendancePercentage + "%"
+                    : "No Data"
                 }
                 percentage={{
                   color: "success",
@@ -173,7 +163,6 @@ function Dashboard() {
             </MDBox>
           </Grid>
 
-          {/* Assignments */}
           <Grid size={{ xs: 12, md: 6, lg: 3 }}>
             <MDBox mb={1.5}>
               <ComplexStatisticsCard
@@ -196,7 +185,6 @@ function Dashboard() {
 
         </Grid>
 
-        {/* Charts */}
         <MDBox mt={4.5}>
           <Grid container spacing={3}>
 
@@ -239,7 +227,6 @@ function Dashboard() {
           </Grid>
         </MDBox>
 
-        {/* Tables */}
         <MDBox>
           <Grid container spacing={3}>
             <Grid size={{ xs: 12, md: 6, lg: 8 }}>

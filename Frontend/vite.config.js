@@ -4,7 +4,7 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react()],
-  base: "/graduation-project/",
+  base: "/", // ✅ عدلنا دي
   resolve: {
     alias: {
       dashboard: path.resolve(__dirname, "src/dashboard"),

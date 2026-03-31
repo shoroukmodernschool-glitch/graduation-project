@@ -7,7 +7,6 @@ import { auth, db } from "../../firebase";
 import { doc, getDoc } from "firebase/firestore";
 
 export default function Login() {
-
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
@@ -33,9 +32,12 @@ export default function Login() {
       const token = await user.getIdToken();
       console.log("🟢 TOKEN:", token);
 
+      // ✅ حفظ التوكن
+      localStorage.setItem("token", token);
+
       console.log("🚀 قبل fetch");
 
-      // ✅ FIX هنا
+      // ✅ Laravel API
       const res = await fetch("http://127.0.0.1:8000/api/test", {
         method: "GET",
         headers: {
@@ -70,21 +72,24 @@ export default function Login() {
 
       if (!userData) {
         alert("User data not found!");
-        localStorage.removeItem("token"); // مهم
+        localStorage.removeItem("token");
         return;
       }
 
       alert("Login Successful ✅");
 
+      // 🔥 أهم تعديل (تنضيف history)
+      window.history.pushState(null, "", "/login");
+
       // 🔥 Routing
       if (userRole === "student") {
-        window.location.href = "/student-dashboard";
+        navigate("/student-dashboard", { replace: true });
       } else if (userRole === "teachers") {
-        window.location.href = "/teacher-dashboard";
+        navigate("/teacher-dashboard", { replace: true });
       } else if (userRole === "parents") {
-        window.location.href = "/parent-dashboard";
+        navigate("/parent-dashboard", { replace: true });
       } else if (userRole === "Admin") {
-        window.location.href = "/admin";
+        navigate("/admin", { replace: true });
       }
 
     } catch (error) {

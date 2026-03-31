@@ -1,9 +1,3 @@
-/**
-=========================================================
-* Material Dashboard 2 React - v2.2.0
-=========================================================
-*/
-
 import { useState, useEffect } from "react";
 
 // react-router components
@@ -42,25 +36,32 @@ import {
   setTransparentNavbar,
   setMiniSidenav,
   setOpenConfigurator,
+  setDarkMode, // 🔥 مهم
 } from "context";
 
-// ✅ Firebase
-import { auth, db } from "../../../../firebase"; // عدل المسار لو مختلف
+// Firebase
+import { auth, db } from "../../../../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, query, where, getDocs } from "firebase/firestore";
 
 function DashboardNavbar({ absolute, light, isMini }) {
   const [navbarType, setNavbarType] = useState();
   const [controller, dispatch] = useMaterialUIController();
-  const { miniSidenav, transparentNavbar, fixedNavbar, openConfigurator, darkMode } = controller;
+
+  const {
+    miniSidenav,
+    transparentNavbar,
+    fixedNavbar,
+    openConfigurator,
+    darkMode, // 🔥 بناخده من هنا
+  } = controller;
+
   const [openMenu, setOpenMenu] = useState(false);
 
-  // ✅ اسم اليوزر
   const [userName, setUserName] = useState("");
 
   const route = useLocation().pathname.split("/").slice(1);
 
-  // Navbar behavior
   useEffect(() => {
     if (fixedNavbar) {
       setNavbarType("sticky");
@@ -78,7 +79,7 @@ function DashboardNavbar({ absolute, light, isMini }) {
     return () => window.removeEventListener("scroll", handleTransparentNavbar);
   }, [dispatch, fixedNavbar]);
 
-  // ✅ 🔥 التعديل المهم هنا
+  // Firebase user name
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -92,9 +93,7 @@ function DashboardNavbar({ absolute, light, isMini }) {
 
           if (!querySnapshot.empty) {
             const data = querySnapshot.docs[0].data();
-
             const fullName = `${data.firstName || ""} ${data.lastName || ""}`.trim();
-
             setUserName(fullName || "User");
           } else {
             setUserName("User");
@@ -113,6 +112,11 @@ function DashboardNavbar({ absolute, light, isMini }) {
   const handleConfiguratorOpen = () => setOpenConfigurator(dispatch, !openConfigurator);
   const handleOpenMenu = (event) => setOpenMenu(event.currentTarget);
   const handleCloseMenu = () => setOpenMenu(false);
+
+  // 🔥 toggle dark mode
+  const handleDarkMode = () => {
+    setDarkMode(dispatch, !darkMode);
+  };
 
   const renderMenu = () => (
     <Menu
@@ -153,7 +157,6 @@ function DashboardNavbar({ absolute, light, isMini }) {
       <Toolbar sx={(theme) => navbarContainer(theme)}>
         <MDBox color="inherit" mb={{ xs: 1, md: 0 }} sx={(theme) => navbarRow(theme, { isMini })}>
           
-          {/* ✅ هنا الويلكم */}
           <Breadcrumbs
             icon="home"
             title={userName ? `Welcome, ${userName}` : "Welcome"}
@@ -170,6 +173,20 @@ function DashboardNavbar({ absolute, light, isMini }) {
             </MDBox>
 
             <MDBox color={light ? "white" : "inherit"}>
+
+              {/* 🌙🔥 Dark Mode Button */}
+              <IconButton
+                size="small"
+                disableRipple
+                color="inherit"
+                sx={navbarIconButton}
+                onClick={handleDarkMode}
+              >
+                <Icon sx={iconsStyle}>
+                  {darkMode ? "dark_mode" : "light_mode"}
+                </Icon>
+              </IconButton>
+
               <Link to="/authentication/sign-in/basic">
                 <IconButton sx={navbarIconButton} size="small" disableRipple>
                   <Icon sx={iconsStyle}>account_circle</Icon>
