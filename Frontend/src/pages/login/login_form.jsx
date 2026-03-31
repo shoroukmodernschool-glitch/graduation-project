@@ -17,15 +17,41 @@ export default function Login() {
     e.preventDefault();
 
     try {
+      console.log("🔥 Start Student Login...");
+
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
         password
       );
 
+      console.log("✅ Firebase login success");
+
       const user = userCredential.user;
 
-      // 🔥 نحاول نجيب اليوزر من كل collection
+      // 🔥 TOKEN
+      const token = await user.getIdToken();
+      console.log("🟢 TOKEN:", token);
+
+      console.log("🚀 قبل fetch");
+
+      // ✅ FIX هنا
+      const res = await fetch("http://127.0.0.1:8000/api/test", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log("📡 بعد fetch");
+      console.log("📡 Laravel status:", res.status);
+
+      const apiData = await res.json();
+      console.log("🟣 Laravel Response:", apiData);
+
+      // 🔥 Firestore
       const collections = ["student", "teachers", "parents", "Admin"];
 
       let userData = null;
@@ -47,9 +73,9 @@ export default function Login() {
         return;
       }
 
-      alert("Login Successful");
+      alert("Login Successful ✅");
 
-      // 🔥 تحويل حسب النوع
+      // 🔥 Routing
       if (userRole === "student") {
         navigate("/student-dashboard");
       } else if (userRole === "teachers") {
@@ -61,7 +87,7 @@ export default function Login() {
       }
 
     } catch (error) {
-      console.error(error);
+      console.error("❌ Login Error:", error);
       alert(error.message);
     }
   };
@@ -83,7 +109,7 @@ export default function Login() {
 
       <div className="login-card student">
 
-        <h2 className="h2login" > Student Login</h2>
+        <h2 className="h2login">Student Login</h2>
 
         <div className="role-tabs">
 

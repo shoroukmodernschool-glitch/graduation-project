@@ -17,23 +17,54 @@ export default function LoginParent() {
     e.preventDefault();
 
     try {
+      console.log("🔥 Start Login...");
 
-      await signInWithEmailAndPassword(auth, email, password);
+      // ✅ امسح أي user قديم (عشان مشكلة اليوزر اللي اتمسح)
+      await auth.signOut();
 
-      alert("Login successful");
+      // ✅ تسجيل الدخول
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
 
-      navigate("/parent-dashboard");
+      console.log("✅ Firebase login success");
+
+      const user = userCredential.user;
+
+      // 🔥 هات توكن جديد دايمًا
+      const token = await user.getIdToken(true);
+
+      console.log("🟢 TOKEN:", token);
+
+      // 🚀 ابعت التوكن للباك
+      const res = await fetch("http://127.0.0.1:8000/api/protected", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+      });
+
+      console.log("📡 Laravel status:", res.status);
+
+      const data = await res.json();
+      console.log("🟣 Laravel Response:", data);
+
+      alert("Login successful ✅");
+
+      // ✅ روح للداشبورد
+      // navigate("/parent-dashboard");
 
     } catch (error) {
-
-      console.log(error);
-      alert("Wrong email or password");
-
+      console.error("❌ Login Error:", error);
+      alert("Error حصل ❌ بص الـ console");
     }
   };
 
   return (
-
     <div className="login-page">
 
       <Navbar />
@@ -53,7 +84,7 @@ export default function LoginParent() {
 
       <div className="login-card parent">
 
-        <h2 className="h2login" > Parent Login</h2>
+        <h2 className="h2login">Parent Login</h2>
 
         <div className="role-tabs">
 
@@ -120,6 +151,5 @@ export default function LoginParent() {
       </div>
 
     </div>
-
   );
 }
