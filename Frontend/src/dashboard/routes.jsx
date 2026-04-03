@@ -9,7 +9,6 @@ const Billing = lazy(() => import("./layouts/billing"));
 const Notifications = lazy(() => import("./layouts/notifications"));
 
 const routes = [
-  
   {
     type: "collapse",
     name: "Student Dashboard",
@@ -18,23 +17,43 @@ const routes = [
     route: "/student-dashboard",
     component: <StudentDashboard />,
   },
-  
+
   {
     type: "collapse",
-    name: "class",
+    name: "Class",
     key: "tables",
-    icon: <Icon>table_view</Icon>,
+    icon: <Icon>school</Icon>, // 👈 مناسب للكلاسات
     route: "/tables",
     component: <Tables />,
   },
+
   {
     type: "collapse",
-    name: "Attendance",
-    key: "billing",
-    icon: <Icon>receipt_long</Icon>,
+    name: "Subjects",
+    key: "subjects",
+    icon: <Icon>menu_book</Icon>, // 👈 مواد
     route: "/billing",
     component: <Billing />,
   },
+
+  {
+    type: "collapse",
+    name: "Assignments",
+    key: "assignments",
+    icon: <Icon>assignment</Icon>, // 👈 واجبات
+    route: "/billing",
+    component: <Billing />,
+  },
+
+  {
+    type: "collapse",
+    name: "Attendance",
+    key: "attendance",
+    icon: <Icon>fact_check</Icon>, // 👈 حضور
+    route: "/billing",
+    component: <Billing />,
+  },
+
   {
     type: "collapse",
     name: "Notifications",

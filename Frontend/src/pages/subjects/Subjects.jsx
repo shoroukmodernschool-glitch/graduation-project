@@ -1,14 +1,21 @@
 import { useEffect, useState } from "react";
 import Sidenav from "../../dashboard/examples/Sidenav";
 import routes from "../../dashboard/routes";
-
 import { db } from "../../firebase";
 import { collection, getDocs } from "firebase/firestore";
+import "./Subjects.css";
 
-import Grid from "@mui/material/Grid";
-import Card from "@mui/material/Card";
-import Icon from "@mui/material/Icon";
-import Typography from "@mui/material/Typography";
+const subjectConfig = {
+  English: { className: "E", icon: "E" },
+  Math: { className: "math", icon: "M" },
+  Science: { className: "Science", icon: <i className="fa-solid fa-atom"></i> },
+  Arabic: { className: "arabic", icon: "ع" },
+  "Social Studies": { className: "Social-Studies", icon: <i className="fa-solid fa-earth-africa"></i> },
+  Computer: { className: "computer", icon: <i className="fa-solid fa-computer"></i> },
+};
+
+const getConfig = (name) =>
+  subjectConfig[name] || { className: "E", icon: name?.[0] || "?" };
 
 export default function Subjects() {
   const [subjects, setSubjects] = useState([]);
@@ -35,53 +42,57 @@ export default function Subjects() {
       <Sidenav routes={routes} />
 
       <div style={{ flex: 1, padding: "30px" }}>
-        <h2 style={{ marginBottom: "20px" }}>Subjects Page</h2>
 
-        <Grid container spacing={3}>
-          {subjects.map((subject) => (
-            <Grid item xs={12} md={6} lg={3} key={subject.id}>
-              <Card
-                sx={{
-                  p: 3,
-                  borderRadius: "16px",
-                  textAlign: "center",
-                  boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
-                  transition: "0.3s",
-                  "&:hover": {
-                    transform: "translateY(-8px)",
-                  },
-                }}
-              >
-                {/* Icon */}
-                <div
-                  style={{
-                    width: "60px",
-                    height: "60px",
-                    margin: "0 auto 15px",
-                    borderRadius: "16px",
-                    background: "#1976d2",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#fff",
-                  }}
-                >
-                  <Icon fontSize="medium">menu_book</Icon>
+        <h1 className="hello-stu">
+          Welcome, Student <i className="fa-regular fa-hand-spock"></i>
+        </h1>
+
+        <p className="Subjects">Your Subjects:</p>
+
+        <div className="cards">
+          {subjects.map((subject) => {
+            const name =
+              subject.name ||
+              subject.title ||
+              subject.subject_name ||
+              "Subject";
+
+            const { className, icon } = getConfig(name);
+            const progress = subject.progress ?? 50;
+            const lessons = subject.lessons
+              ? `${subject.lessons} Lessons`
+              : "Last attended: Today";
+
+            return (
+              <div key={subject.id} className={`card ${className}`}>
+
+                <div className="top">
+
+                  <div className="text">
+                    <h3>{name}</h3>
+                    <span>Grade: {subject.grade || "10"}</span>
+                  </div>
+
+                  <div className="icon">{icon}</div>
+
                 </div>
 
-                {/* Title */}
-                <Typography variant="h6" fontWeight="bold">
-                  {subject.name || subject.title || subject.subject_name || "Subject"}
-                </Typography>
+                <p className="Lessons">{lessons}</p>
 
-                {/* Grade */}
-                <Typography variant="body2" color="text.secondary">
-                  Grade: {subject.grade || "N/A"}
-                </Typography>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+                <div className="progress">
+                  <div
+                    className="bar"
+                    style={{ width: `${progress}%` }}
+                  ></div>
+                </div>
+
+                <span className="percent">{progress}%</span>
+
+              </div>
+            );
+          })}
+        </div>
+
       </div>
     </div>
   );
