@@ -1,6 +1,7 @@
 import { lazy } from "react";
 import Icon from "@mui/material/Icon";
-
+import Subjects from "../pages/subjects/Subjects";
+import TeacherDashboard from "./layouts/dashboard/teacher";
 // layouts
 const StudentDashboard = lazy(() => import("./layouts/student"));
 const Profile = lazy(() => import("./layouts/profile"));
@@ -26,15 +27,14 @@ const routes = [
     route: "/tables",
     component: <Tables />,
   },
-
-  {
-    type: "collapse",
-    name: "Subjects",
-    key: "subjects",
-    icon: <Icon>menu_book</Icon>, // 👈 مواد
-    route: "/billing",
-    component: <Billing />,
-  },
+{
+  type: "collapse",
+  name: "Subjects",
+  key: "subjects",
+  icon: <Icon>menu_book</Icon>,
+  route: "/subjects", // 👈 اتغيرت
+  component: <Subjects />, // 👈 اتغيرت
+},
 
   {
     type: "collapse",
@@ -71,6 +71,15 @@ const routes = [
     route: "/profile",
     component: <Profile />,
   },
+{
+  type: "collapse",
+  name: "Teacher",
+  key: "teacher",
+  icon: <Icon>school</Icon>,
+  route: "/teacher-dashboard",
+  component: <TeacherDashboard />,
+}
+
 ];
 
 export default routes;

@@ -30,30 +30,20 @@ export default function LoginTeacher() {
 
       const user = userCredential.user;
 
-      // 🔥 token
+      // 🔥 نجيب التوكن
       const token = await user.getIdToken();
+
+      // ✅ نخزن البيانات المهمة
+      localStorage.setItem("token", token);
+      localStorage.setItem("uid", user.uid);
+      localStorage.setItem("email", user.email);
+
       console.log("🟢 TOKEN:", token);
-
-      console.log("🚀 قبل fetch");
-
-      // ✅ FIX هنا
-      const res = await fetch("http://127.0.0.1:8000/api/test", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      console.log("📡 بعد fetch");
-      console.log("📡 Laravel status:", res.status);
-
-      const data = await res.json();
-      console.log("🟣 Laravel Response:", data);
+      console.log("🟢 UID:", user.uid);
 
       alert("Login successful ✅");
 
+      // ✅ يروح للدashboard
       navigate("/teacher-dashboard");
 
     } catch (error) {

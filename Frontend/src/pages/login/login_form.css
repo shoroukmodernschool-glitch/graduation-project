@@ -42,25 +42,15 @@ html, body, #root {
   position: relative;
   z-index: 2;
   border: 2px solid transparent;
+  overflow: hidden;
 }
 
 /* ================= ROLE COLORS ================= */
 
-.login-card.student {
-  border-color: #3B82F6;
-}
-
-.login-card.teacher {
-  border-color: #22C55E;
-}
-
-.login-card.parent {
-  border-color: #0F766E;
-}
-
-.login-card.admin {
-  border-color: #ef4444;
-}
+.login-card.student { border-color: #3B82F6; }
+.login-card.teacher { border-color: #22C55E; }
+.login-card.parent { border-color: #0F766E; }
+.login-card.admin { border-color: #ef4444; }
 
 /* ================= ROLE TABS ================= */
 
@@ -71,45 +61,31 @@ html, body, #root {
   padding:6px;
   border-radius:40px;
   border:1px solid rgba(255,255,255,0.4);
-  width:100%; /* 🔥 مهم */
+  width:100%;
 }
 
 .role-tabs button{
-  flex:1; /* 🔥 كلهم نفس العرض */
+  flex:1;
   padding:10px;
   border:none;
   background:transparent;
   color:white;
   border-radius:25px;
   cursor:pointer;
-  font-size:14px; /* رجعنا الحجم الطبيعي */
+  font-size:14px;
   transition:0.3s;
   text-align:center;
-  white-space:nowrap; /* يمنع النزول */
+  white-space:nowrap;
 }
 
 .role-tabs button:hover{
   background:rgba(255,255,255,0.15);
 }
 
-/* ACTIVE */
-
-.login-card.student .role-tabs button.active{
-  background:#3B82F6;
-}
-
-.login-card.teacher .role-tabs button.active{
-  background:#22C55E;
-  color:black;
-}
-
-.login-card.parent .role-tabs button.active{
-  background:#0F766E;
-}
-
-.login-card.admin .role-tabs button.active{
-  background:#ef4444;
-}
+.login-card.student .role-tabs button.active{ background:#3B82F6; }
+.login-card.teacher .role-tabs button.active{ background:#22C55E; color:black; }
+.login-card.parent .role-tabs button.active{ background:#0F766E; }
+.login-card.admin .role-tabs button.active{ background:#ef4444; }
 
 /* ================= INPUT ================= */
 
@@ -120,22 +96,37 @@ html, body, #root {
 
 .input-group input{
   width:100%;
-  padding:12px 40px 12px 15px;
+  padding:12px 30px 12px 15px; /* 👈 اتظبط */
   border-radius:25px;
   border:1px solid rgba(255,255,255,0.4);
   background:transparent;
   color:white;
+  box-sizing: border-box;
 }
 
 .input-group input::placeholder{
   color:rgba(255,255,255,0.7);
 }
 
-.icon{
+/* 🔥 الحل النهائي */
+.input-group .icon{
   position:absolute;
-  right:15px;
+  right:8px;
   top:50%;
   transform:translateY(-50%);
+
+  width:28px !important;
+  height:28px !important;
+
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  border-radius:6px;
+  background: rgba(255,255,255,0.12);
+
+  font-size:12px !important; /* 👈 ده اللي بيصغر الإيموجي */
+  line-height:1 !important;
 }
 
 /* ================= OPTIONS ================= */
@@ -163,25 +154,11 @@ html, body, #root {
   cursor:pointer;
 }
 
-.submit-btn.student{
-  background:#3B82F6;
-  color:white;
-}
+.submit-btn.student{ background:#3B82F6; color:white; }
+.submit-btn.teacher{ background:#22C55E; color:black; }
+.submit-btn.parent{ background:#0F766E; color:white; }
+.submit-btn.admin{ background:#ef4444; color:white; }
 
-.submit-btn.teacher{
-  background:#22C55E;
-  color:black;
-}
-
-.submit-btn.parent{
-  background:#0F766E;
-  color:white;
-}
-
-.submit-btn.admin{
-  background:#ef4444;
-  color:white;
-}
 .h2login{
   font-size: 25px;
 }

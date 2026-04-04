@@ -1,6 +1,7 @@
 html{
 scroll-behavior: smooth;
 }
+
 /* ================= GLOBAL ================= */
 
 .nav-links a {
@@ -307,6 +308,48 @@ background:#333;
 color:white;
 cursor:pointer;
 border-radius:5px;
+}
+
+/* ================= LOGIN INPUT FIX ================= */
+
+.input-box {
+position: relative;
+width: 100%;
+}
+
+.input-box input {
+width: 100%;
+padding: 12px 45px 12px 15px;
+border-radius: 30px;
+border: 1px solid rgba(255,255,255,0.3);
+outline: none;
+background: transparent;
+color: white;
+}
+
+.input-box i,
+.input-box .icon {
+position: absolute;
+right: 15px;
+top: 50%;
+transform: translateY(-50%);
+font-size: 18px;
+color: #ccc;
+pointer-events: none;
+}
+
+.input-box button {
+position: absolute;
+right: 10px;
+top: 50%;
+transform: translateY(-50%);
+background: none;
+border: none;
+cursor: pointer;
+}
+
+.login-card {
+overflow: hidden;
 }
 
 /* ================= RESPONSIVE ================= */

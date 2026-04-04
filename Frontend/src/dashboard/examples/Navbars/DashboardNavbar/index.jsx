@@ -36,13 +36,13 @@ import {
   setTransparentNavbar,
   setMiniSidenav,
   setOpenConfigurator,
-  setDarkMode, // 🔥 مهم
+  setDarkMode,
 } from "context";
 
-// Firebase
+// 🔥 Firebase
 import { auth, db } from "../../../../firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 
 function DashboardNavbar({ absolute, light, isMini }) {
   const [navbarType, setNavbarType] = useState();
@@ -53,11 +53,10 @@ function DashboardNavbar({ absolute, light, isMini }) {
     transparentNavbar,
     fixedNavbar,
     openConfigurator,
-    darkMode, // 🔥 بناخده من هنا
+    darkMode,
   } = controller;
 
   const [openMenu, setOpenMenu] = useState(false);
-
   const [userName, setUserName] = useState("");
 
   const route = useLocation().pathname.split("/").slice(1);
@@ -79,25 +78,34 @@ function DashboardNavbar({ absolute, light, isMini }) {
     return () => window.removeEventListener("scroll", handleTransparentNavbar);
   }, [dispatch, fixedNavbar]);
 
-  // Firebase user name
+  // 🔥 جلب اسم المستخدم (Teacher أو Student)
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
-          const q = query(
-            collection(db, "student"),
-            where("uid", "==", user.uid)
-          );
+          // ✅ نحاول teacher الأول
+          const teacherRef = doc(db, "teachers", user.uid);
+          const teacherSnap = await getDoc(teacherRef);
 
-          const querySnapshot = await getDocs(q);
+          if (teacherSnap.exists()) {
+            const data = teacherSnap.data();
+            const fullName = `${data.firstName || ""} ${data.lastName || ""}`.trim();
+            setUserName(fullName || "User");
+            return;
+          }
 
-          if (!querySnapshot.empty) {
-            const data = querySnapshot.docs[0].data();
+          // ✅ لو مش teacher → student
+          const studentRef = doc(db, "student", user.uid);
+          const studentSnap = await getDoc(studentRef);
+
+          if (studentSnap.exists()) {
+            const data = studentSnap.data();
             const fullName = `${data.firstName || ""} ${data.lastName || ""}`.trim();
             setUserName(fullName || "User");
           } else {
             setUserName("User");
           }
+
         } catch (error) {
           console.error("Error:", error);
           setUserName("User");
@@ -113,7 +121,6 @@ function DashboardNavbar({ absolute, light, isMini }) {
   const handleOpenMenu = (event) => setOpenMenu(event.currentTarget);
   const handleCloseMenu = () => setOpenMenu(false);
 
-  // 🔥 toggle dark mode
   const handleDarkMode = () => {
     setDarkMode(dispatch, !darkMode);
   };
@@ -157,6 +164,7 @@ function DashboardNavbar({ absolute, light, isMini }) {
       <Toolbar sx={(theme) => navbarContainer(theme)}>
         <MDBox color="inherit" mb={{ xs: 1, md: 0 }} sx={(theme) => navbarRow(theme, { isMini })}>
           
+          {/* ✅ هنا الاسم */}
           <Breadcrumbs
             icon="home"
             title={userName ? `Welcome, ${userName}` : "Welcome"}
@@ -174,7 +182,7 @@ function DashboardNavbar({ absolute, light, isMini }) {
 
             <MDBox color={light ? "white" : "inherit"}>
 
-              {/* 🌙🔥 Dark Mode Button */}
+              {/* Dark Mode */}
               <IconButton
                 size="small"
                 disableRipple

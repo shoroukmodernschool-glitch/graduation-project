@@ -39,6 +39,9 @@ import Tables from "./dashboard/layouts/tables";
 import Billing from "./dashboard/layouts/billing";
 import Notifications from "./dashboard/layouts/notifications";
 
+import TeacherDashboard from "./dashboard/layouts/dashboard/teacher";
+
+
 /* Subjects */
 import Subjects from "./pages/subjects/Subjects";
 
@@ -124,7 +127,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-
+<Route path="/teacher-dashboard" element={<TeacherDashboard />} />
         {/* Subjects */}
         <Route path="/subjects" element={<Subjects />} />
 
