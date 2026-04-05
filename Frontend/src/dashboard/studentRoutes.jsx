@@ -1,7 +1,6 @@
 import { lazy } from "react";
 import Icon from "@mui/material/Icon";
 import Subjects from "../pages/subjects/Subjects";
-import AdminDashboard from "./layouts/dashboard/admin";
 
 // layouts
 const StudentDashboard = lazy(() => import("./layouts/student"));
@@ -10,7 +9,7 @@ const Tables = lazy(() => import("./layouts/tables"));
 const Billing = lazy(() => import("./layouts/billing"));
 const Notifications = lazy(() => import("./layouts/notifications"));
 
-const routes = [
+const studentRoutes = [
   {
     type: "collapse",
     name: "Student Dashboard",
@@ -67,14 +66,6 @@ const routes = [
     route: "/profile",
     component: <Profile />,
   },
-  {
-    type: "collapse",
-    name: "Admin",
-    key: "admin",
-    icon: <Icon>videocam</Icon>,
-    route: "/admin",
-    component: <AdminDashboard />,
-  },
 ];
 
-export default routes;
+export default studentRoutes;

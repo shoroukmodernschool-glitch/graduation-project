@@ -39,3 +39,6 @@ __pycache__/
 
 # OS files
 Thumbs.db
+
+# Firebase secret key
+ai_model/firebase_key.json

@@ -2,20 +2,23 @@ import "./Login_form.css";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import { useState } from "react";
-import { auth } from "../../firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth, db } from "../../firebase";
+import { doc, getDoc } from "firebase/firestore";
 
-export default function LoginAdmin() {
+export default function Login() {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = async () => {
-    try {
-      console.log("🔥 Start Admin Login...");
+  const handleLogin = async (e) => {
+    e.preventDefault();
 
-      const result = await signInWithEmailAndPassword(
+    try {
+      console.log("🔥 Start Student Login...");
+
+      const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
         password
@@ -23,15 +26,19 @@ export default function LoginAdmin() {
 
       console.log("✅ Firebase login success");
 
-      const user = result.user;
+      const user = userCredential.user;
 
       // 🔥 TOKEN
       const token = await user.getIdToken();
       console.log("🟢 TOKEN:", token);
 
+    
+      localStorage.setItem("token", token);
+
       console.log("🚀 قبل fetch");
 
-      const res = await fetch("http://127.0.0.1:8000/api/test", { // ✅ FIX
+      // ✅ Laravel API
+      const res = await fetch("http://127.0.0.1:8000/api/test", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -43,67 +50,131 @@ export default function LoginAdmin() {
       console.log("📡 بعد fetch");
       console.log("📡 Laravel status:", res.status);
 
-      const data = await res.json();
-      console.log("🟣 Laravel Response:", data);
+      const apiData = await res.json();
+      console.log("🟣 Laravel Response:", apiData);
+
+      // 🔥 Firestore
+      const collections = ["student", "teachers", "parents", "Admin"];
+
+      let userData = null;
+      let userRole = "";
+
+      for (let col of collections) {
+        const docRef = doc(db, col, user.uid);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          userData = docSnap.data();
+          userRole = col;
+          break;
+        }
+      }
+
+      if (!userData) {
+        alert("User data not found!");
+        localStorage.removeItem("token");
+        return;
+      }
+
+      alert("Login Successful ✅");
+
+      // 🔥 أهم تعديل (تنضيف history)
+      window.history.pushState(null, "", "/login");
+
+      // 🔥 Routing
+      if (userRole === "student") {
+        navigate("/student-dashboard", { replace: true });
+      } else if (userRole === "teachers") {
+        navigate("/teacher-dashboard", { replace: true });
+      } else if (userRole === "parents") {
+        navigate("/parent-dashboard", { replace: true });
+      } else if (userRole === "Admin") {
+        navigate("/admin", { replace: true });
+      }
 
     } catch (error) {
       console.error("❌ Login Error:", error);
+      alert(error.message);
     }
   };
 
   return (
     <div className="login-page">
+
       <Navbar />
 
-      <video className="background-video" autoPlay loop muted playsInline>
-        <source
-          src={`${import.meta.env.BASE_URL}videos/bk.mp4`}
-          type="video/mp4"
-        />
+      <video
+        className="background-video"
+        autoPlay
+        loop
+        muted
+        playsInline
+      >
+        <source src={`${import.meta.env.BASE_URL}videos/bk.mp4`} />
       </video>
 
-      <div className="login-card admin">
-        <h2 className="h2login">Administration Login</h2>
+      <div className="login-card student">
+
+        <h2 className="h2login">Student Login</h2>
 
         <div className="role-tabs">
-          <button onClick={() => navigate("/login")}>Student</button>
-          <button onClick={() => navigate("/login-parent")}>Parent</button>
-          <button onClick={() => navigate("/login-teacher")}>Teacher</button>
-          <button className="active">Administration</button>
+
+          <button className="active">Student</button>
+
+          <button onClick={() => navigate("/login-parent")}>
+            Parent
+          </button>
+
+          <button onClick={() => navigate("/login-teacher")}>
+            Teacher
+          </button>
+
+          <button onClick={() => navigate("/login-admin")}>
+            Administration
+          </button>
+
         </div>
 
-        <div className="input-group">
-          <input
-            type="email"
-            placeholder="Administration Email"
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <span className="icon">👤</span>
-        </div>
+        <form onSubmit={handleLogin}>
 
-        <div className="input-group">
-          <input
-            type="password"
-            placeholder="Password"
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <span className="icon">🔒</span>
-        </div>
+          <div className="input-group">
+            <input
+              type="email"
+              placeholder="Student Email"
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <span className="icon">👤</span>
+          </div>
 
-        <div className="options">
-          <label>
-            <input type="checkbox" /> Remember Me
-          </label>
+          <div className="input-group">
+            <input
+              type="password"
+              placeholder="Password"
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <span className="icon">🔒</span>
+          </div>
 
-          <Link to="/forgot-password">Forgot Password?</Link>
-        </div>
+          <div className="options">
+            <label>
+              <input type="checkbox" /> Remember Me
+            </label>
 
-        <button className="submit-btn admin" onClick={handleLogin}>
-          Submit
-        </button>
+            <Link to="/forgot-password">
+              Forgot Password?
+            </Link>
+          </div>
+
+          <button className="submit-btn student">
+            Submit
+          </button>
+
+        </form>
+
       </div>
+
     </div>
   );
 }

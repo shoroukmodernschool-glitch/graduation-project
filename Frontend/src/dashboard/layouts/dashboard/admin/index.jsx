@@ -9,33 +9,45 @@ import ComplexStatisticsCard from "../../../examples/Cards/StatisticsCards/Compl
 
 // Firebase
 import { auth, db } from "../../../../firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 
-function TeacherDashboard() {
+function AdminDashboard() {
   const [isRunning, setIsRunning] = useState(false);
-  const [teacherName, setTeacherName] = useState("");
+  const [adminName, setAdminName] = useState("");
   const [streamUrl, setStreamUrl] = useState("");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          const docRef = doc(db, "teachers", user.uid);
-          const docSnap = await getDoc(docRef);
+      if (!user) {
+        console.log("❌ No logged in user");
+        setAdminName("No Name");
+        return;
+      }
 
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            setTeacherName(`${data.firstName} ${data.lastName}`);
-          } else {
-            setTeacherName("No Name");
-          }
-        } catch (error) {
-          console.log("Error fetching user:", error);
-          setTeacherName("No Name");
+      console.log("✅ Logged user email:", user.email);
+
+      try {
+        const q = query(
+          collection(db, "Admin"),
+          where("email", "==", user.email)
+        );
+
+        const querySnapshot = await getDocs(q);
+
+        console.log("📦 Admin docs found:", querySnapshot.size);
+
+        if (!querySnapshot.empty) {
+          const adminData = querySnapshot.docs[0].data();
+          console.log("✅ Admin data:", adminData);
+          setAdminName(`${adminData.firstName} ${adminData.lastName}`);
+        } else {
+          console.log("❌ No matching admin found in Firestore");
+          setAdminName("No Name");
         }
-      } else {
-        setTeacherName("No Name");
+      } catch (error) {
+        console.log("🔥 Error fetching admin:", error);
+        setAdminName("No Name");
       }
     });
 
@@ -44,7 +56,6 @@ function TeacherDashboard() {
 
   const startCamera = () => {
     if (isRunning) return;
-
     setStreamUrl(`http://127.0.0.1:5000/video_feed?ts=${Date.now()}`);
     setIsRunning(true);
   };
@@ -59,7 +70,7 @@ function TeacherDashboard() {
       <DashboardNavbar />
 
       <MDBox mb={2} px={3}>
-        <h3>Welcome, {teacherName || "Loading..."}</h3>
+        <h3>Welcome, {adminName || "Loading..."}</h3>
       </MDBox>
 
       <MDBox py={3}>
@@ -177,4 +188,4 @@ function TeacherDashboard() {
   );
 }
 
-export default TeacherDashboard;
+export default AdminDashboard;
