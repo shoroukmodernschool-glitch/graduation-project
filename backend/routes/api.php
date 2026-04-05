@@ -19,13 +19,16 @@ Route::get('/test', function (Request $request) {
     ]);
 });
 
-// ✅ Login (لو محتاجه بعدين)
+// ✅ Login
 Route::post('/login', [AuthController::class, 'login']);
+
+// ✅ Register (اللي ضفناه دلوقتي)
+Route::post('/register', [AuthController::class, 'register']);
 
 // ✅ Verify Firebase Token
 Route::post('/verify-token', [FirebaseController::class, 'verifyToken']);
 
-// 🔥 Route محمي بالـ Firebase (ده المهم)
+// 🔥 Route محمي بالـ Firebase
 Route::middleware('firebase.auth')->get('/protected', function (Request $request) {
     return response()->json([
         'message' => 'Authorized ✅',

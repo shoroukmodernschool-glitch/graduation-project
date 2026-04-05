@@ -13,6 +13,8 @@ export default function SignUp() {
 
   const [imageFile, setImageFile] = useState(null);
 
+  const [errors, setErrors] = useState({}); // ✅ جديد
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -35,7 +37,6 @@ export default function SignUp() {
     });
   };
 
-  // ✅ لما يختار صورة
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -44,13 +45,40 @@ export default function SignUp() {
     alert("Image Selected ✅");
   };
 
-  // ✅ يفتح file picker
   const openFilePicker = () => {
     fileInputRef.current.click();
   };
 
+  // ✅ Validation Function
+  const validate = () => {
+    let newErrors = {};
+
+    if (!formData.firstName) newErrors.firstName = "First name is required";
+    if (!formData.lastName) newErrors.lastName = "Last name is required";
+
+    if (!formData.email) {
+      newErrors.email = "Email is required";
+    } else if (!formData.email.includes("@")) {
+      newErrors.email = "Invalid email";
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters";
+    }
+
+    return newErrors;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
 
     try {
       const userCredential = await createUserWithEmailAndPassword(
@@ -63,7 +91,6 @@ export default function SignUp() {
 
       let imageURL = "";
 
-      // ✅ رفع الصورة لـ Cloudinary
       if (imageFile) {
         const formDataUpload = new FormData();
         formDataUpload.append("file", imageFile);
@@ -81,7 +108,6 @@ export default function SignUp() {
         imageURL = data.secure_url;
       }
 
-      // ✅ حفظ في Firebase
       await setDoc(doc(db, "student", user.uid), {
         ...formData,
         faceImage: imageURL,
@@ -108,7 +134,6 @@ export default function SignUp() {
 
         <form className="student-form" onSubmit={handleSubmit}>
 
-          {/* USER TYPE */}
           <div className="role-tabs">
             <button type="button" className="active">Student</button>
             <button type="button" onClick={() => navigate("/signup-parent")}>Parent</button>
@@ -116,7 +141,6 @@ export default function SignUp() {
             <button type="button" onClick={() => navigate("/signup-admin")}>Administration</button>
           </div>
 
-          {/* SECTION 1 */}
           <div className="section-title">
             <span className="number">1</span>
             <h3>Student Personal Information</h3>
@@ -126,10 +150,12 @@ export default function SignUp() {
 
             <div className="form-group">
               <input name="firstName" onChange={handleChange} placeholder="First name" />
+              {errors.firstName && <small style={{color:"red"}}>{errors.firstName}</small>}
             </div>
 
             <div className="form-group">
               <input name="lastName" onChange={handleChange} placeholder="Last name" />
+              {errors.lastName && <small style={{color:"red"}}>{errors.lastName}</small>}
             </div>
 
             <div className="form-group">
@@ -158,26 +184,25 @@ export default function SignUp() {
 
             <div className="form-group">
               <input name="email" onChange={handleChange} type="email" placeholder="Email" />
+              {errors.email && <small style={{color:"red"}}>{errors.email}</small>}
             </div>
 
             <div className="form-group">
               <input name="password" onChange={handleChange} type="password" placeholder="Password" />
+              {errors.password && <small style={{color:"red"}}>{errors.password}</small>}
             </div>
 
           </div>
 
-          {/* FACE ID */}
           <div className="section-title">
             <span className="number">2</span>
             <h3>Register Face ID</h3>
           </div>
 
-          {/* 🔥 زرار رفع الصورة */}
           <button type="button" className="confirm" onClick={openFilePicker}>
             {imageFile ? "Image Selected ✅" : "Register Face ID"}
           </button>
 
-          {/* 🔥 input مخفي */}
           <input
             type="file"
             ref={fileInputRef}
@@ -185,7 +210,6 @@ export default function SignUp() {
             onChange={handleImageUpload}
           />
 
-          {/* SECTION 3 */}
           <div className="section-title">
             <span className="number">3</span>
             <h3>Student Scholar Information</h3>
