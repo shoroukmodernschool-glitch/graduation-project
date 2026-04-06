@@ -212,7 +212,7 @@ export default function SignUp() {
 
           <div className="section-title">
             <span className="number">3</span>
-            <h3>Student Scholar Information</h3>
+            <h3 className="edit" >Student Scholar Information</h3>
           </div>
 
           <div className="Scholar-info">
