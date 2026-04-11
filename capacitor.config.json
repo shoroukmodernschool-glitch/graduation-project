@@ -1,0 +1,5 @@
+{
+  "appId": "com.shorouq.school",
+  "appName": "npm.cmd run buildnpx.cmd cap add androidnpx.cmd cap open android",
+  "webDir": "dist"
+}

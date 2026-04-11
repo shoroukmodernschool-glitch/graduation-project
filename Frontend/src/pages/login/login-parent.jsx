@@ -2,16 +2,17 @@ import "./Login_form.css";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import { useState } from "react";
+import { FaEnvelope, FaEye, FaEyeSlash } from "react-icons/fa";
 
 import { auth } from "../../firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 
 export default function LoginParent() {
-
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -42,9 +43,9 @@ export default function LoginParent() {
       const res = await fetch("http://127.0.0.1:8000/api/protected", {
         method: "GET",
         headers: {
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
-          "Accept": "application/json",
+          Accept: "application/json",
         },
       });
 
@@ -66,7 +67,6 @@ export default function LoginParent() {
 
   return (
     <div className="login-page">
-
       <Navbar />
 
       <video
@@ -83,11 +83,9 @@ export default function LoginParent() {
       </video>
 
       <div className="login-card parent">
-
         <h2 className="h2login">Parent Login</h2>
 
         <div className="role-tabs">
-
           <button onClick={() => navigate("/login")}>
             Student
           </button>
@@ -103,11 +101,9 @@ export default function LoginParent() {
           <button onClick={() => navigate("/login-admin")}>
             Administration
           </button>
-
         </div>
 
         <form onSubmit={handleLogin}>
-
           <div className="input-group">
             <input
               type="email"
@@ -116,22 +112,28 @@ export default function LoginParent() {
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-            <span className="icon">👤</span>
+            <span className="icon">
+              <FaEnvelope />
+            </span>
           </div>
 
           <div className="input-group">
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            <span className="icon">🔒</span>
+            <span
+              className="icon"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </span>
           </div>
 
           <div className="options">
-
             <label>
               <input type="checkbox" /> Remember Me
             </label>
@@ -139,17 +141,13 @@ export default function LoginParent() {
             <Link to="/forgot-password">
               Forgot Password?
             </Link>
-
           </div>
 
           <button className="submit-btn parent">
             Submit
           </button>
-
         </form>
-
       </div>
-
     </div>
   );
 }

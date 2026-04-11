@@ -44,7 +44,7 @@ const Footer = () => {
         <div className="footer-col">
           <h3>QUICK LINKS</h3>
           <ul>
-            <li><a href="#">Admission</a></li>
+            <li><a href="#">Chatbot</a></li>
           </ul>
         </div>
 

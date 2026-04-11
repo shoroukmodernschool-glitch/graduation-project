@@ -2,16 +2,17 @@ import "./Login_form.css";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import Navbar from "../../components/Navbar";
+import { FaEnvelope, FaEye, FaEyeSlash } from "react-icons/fa";
 
 import { auth } from "../../firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 
 export default function LoginTeacher() {
-
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -54,7 +55,6 @@ export default function LoginTeacher() {
 
   return (
     <div className="login-page">
-
       <Navbar />
 
       <video
@@ -71,11 +71,9 @@ export default function LoginTeacher() {
       </video>
 
       <div className="login-card teacher">
-
         <h2 className="h2login">Teacher Login</h2>
 
         <div className="role-tabs">
-
           <button onClick={() => navigate("/login")}>
             Student
           </button>
@@ -91,11 +89,9 @@ export default function LoginTeacher() {
           <button onClick={() => navigate("/login-admin")}>
             Administration
           </button>
-
         </div>
 
         <form onSubmit={handleLogin}>
-
           <div className="input-group">
             <input
               type="email"
@@ -103,17 +99,24 @@ export default function LoginTeacher() {
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-            <span className="icon">👤</span>
+            <span className="icon">
+              <FaEnvelope />
+            </span>
           </div>
 
           <div className="input-group">
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Password"
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            <span className="icon">🔒</span>
+            <span
+              className="icon"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </span>
           </div>
 
           <div className="options">
@@ -129,11 +132,8 @@ export default function LoginTeacher() {
           <button className="submit-btn teacher">
             Submit
           </button>
-
         </form>
-
       </div>
-
     </div>
   );
 }

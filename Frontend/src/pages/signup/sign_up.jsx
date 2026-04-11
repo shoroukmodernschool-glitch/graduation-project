@@ -12,8 +12,16 @@ export default function SignUp() {
   const fileInputRef = useRef(null);
 
   const [imageFile, setImageFile] = useState(null);
+  const [errors, setErrors] = useState({});
 
-  const [errors, setErrors] = useState({}); // ✅ جديد
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [signupLoading, setSignupLoading] = useState(false);
+
+  const [verificationCode, setVerificationCode] = useState("");
+  const [isCodeSent, setIsCodeSent] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState("");
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -31,10 +39,25 @@ export default function SignUp() {
   });
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
+
+    setErrors((prev) => ({
+      ...prev,
+      [name]: ""
+    }));
+
+    // لو الإيميل اتغير بعد ما اتبعت له كود أو اتأكد
+    if (name === "email") {
+      setIsCodeSent(false);
+      setIsEmailVerified(false);
+      setVerificationCode("");
+      setVerificationMessage("");
+    }
   };
 
   const handleImageUpload = (e) => {
@@ -49,16 +72,15 @@ export default function SignUp() {
     fileInputRef.current.click();
   };
 
-  // ✅ Validation Function
   const validate = () => {
     let newErrors = {};
 
-    if (!formData.firstName) newErrors.firstName = "First name is required";
-    if (!formData.lastName) newErrors.lastName = "Last name is required";
+    if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
+    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
 
-    if (!formData.email) {
+    if (!formData.email.trim()) {
       newErrors.email = "Email is required";
-    } else if (!formData.email.includes("@")) {
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = "Invalid email";
     }
 
@@ -68,7 +90,105 @@ export default function SignUp() {
       newErrors.password = "Password must be at least 8 characters";
     }
 
+    if (!isEmailVerified) {
+      newErrors.emailVerification = "Please verify your email first";
+    }
+
     return newErrors;
+  };
+
+  const handleSendCode = async () => {
+    if (!formData.email.trim()) {
+      setErrors((prev) => ({
+        ...prev,
+        email: "Email is required"
+      }));
+      return;
+    }
+
+    if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      setErrors((prev) => ({
+        ...prev,
+        email: "Invalid email"
+      }));
+      return;
+    }
+
+    try {
+      setEmailLoading(true);
+      setVerificationMessage("");
+
+      const res = await fetch("http://127.0.0.1:8000/api/send-verification-code", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json"
+        },
+        body: JSON.stringify({
+          email: formData.email
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setVerificationMessage(data.error || data.message || "Failed to send code");
+        return;
+      }
+
+      setIsCodeSent(true);
+      setIsEmailVerified(false);
+      setVerificationMessage(data.message || "Verification code sent successfully ✅");
+    } catch (error) {
+      console.error("Send code error:", error);
+      setVerificationMessage("Server connection failed while sending code");
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    if (!verificationCode.trim()) {
+      setVerificationMessage("Please enter the verification code");
+      return;
+    }
+
+    try {
+      setVerifyLoading(true);
+      setVerificationMessage("");
+
+      const res = await fetch("http://127.0.0.1:8000/api/verify-code", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json"
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          code: verificationCode
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setIsEmailVerified(false);
+        setVerificationMessage(data.error || data.message || "Invalid verification code");
+        return;
+      }
+
+      setIsEmailVerified(true);
+      setVerificationMessage(data.message || "Email verified successfully ✅");
+      setErrors((prev) => ({
+        ...prev,
+        emailVerification: ""
+      }));
+    } catch (error) {
+      console.error("Verify code error:", error);
+      setVerificationMessage("Server connection failed while verifying code");
+    } finally {
+      setVerifyLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -81,6 +201,8 @@ export default function SignUp() {
     }
 
     try {
+      setSignupLoading(true);
+
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         formData.email,
@@ -105,21 +227,24 @@ export default function SignUp() {
         );
 
         const data = await res.json();
-        imageURL = data.secure_url;
+        imageURL = data.secure_url || "";
       }
 
       await setDoc(doc(db, "student", user.uid), {
         ...formData,
         faceImage: imageURL,
         role: "student",
+        email_verified: true,
         createdAt: serverTimestamp()
       });
 
       alert("Account Created ✅");
       navigate("/profile");
-
     } catch (error) {
+      console.error("Signup error:", error);
       alert(error.message);
+    } finally {
+      setSignupLoading(false);
     }
   };
 
@@ -133,7 +258,6 @@ export default function SignUp() {
         <Navbar />
 
         <form className="student-form" onSubmit={handleSubmit}>
-
           <div className="role-tabs">
             <button type="button" className="active">Student</button>
             <button type="button" onClick={() => navigate("/signup-parent")}>Parent</button>
@@ -147,27 +271,54 @@ export default function SignUp() {
           </div>
 
           <div className="form-grid">
-
             <div className="form-group">
-              <input name="firstName" onChange={handleChange} placeholder="First name" />
-              {errors.firstName && <small style={{color:"red"}}>{errors.firstName}</small>}
+              <input
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                placeholder="First name"
+              />
+              {errors.firstName && (
+                <small style={{ color: "red" }}>{errors.firstName}</small>
+              )}
             </div>
 
             <div className="form-group">
-              <input name="lastName" onChange={handleChange} placeholder="Last name" />
-              {errors.lastName && <small style={{color:"red"}}>{errors.lastName}</small>}
+              <input
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                placeholder="Last name"
+              />
+              {errors.lastName && (
+                <small style={{ color: "red" }}>{errors.lastName}</small>
+              )}
             </div>
 
             <div className="form-group">
-              <input name="address" onChange={handleChange} placeholder="Address" />
+              <input
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                placeholder="Address"
+              />
             </div>
 
             <div className="form-group">
-              <input type="date" name="dob" onChange={handleChange} />
+              <input
+                type="date"
+                name="dob"
+                value={formData.dob}
+                onChange={handleChange}
+              />
             </div>
 
             <div className="form-group">
-              <select name="gender" onChange={handleChange}>
+              <select
+                name="gender"
+                value={formData.gender}
+                onChange={handleChange}
+              >
                 <option value="">Gender</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>
@@ -175,23 +326,100 @@ export default function SignUp() {
             </div>
 
             <div className="form-group">
-              <input name="id" onChange={handleChange} placeholder="Student ID" />
+              <input
+                name="id"
+                value={formData.id}
+                onChange={handleChange}
+                placeholder="Student ID"
+              />
             </div>
 
             <div className="form-group">
-              <input name="phone" onChange={handleChange} placeholder="Phone" />
+              <input
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="Phone"
+              />
             </div>
 
             <div className="form-group">
-              <input name="email" onChange={handleChange} type="email" placeholder="Email" />
-              {errors.email && <small style={{color:"red"}}>{errors.email}</small>}
+              <input
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                type="email"
+                placeholder="Email"
+                disabled={isEmailVerified}
+              />
+              {errors.email && (
+                <small style={{ color: "red" }}>{errors.email}</small>
+              )}
+
+              <div style={{ display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  className="confirm"
+                  onClick={handleSendCode}
+                  disabled={emailLoading || isEmailVerified}
+                  style={{ margin: 0 }}
+                >
+                  {emailLoading ? "Sending..." : isCodeSent ? "Resend Code" : "Send Code"}
+                </button>
+              </div>
+
+              {isCodeSent && !isEmailVerified && (
+                <div style={{ marginTop: "10px" }}>
+                  <input
+                    type="text"
+                    placeholder="Enter verification code"
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value)}
+                  />
+
+                  <button
+                    type="button"
+                    className="confirm"
+                    onClick={handleVerifyCode}
+                    disabled={verifyLoading}
+                    style={{ marginTop: "10px" }}
+                  >
+                    {verifyLoading ? "Verifying..." : "Verify Code"}
+                  </button>
+                </div>
+              )}
+
+              {verificationMessage && (
+                <small
+                  style={{
+                    color: isEmailVerified ? "lightgreen" : "#ffcc00",
+                    display: "block",
+                    marginTop: "10px"
+                  }}
+                >
+                  {verificationMessage}
+                </small>
+              )}
+
+              {errors.emailVerification && (
+                <small style={{ color: "red", display: "block", marginTop: "8px" }}>
+                  {errors.emailVerification}
+                </small>
+              )}
             </div>
 
             <div className="form-group">
-              <input name="password" onChange={handleChange} type="password" placeholder="Password" />
-              {errors.password && <small style={{color:"red"}}>{errors.password}</small>}
+              <input
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                type="password"
+                placeholder="Password"
+              />
+              {errors.password && (
+                <small style={{ color: "red" }}>{errors.password}</small>
+              )}
             </div>
-
           </div>
 
           <div className="section-title">
@@ -212,29 +440,49 @@ export default function SignUp() {
 
           <div className="section-title">
             <span className="number">3</span>
-            <h3 className="edit" >Student Scholar Information</h3>
+            <h3 className="edit">Student Scholar Information</h3>
           </div>
 
           <div className="Scholar-info">
-
             <div className="form-group">
-              <input name="className" onChange={handleChange} placeholder="Class" />
+              <input
+                name="className"
+                value={formData.className}
+                onChange={handleChange}
+                placeholder="Class"
+              />
             </div>
 
             <div className="form-group">
-              <input name="grade" onChange={handleChange} placeholder="Grade" />
+              <input
+                name="grade"
+                value={formData.grade}
+                onChange={handleChange}
+                placeholder="Grade"
+              />
             </div>
 
             <div className="form-group notes-full">
-              <textarea name="notes" onChange={handleChange} placeholder="Notes"></textarea>
+              <textarea
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                placeholder="Notes"
+              ></textarea>
             </div>
-
           </div>
 
-          <button type="submit" className="confirm">
-            Confirm
+          <button
+            type="submit"
+            className="confirm"
+            disabled={!isEmailVerified || signupLoading}
+            style={{
+              opacity: !isEmailVerified || signupLoading ? 0.7 : 1,
+              cursor: !isEmailVerified || signupLoading ? "not-allowed" : "pointer"
+            }}
+          >
+            {signupLoading ? "Creating Account..." : "Confirm"}
           </button>
-
         </form>
       </div>
     </>
