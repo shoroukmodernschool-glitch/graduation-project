@@ -16,6 +16,54 @@ export default function Login() {
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Forgot Password Popup States
+  const [showForgotPopup, setShowForgotPopup] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetCode, setResetCode] = useState("");
+  const [forgotMessage, setForgotMessage] = useState("");
+
+  const openForgotPopup = () => {
+    setShowForgotPopup(true);
+    setResetEmail("");
+    setResetCode("");
+    setForgotMessage("");
+  };
+
+  const closeForgotPopup = () => {
+    setShowForgotPopup(false);
+    setResetEmail("");
+    setResetCode("");
+    setForgotMessage("");
+  };
+
+  const handleSendCode = async () => {
+    if (!resetEmail) {
+      setForgotMessage("Please enter your email.");
+      return;
+    }
+
+    try {
+      // مؤقتًا لحد ما الباك يشتغل
+      setForgotMessage("Code sent successfully.");
+    } catch (error) {
+      setForgotMessage("Something went wrong.");
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    if (!resetCode) {
+      setForgotMessage("Please enter the code.");
+      return;
+    }
+
+    try {
+      // مؤقتًا لحد ما الباك يشتغل
+      setForgotMessage("Code verified.");
+    } catch (error) {
+      setForgotMessage("Invalid code.");
+    }
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMessage("");
@@ -172,9 +220,13 @@ export default function Login() {
               <input type="checkbox" /> Remember Me
             </label>
 
-            <Link to="/forgot-password">
+            <button
+              type="button"
+              className="forgot-link-btn"
+              onClick={openForgotPopup}
+            >
               Forgot Password?
-            </Link>
+            </button>
           </div>
 
           {errorMessage && (
@@ -197,6 +249,56 @@ export default function Login() {
           </button>
         </form>
       </div>
+
+      {showForgotPopup && (
+        <div className="forgot-overlay">
+          <div className="forgot-popup">
+            <button
+              type="button"
+              className="close-popup-btn"
+              onClick={closeForgotPopup}
+            >
+              ×
+            </button>
+
+            <h2>Forgot Password</h2>
+
+            <input
+              type="email"
+              placeholder="Enter your email"
+              value={resetEmail}
+              onChange={(e) => setResetEmail(e.target.value)}
+            />
+
+            <button
+              type="button"
+              onClick={handleSendCode}
+              className="forgot-action-btn"
+            >
+              Send Code
+            </button>
+
+            <input
+              type="text"
+              placeholder="Enter code"
+              value={resetCode}
+              onChange={(e) => setResetCode(e.target.value)}
+            />
+
+            <button
+              type="button"
+              onClick={handleVerifyCode}
+              className="forgot-action-btn"
+            >
+              Verify Code
+            </button>
+
+            {forgotMessage && (
+              <p className="forgot-message">{forgotMessage}</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

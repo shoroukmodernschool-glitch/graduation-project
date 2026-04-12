@@ -9,13 +9,27 @@ from firebase_admin import credentials, firestore
 from insightface.app import FaceAnalysis
 from datetime import datetime
 
-SIMILARITY_THRESHOLD = 0.7
+SIMILARITY_THRESHOLD = 0.68
 
 # Performance
-DETECTION_FRAME_SKIP = 4
-DETECTION_INTERVAL_SEC = 0.25
-DETECTION_WIDTH = 240
+DETECTION_FRAME_SKIP = 2
+DETECTION_INTERVAL_SEC = 0.10
+DETECTION_WIDTH = 280
 MAX_FACES = 3
+
+# Attendance cooldown
+ATTENDANCE_COOLDOWN_SEC = 10
+
+# Ignore very small faces to reduce false matches
+MIN_FACE_SIZE = 45
+
+# Smooth box movement
+BOX_SMOOTHING_ALPHA = 0.65
+
+# Stable identity / tracking
+REQUIRED_MATCH_FRAMES = 2
+TRACK_TTL_SEC = 0.60
+TRACK_MATCH_DISTANCE = 140
 
 
 class VideoStream:
@@ -69,7 +83,7 @@ class VideoStream:
 
 def open_available_camera(preferred_indexes=None) -> Optional[VideoStream]:
     if preferred_indexes is None:
-        preferred_indexes = [0, 1, 2]
+        preferred_indexes = [1, 0, 2]
 
     for cam_id in preferred_indexes:
         print(f"[INFO] Trying camera index {cam_id} ...")
@@ -141,13 +155,16 @@ def load_faces_from_firestore(firestore_db, face_analyzer):
             faces = face_analyzer.get(img)
 
             if len(faces) > 0:
-                embeddings.append(faces[0].embedding)
+                best_face = max(
+                    faces,
+                    key=lambda f: (f.bbox[2] - f.bbox[0]) * (f.bbox[3] - f.bbox[1])
+                )
+                embeddings.append(best_face.embedding)
 
         if embeddings:
-            avg_embedding = np.mean(embeddings, axis=0)
             db[person_name] = {
                 "student_id": student_id,
-                "embedding": avg_embedding
+                "embeddings": embeddings
             }
             print(f"Loaded {len(embeddings)} images for {person_name}")
 
@@ -160,6 +177,29 @@ def cosine_similarity(a, b):
     return float(np.dot(a, b))
 
 
+def bbox_center(bbox):
+    x1, y1, x2, y2 = bbox
+    return ((x1 + x2) / 2, (y1 + y2) / 2)
+
+
+def smooth_bbox(old_bbox, new_bbox, alpha=BOX_SMOOTHING_ALPHA):
+    ox1, oy1, ox2, oy2 = old_bbox
+    nx1, ny1, nx2, ny2 = new_bbox
+
+    x1 = int(alpha * nx1 + (1 - alpha) * ox1)
+    y1 = int(alpha * ny1 + (1 - alpha) * oy1)
+    x2 = int(alpha * nx2 + (1 - alpha) * ox2)
+    y2 = int(alpha * ny2 + (1 - alpha) * oy2)
+
+    return (x1, y1, x2, y2)
+
+
+def distance_between_bboxes(b1, b2):
+    c1x, c1y = bbox_center(b1)
+    c2x, c2y = bbox_center(b2)
+    return ((c1x - c2x) ** 2 + (c1y - c2y) ** 2) ** 0.5
+
+
 def recognize(frame, analyzer, db):
     faces = analyzer.get(frame)
     results = []
@@ -167,15 +207,28 @@ def recognize(frame, analyzer, db):
     for face in faces[:MAX_FACES]:
         emb = face.embedding
         bbox = face.bbox.astype(int)
+        x1, y1, x2, y2 = bbox
+
+        face_w = x2 - x1
+        face_h = y2 - y1
+
+        if face_w < MIN_FACE_SIZE or face_h < MIN_FACE_SIZE:
+            continue
 
         best_name = "Unknown"
         best_sim = 0
         best_student_id = None
 
         for name, student_data in db.items():
-            sim = cosine_similarity(emb, student_data["embedding"])
-            if sim > best_sim:
-                best_sim = sim
+            person_best_sim = 0
+
+            for stored_emb in student_data["embeddings"]:
+                sim = cosine_similarity(emb, stored_emb)
+                if sim > person_best_sim:
+                    person_best_sim = sim
+
+            if person_best_sim > best_sim:
+                best_sim = person_best_sim
                 best_name = name
                 best_student_id = student_data["student_id"]
 
@@ -189,6 +242,112 @@ def recognize(frame, analyzer, db):
         results.append((bbox, best_name, best_student_id, best_sim, color))
 
     return results
+
+
+def update_tracks(tracks, detections, now):
+    updated_tracks = []
+    used_detection_indexes = set()
+
+    for track in tracks:
+        best_idx = None
+        best_distance = float("inf")
+
+        for i, det in enumerate(detections):
+            if i in used_detection_indexes:
+                continue
+
+            det_bbox, det_name, det_student_id, det_sim, det_color = det
+            distance = distance_between_bboxes(track["bbox"], det_bbox)
+
+            if distance < TRACK_MATCH_DISTANCE and distance < best_distance:
+                best_distance = distance
+                best_idx = i
+
+        if best_idx is not None:
+            used_detection_indexes.add(best_idx)
+            det_bbox, det_name, det_student_id, det_sim, det_color = detections[best_idx]
+
+            stable_name = track["stable_name"]
+            stable_student_id = track["stable_student_id"]
+            stable_color = track["stable_color"]
+            stable_sim = track["stable_sim"]
+
+            candidate_name = track["candidate_name"]
+            candidate_student_id = track["candidate_student_id"]
+            candidate_count = track["candidate_count"]
+
+            if det_name != "Unknown" and det_student_id is not None:
+                if det_student_id == candidate_student_id:
+                    candidate_count += 1
+                else:
+                    candidate_name = det_name
+                    candidate_student_id = det_student_id
+                    candidate_count = 1
+
+                if candidate_count >= REQUIRED_MATCH_FRAMES:
+                    stable_name = det_name
+                    stable_student_id = det_student_id
+                    stable_color = det_color
+                    stable_sim = det_sim
+            else:
+                candidate_name = None
+                candidate_student_id = None
+                candidate_count = 0
+
+            if stable_student_id is not None and det_student_id == stable_student_id:
+                stable_sim = max(stable_sim, det_sim)
+                stable_color = det_color
+            elif stable_student_id is None:
+                stable_color = det_color
+                stable_sim = det_sim
+
+            updated_tracks.append({
+                "bbox": smooth_bbox(track["bbox"], det_bbox),
+                "stable_name": stable_name,
+                "stable_student_id": stable_student_id,
+                "stable_color": stable_color,
+                "stable_sim": stable_sim,
+                "candidate_name": candidate_name,
+                "candidate_student_id": candidate_student_id,
+                "candidate_count": candidate_count,
+                "last_seen": now
+            })
+        else:
+            if now - track["last_seen"] <= TRACK_TTL_SEC:
+                updated_tracks.append(track)
+
+    for i, det in enumerate(detections):
+        if i in used_detection_indexes:
+            continue
+
+        det_bbox, det_name, det_student_id, det_sim, det_color = det
+
+        candidate_name = det_name if det_name != "Unknown" and det_student_id is not None else None
+        candidate_student_id = det_student_id if det_name != "Unknown" and det_student_id is not None else None
+        candidate_count = 1 if candidate_student_id is not None else 0
+
+        stable_name = "Unknown"
+        stable_student_id = None
+        stable_color = det_color
+        stable_sim = det_sim
+
+        if candidate_count >= REQUIRED_MATCH_FRAMES:
+            stable_name = det_name
+            stable_student_id = det_student_id
+
+        updated_tracks.append({
+            "bbox": det_bbox,
+            "stable_name": stable_name,
+            "stable_student_id": stable_student_id,
+            "stable_color": stable_color,
+            "stable_sim": stable_sim,
+            "candidate_name": candidate_name,
+            "candidate_student_id": candidate_student_id,
+            "candidate_count": candidate_count,
+            "last_seen": now
+        })
+
+    return updated_tracks
 
 
 def mark_attendance(firestore_db, student_id, student_name):
@@ -224,7 +383,7 @@ def generate_frames():
     print(f"Loaded database with {len(face_db)} person(s).")
 
     print("Starting camera...")
-    vs = open_available_camera([0, 1, 2])
+    vs = open_available_camera([1, 0, 2])
 
     if vs is None:
         return
@@ -233,69 +392,67 @@ def generate_frames():
 
     frame_count = 0
     last_time = 0
-    cached_results = []
-    prev_gray = None
-    already_seen = set()
+    tracks = []
+    last_seen = {}
 
     try:
         while True:
             frame = vs.read()
 
             if frame is None:
-                time.sleep(0.1)
+                time.sleep(0.01)
                 continue
 
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            do_detection = True
-
-            if prev_gray is not None:
-                diff = cv2.absdiff(prev_gray, gray)
-                change = np.mean(diff)
-
-                if change < 6:
-                    do_detection = False
-
-            prev_gray = gray
             frame_count += 1
+            now = time.time()
 
-            if do_detection and frame_count % DETECTION_FRAME_SKIP == 0:
-                now = time.time()
+            if frame_count % DETECTION_FRAME_SKIP == 0 and now - last_time >= DETECTION_INTERVAL_SEC:
+                small = cv2.resize(
+                    frame,
+                    (DETECTION_WIDTH, int(frame.shape[0] * DETECTION_WIDTH / frame.shape[1]))
+                )
 
-                if now - last_time > DETECTION_INTERVAL_SEC:
-                    small = cv2.resize(
-                        frame,
-                        (DETECTION_WIDTH, int(frame.shape[0] * DETECTION_WIDTH / frame.shape[1]))
-                    )
+                results = recognize(small, analyzer, face_db)
 
-                    results = recognize(small, analyzer, face_db)
+                detections = []
+                for bbox, name, student_id, sim, color in results:
+                    x1, y1, x2, y2 = bbox
 
-                    cached_results = []
-                    for bbox, name, student_id, sim, color in results:
-                        x1, y1, x2, y2 = bbox
+                    scale_x = frame.shape[1] / small.shape[1]
+                    scale_y = frame.shape[0] / small.shape[0]
 
-                        scale_x = frame.shape[1] / small.shape[1]
-                        scale_y = frame.shape[0] / small.shape[0]
+                    x1 = int(x1 * scale_x)
+                    x2 = int(x2 * scale_x)
+                    y1 = int(y1 * scale_y)
+                    y2 = int(y2 * scale_y)
 
-                        x1 = int(x1 * scale_x)
-                        x2 = int(x2 * scale_x)
-                        y1 = int(y1 * scale_y)
-                        y2 = int(y2 * scale_y)
+                    detections.append(((x1, y1, x2, y2), name, student_id, sim, color))
 
-                        cached_results.append(((x1, y1, x2, y2), name, student_id, sim, color))
+                tracks = update_tracks(tracks, detections, now)
 
-                        if name != "Unknown" and student_id is not None and student_id not in already_seen:
-                            mark_attendance(firestore_db, student_id, name)
-                            already_seen.add(student_id)
+                for track in tracks:
+                    student_id = track["stable_student_id"]
+                    student_name = track["stable_name"]
 
-                    last_time = now
+                    if student_id is not None and student_name != "Unknown":
+                        last_seen_time = last_seen.get(student_id, 0)
+                        if now - last_seen_time >= ATTENDANCE_COOLDOWN_SEC:
+                            mark_attendance(firestore_db, student_id, student_name)
+                            last_seen[student_id] = now
 
-            for bbox, name, student_id, sim, color in cached_results:
-                x1, y1, x2, y2 = bbox
+                last_time = now
+
+            for track in tracks:
+                x1, y1, x2, y2 = track["bbox"]
+                name = track["stable_name"]
+                sim = track["stable_sim"]
+                color = track["stable_color"]
+
                 cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                 cv2.putText(
                     frame,
                     f"{name} {sim*100:.1f}%",
-                    (x1, y1 - 10),
+                    (x1, max(20, y1 - 10)),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     0.6,
                     color,
