@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FirebaseController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,11 +23,14 @@ Route::get('/test', function (Request $request) {
 // ✅ Login
 Route::post('/login', [AuthController::class, 'login']);
 
-// ✅ Register (اللي ضفناه دلوقتي)
+// ✅ Register
 Route::post('/register', [AuthController::class, 'register']);
 
 // ✅ Verify Firebase Token
 Route::post('/verify-token', [FirebaseController::class, 'verifyToken']);
+
+// ✅ Forgot Password - Send Code
+Route::post('/forgot-password/send-code', [ForgotPasswordController::class, 'sendCode']);
 
 // 🔥 Route محمي بالـ Firebase
 Route::middleware('firebase.auth')->get('/protected', function (Request $request) {
