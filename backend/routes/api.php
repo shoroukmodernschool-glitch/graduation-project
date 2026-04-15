@@ -12,7 +12,7 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 |--------------------------------------------------------------------------
 */
 
-// ✅ Route للتجربة (بيأكد إن التوكن واصل)
+// ✅ Route للتجربة
 Route::get('/test', function (Request $request) {
     return response()->json([
         'full_header' => $request->header('Authorization'),
@@ -31,6 +31,12 @@ Route::post('/verify-token', [FirebaseController::class, 'verifyToken']);
 
 // ✅ Forgot Password - Send Code
 Route::post('/forgot-password/send-code', [ForgotPasswordController::class, 'sendCode']);
+
+// ✅ Forgot Password - Verify Code
+Route::post('/forgot-password/verify-code', [ForgotPasswordController::class, 'verifyCode']);
+
+// ✅ Forgot Password - Reset Password
+Route::post('/forgot-password/reset-password', [ForgotPasswordController::class, 'resetPassword']);
 
 // 🔥 Route محمي بالـ Firebase
 Route::middleware('firebase.auth')->get('/protected', function (Request $request) {

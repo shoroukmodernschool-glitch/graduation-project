@@ -21,12 +21,18 @@ export default function Login() {
   const [resetEmail, setResetEmail] = useState("");
   const [resetCode, setResetCode] = useState("");
   const [forgotMessage, setForgotMessage] = useState("");
+  const [isCodeVerified, setIsCodeVerified] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const openForgotPopup = () => {
     setShowForgotPopup(true);
     setResetEmail("");
     setResetCode("");
     setForgotMessage("");
+    setIsCodeVerified(false);
+    setNewPassword("");
+    setConfirmPassword("");
   };
 
   const closeForgotPopup = () => {
@@ -34,33 +40,148 @@ export default function Login() {
     setResetEmail("");
     setResetCode("");
     setForgotMessage("");
+    setIsCodeVerified(false);
+    setNewPassword("");
+    setConfirmPassword("");
   };
 
   const handleSendCode = async () => {
-    if (!resetEmail) {
+    if (!resetEmail.trim()) {
       setForgotMessage("Please enter your email.");
       return;
     }
 
     try {
-      // مؤقتًا لحد ما الباك يشتغل
-      setForgotMessage("Code sent successfully.");
+      setForgotMessage("");
+      setIsCodeVerified(false);
+      setNewPassword("");
+      setConfirmPassword("");
+
+      const res = await fetch("http://127.0.0.1:8000/api/forgot-password/send-code", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          email: resetEmail,
+        }),
+      });
+
+      const text = await res.text();
+      console.log("RAW RESPONSE:", text);
+
+      let data = {};
+      try {
+        data = JSON.parse(text);
+      } catch {
+        setForgotMessage("Backend returned invalid JSON.");
+        return;
+      }
+
+      if (!res.ok) {
+        setForgotMessage(
+          data.error_details || data.message || data.error || "Failed to send code."
+        );
+        return;
+      }
+
+      setForgotMessage(data.message || "Code sent successfully.");
     } catch (error) {
-      setForgotMessage("Something went wrong.");
+      console.error("Send Code Error:", error);
+      setForgotMessage(error.message || "Something went wrong.");
     }
   };
 
   const handleVerifyCode = async () => {
-    if (!resetCode) {
+    if (!resetCode.trim()) {
       setForgotMessage("Please enter the code.");
       return;
     }
 
     try {
-      // مؤقتًا لحد ما الباك يشتغل
-      setForgotMessage("Code verified.");
+      setForgotMessage("");
+
+      const res = await fetch("http://127.0.0.1:8000/api/forgot-password/verify-code", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          email: resetEmail,
+          code: resetCode,
+        }),
+      });
+
+      const data = await res.json();
+      console.log("Verify code response:", data);
+
+      if (!res.ok) {
+        setForgotMessage(
+          data.error_details || data.message || data.error || "Invalid code."
+        );
+        return;
+      }
+
+      setIsCodeVerified(true);
+      setForgotMessage(data.message || "Code verified.");
     } catch (error) {
-      setForgotMessage("Invalid code.");
+      console.error("Verify Code Error:", error);
+      setForgotMessage(error.message || "Invalid code.");
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!newPassword.trim() || !confirmPassword.trim()) {
+      setForgotMessage("Please enter the new password and confirm it.");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setForgotMessage("Password must be at least 6 characters.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setForgotMessage("Passwords do not match.");
+      return;
+    }
+
+    try {
+      setForgotMessage("");
+
+      const res = await fetch("http://127.0.0.1:8000/api/forgot-password/reset-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          email: resetEmail,
+          password: newPassword,
+          password_confirmation: confirmPassword,
+        }),
+      });
+
+      const data = await res.json();
+      console.log("Reset password response:", data);
+
+      if (!res.ok) {
+        setForgotMessage(
+          data.error_details || data.message || data.error || "Failed to reset password."
+        );
+        return;
+      }
+
+      setForgotMessage(data.message || "Password reset successfully.");
+      setResetCode("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setIsCodeVerified(false);
+    } catch (error) {
+      console.error("Reset Password Error:", error);
+      setForgotMessage(error.message || "Failed to reset password.");
     }
   };
 
@@ -292,6 +413,32 @@ export default function Login() {
             >
               Verify Code
             </button>
+
+            {isCodeVerified && (
+              <>
+                <input
+                  type="password"
+                  placeholder="Enter new password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+
+                <input
+                  type="password"
+                  placeholder="Confirm new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+
+                <button
+                  type="button"
+                  onClick={handleResetPassword}
+                  className="forgot-action-btn"
+                >
+                  Reset Password
+                </button>
+              </>
+            )}
 
             {forgotMessage && (
               <p className="forgot-message">{forgotMessage}</p>

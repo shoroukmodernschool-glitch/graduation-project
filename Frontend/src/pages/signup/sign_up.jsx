@@ -22,6 +22,7 @@ export default function SignUp() {
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [verificationMessage, setVerificationMessage] = useState("");
+  const [showCodePopup, setShowCodePopup] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -51,12 +52,12 @@ export default function SignUp() {
       [name]: ""
     }));
 
-    // لو الإيميل اتغير بعد ما اتبعت له كود أو اتأكد
     if (name === "email") {
       setIsCodeSent(false);
       setIsEmailVerified(false);
       setVerificationCode("");
       setVerificationMessage("");
+      setShowCodePopup(false);
     }
   };
 
@@ -88,10 +89,6 @@ export default function SignUp() {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 8) {
       newErrors.password = "Password must be at least 8 characters";
-    }
-
-    if (!isEmailVerified) {
-      newErrors.emailVerification = "Please verify your email first";
     }
 
     return newErrors;
@@ -138,6 +135,7 @@ export default function SignUp() {
 
       setIsCodeSent(true);
       setIsEmailVerified(false);
+      setShowCodePopup(true);
       setVerificationMessage(data.message || "Verification code sent successfully ✅");
     } catch (error) {
       console.error("Send code error:", error);
@@ -178,6 +176,7 @@ export default function SignUp() {
       }
 
       setIsEmailVerified(true);
+      setShowCodePopup(false);
       setVerificationMessage(data.message || "Email verified successfully ✅");
       setErrors((prev) => ({
         ...prev,
@@ -234,7 +233,7 @@ export default function SignUp() {
         ...formData,
         faceImage: imageURL,
         role: "student",
-        email_verified: true,
+        email_verified: isEmailVerified,
         createdAt: serverTimestamp()
       });
 
@@ -368,27 +367,6 @@ export default function SignUp() {
                 </button>
               </div>
 
-              {isCodeSent && !isEmailVerified && (
-                <div style={{ marginTop: "10px" }}>
-                  <input
-                    type="text"
-                    placeholder="Enter verification code"
-                    value={verificationCode}
-                    onChange={(e) => setVerificationCode(e.target.value)}
-                  />
-
-                  <button
-                    type="button"
-                    className="confirm"
-                    onClick={handleVerifyCode}
-                    disabled={verifyLoading}
-                    style={{ marginTop: "10px" }}
-                  >
-                    {verifyLoading ? "Verifying..." : "Verify Code"}
-                  </button>
-                </div>
-              )}
-
               {verificationMessage && (
                 <small
                   style={{
@@ -475,16 +453,89 @@ export default function SignUp() {
           <button
             type="submit"
             className="confirm"
-            disabled={!isEmailVerified || signupLoading}
+            disabled={signupLoading}
             style={{
-              opacity: !isEmailVerified || signupLoading ? 0.7 : 1,
-              cursor: !isEmailVerified || signupLoading ? "not-allowed" : "pointer"
+              opacity: signupLoading ? 0.7 : 1,
+              cursor: signupLoading ? "not-allowed" : "pointer"
             }}
           >
             {signupLoading ? "Creating Account..." : "Confirm"}
           </button>
         </form>
       </div>
+
+      {showCodePopup && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999
+          }}
+        >
+          <div
+            style={{
+              width: "90%",
+              maxWidth: "400px",
+              background: "#ffffff",
+              borderRadius: "16px",
+              padding: "25px",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
+              textAlign: "center"
+            }}
+          >
+            <h2 style={{ marginBottom: "15px", color: "#333" }}>
+              Enter Verification Code
+            </h2>
+
+            <input
+              type="text"
+              placeholder="Enter verification code"
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "12px",
+                borderRadius: "10px",
+                border: "1px solid #ccc",
+                outline: "none",
+                marginBottom: "15px"
+              }}
+            />
+
+            <div
+              style={{
+                display: "flex",
+                gap: "10px",
+                justifyContent: "center",
+                flexWrap: "wrap"
+              }}
+            >
+              <button
+                type="button"
+                className="confirm"
+                onClick={handleVerifyCode}
+                disabled={verifyLoading}
+                style={{ margin: 0 }}
+              >
+                {verifyLoading ? "Verifying..." : "Verify Code"}
+              </button>
+
+              <button
+                type="button"
+                className="confirm"
+                onClick={() => setShowCodePopup(false)}
+                style={{ margin: 0 }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

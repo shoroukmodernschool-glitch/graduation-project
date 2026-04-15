@@ -5,7 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\TestFirebaseController;
 use App\Http\Controllers\FirebaseController;
-use App\Http\Controllers\UserController; // أضفنا Controller الجديد
+use App\Http\Controllers\UserController;
 use Kreait\Firebase\Factory;
 
 /*
@@ -33,10 +33,8 @@ Route::get('/test-file', function () {
 | Firebase Test Routes
 |--------------------------------------
 */
-// باستخدام TestFirebaseController
 Route::get('/firebase-test', [TestFirebaseController::class, 'test']);
 
-// باستخدام Factory مباشرة
 Route::get('/firebase-factory', function () {
     $factory = (new Factory)
         ->withServiceAccount(config('firebase.credentials'));
@@ -102,10 +100,8 @@ Route::group(['middleware' => ['noBackHistory']], function () {
 | User Form Routes (Validation)
 |--------------------------------------
 */
-// صفحة الفورم
 Route::get('/create-user', function () {
-    return view('create-user'); // Blade file اللي عملناه
+    return view('create-user');
 });
 
-// حفظ البيانات من الفورم
 Route::post('/users', [UserController::class, 'store'])->name('users.store');
