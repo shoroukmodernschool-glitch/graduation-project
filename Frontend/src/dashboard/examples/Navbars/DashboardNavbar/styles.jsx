@@ -105,7 +105,9 @@ const navbarRow = ({ breakpoints }, { isMini }) => ({
 });
 
 const navbarIconButton = ({ typography: { size }, breakpoints }) => ({
-  px: 1,
+  
+ px: 0,
+mx: -7,
 
   "& .material-icons, .material-icons-round": {
     fontSize: `${size.xl} !important`,

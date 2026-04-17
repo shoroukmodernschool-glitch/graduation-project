@@ -1,27 +1,19 @@
 import { useState, useEffect } from "react";
-
-// react-router components
 import { useLocation, Link } from "react-router-dom";
-
-// prop-types
 import PropTypes from "prop-types";
 
-// MUI components
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import IconButton from "@mui/material/IconButton";
 import Menu from "@mui/material/Menu";
 import Icon from "@mui/material/Icon";
 
-// Material Dashboard components
 import MDBox from "components/MDBox";
 import MDInput from "components/MDInput";
 
-// Dashboard components
 import Breadcrumbs from "examples/Breadcrumbs";
 import NotificationItem from "examples/Items/NotificationItem";
 
-// styles
 import {
   navbar,
   navbarContainer,
@@ -30,7 +22,6 @@ import {
   navbarMobileMenu,
 } from "examples/Navbars/DashboardNavbar/styles";
 
-// context
 import {
   useMaterialUIController,
   setTransparentNavbar,
@@ -39,7 +30,6 @@ import {
   setDarkMode,
 } from "context";
 
-// 🔥 Firebase
 import { auth, db } from "../../../../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
@@ -78,12 +68,10 @@ function DashboardNavbar({ absolute, light, isMini }) {
     return () => window.removeEventListener("scroll", handleTransparentNavbar);
   }, [dispatch, fixedNavbar]);
 
-  // 🔥 جلب اسم المستخدم (Teacher أو Student)
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
-          // ✅ نحاول teacher الأول
           const teacherRef = doc(db, "teachers", user.uid);
           const teacherSnap = await getDoc(teacherRef);
 
@@ -94,7 +82,6 @@ function DashboardNavbar({ absolute, light, isMini }) {
             return;
           }
 
-          // ✅ لو مش teacher → student
           const studentRef = doc(db, "student", user.uid);
           const studentSnap = await getDoc(studentRef);
 
@@ -105,7 +92,6 @@ function DashboardNavbar({ absolute, light, isMini }) {
           } else {
             setUserName("User");
           }
-
         } catch (error) {
           console.error("Error:", error);
           setUserName("User");
@@ -163,15 +149,12 @@ function DashboardNavbar({ absolute, light, isMini }) {
     >
       <Toolbar sx={(theme) => navbarContainer(theme)}>
         <MDBox color="inherit" mb={{ xs: 1, md: 0 }} sx={(theme) => navbarRow(theme, { isMini })}>
-          
-          {/* ✅ هنا الاسم */}
           <Breadcrumbs
             icon="home"
             title={userName ? `Welcome, ${userName}` : "Welcome"}
             route={route}
             light={light}
           />
-
         </MDBox>
 
         {isMini ? null : (
@@ -181,8 +164,6 @@ function DashboardNavbar({ absolute, light, isMini }) {
             </MDBox>
 
             <MDBox color={light ? "white" : "inherit"}>
-
-              {/* Dark Mode */}
               <IconButton
                 size="small"
                 disableRipple

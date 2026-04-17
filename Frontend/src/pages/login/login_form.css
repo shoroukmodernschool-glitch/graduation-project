@@ -29,7 +29,7 @@ html, body, #root {
 /* ================= CARD ================= */
 
 .login-card {
-  width: 600px;
+  width: 618px;
   height: 450px;
   max-width: 95%;
   padding: 35px;
@@ -54,28 +54,31 @@ html, body, #root {
 
 /* ================= ROLE TABS ================= */
 
-.role-tabs{
-  display:flex;
-  gap:10px;
-  margin-bottom:20px;
-  padding:6px;
-  border-radius:40px;
-  border:1px solid rgba(255,255,255,0.4);
-  width:100%;
+.role-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 6px;
+  border-radius: 40px;
+  border: 1px solid rgba(255,255,255,0.4);
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.role-tabs button{
-  flex:1;
-  padding:10px;
-  border:none;
-  background:transparent;
-  color:white;
-  border-radius:25px;
-  cursor:pointer;
-  font-size:14px;
-  transition:0.3s;
-  text-align:center;
-  white-space:nowrap;
+.role-tabs button {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 6px;
+  border: none;
+  background: transparent;
+  color: white;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: 0.3s;
+  text-align: center;
+  white-space: normal;
 }
 
 .role-tabs button:hover{

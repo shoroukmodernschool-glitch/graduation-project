@@ -1,48 +1,42 @@
 /**
 =========================================================
-* Material Dashboard 2 React - v2.2.0
+* Custom Footer - SMS Team
 =========================================================
-
-* Product Page: https://www.creative-tim.com/product/material-dashboard-react
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 */
 
-// prop-types is a library for typechecking of props
 import PropTypes from "prop-types";
 
 // @mui material components
 import Link from "@mui/material/Link";
 import Icon from "@mui/material/Icon";
 
-// Material Dashboard 2 React components
+// Material Dashboard components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 
-// Material Dashboard 2 React base styles
+// Theme
 import typography from "assets/theme/base/typography";
 
-const defaultCompany = { href: "https://www.creative-tim.com/", name: "Creative Tim" };
+const defaultCompany = {
+  href: "#",
+  name: "SMS Team",
+};
+
 const defaultLinks = [
-  { href: "https://www.creative-tim.com/", name: "Creative Tim" },
-  { href: "https://www.creative-tim.com/presentation", name: "About Us" },
-  { href: "https://www.creative-tim.com/blog", name: "Blog" },
-  { href: "https://www.creative-tim.com/license", name: "License" },
+  { href: "#", name: "Home" },
+  { href: "#", name: "About Project" },
+  { href: "#", name: "Contact" },
+  { href: "#", name: "Help" },
 ];
 
 function Footer({ company = defaultCompany, links = defaultLinks, light = false }) {
-  const { href = "https://www.creative-tim.com/", name = "Creative Tim" } = company;
+  const { href = "#", name = "SMS Team" } = company;
   const { size } = typography;
 
   const renderLinks = () =>
     links.map((link) => (
       <MDBox key={link.name} component="li" px={2} lineHeight={1}>
-        <Link href={link.href} target="_blank">
+        <Link href={link.href}>
           <MDTypography variant="button" fontWeight="regular" color={light ? "white" : "text"}>
             {link.name}
           </MDTypography>
@@ -69,19 +63,20 @@ function Footer({ company = defaultCompany, links = defaultLinks, light = false 
         px={1.5}
       >
         &copy; {new Date().getFullYear()}, made with
-        <MDBox fontSize={size.md} color="text" mb={-0.5} mx={0.25}>
+        <MDBox fontSize={size.md} color="error" mb={-0.5} mx={0.25}>
           <Icon color="inherit" fontSize="inherit">
             favorite
           </Icon>
         </MDBox>
         by
-        <Link href={href} target="_blank">
+        <Link href={href}>
           <MDTypography variant="button" fontWeight="medium">
             &nbsp;{name}&nbsp;
           </MDTypography>
         </Link>
-        for a better web.
+        for smart school management.
       </MDBox>
+
       <MDBox
         component="ul"
         sx={({ breakpoints }) => ({
@@ -105,7 +100,6 @@ function Footer({ company = defaultCompany, links = defaultLinks, light = false 
   );
 }
 
-// Typechecking props for the Footer
 Footer.propTypes = {
   company: PropTypes.objectOf(PropTypes.string),
   links: PropTypes.arrayOf(PropTypes.object),

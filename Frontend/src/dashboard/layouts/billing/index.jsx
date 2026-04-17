@@ -2,88 +2,144 @@
 =========================================================
 * Material Dashboard 2 React - v2.2.0
 =========================================================
-
-* Product Page: https://www.creative-tim.com/product/material-dashboard-react
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 */
 
 // @mui material components
 import Grid from "@mui/material/Grid";
+import Card from "@mui/material/Card";
+import LinearProgress from "@mui/material/LinearProgress";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
+import MDTypography from "components/MDTypography";
 
 // Material Dashboard 2 React examples
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
-import MasterCard from "examples/Cards/MasterCard";
-import DefaultInfoCard from "examples/Cards/InfoCards/DefaultInfoCard";
 
-// Billing page components
-import PaymentMethod from "layouts/billing/components/PaymentMethod";
-import Invoices from "layouts/billing/components/Invoices";
-import BillingInformation from "layouts/billing/components/BillingInformation";
-import Transactions from "layouts/billing/components/Transactions";
+function Attendance() {
+  const attendanceData = [
+    {
+      subject: "English",
+      attended: 18,
+      absent: 2,
+      percentage: 90,
+      color: "info",
+    },
+    {
+      subject: "Math",
+      attended: 15,
+      absent: 5,
+      percentage: 75,
+      color: "success",
+    },
+    {
+      subject: "Science",
+      attended: 17,
+      absent: 3,
+      percentage: 85,
+      color: "error",
+    },
+    {
+      subject: "Arabic",
+      attended: 16,
+      absent: 4,
+      percentage: 80,
+      color: "dark",
+    },
+    {
+      subject: "Social Studies",
+      attended: 14,
+      absent: 6,
+      percentage: 70,
+      color: "warning",
+    },
+    {
+      subject: "Computer",
+      attended: 19,
+      absent: 1,
+      percentage: 95,
+      color: "secondary",
+    },
+  ];
 
-function Billing() {
   return (
     <DashboardLayout>
-      <DashboardNavbar absolute isMini />
-      <MDBox mt={8}>
+      <DashboardNavbar />
+      
+      <MDBox py={3}>
         <MDBox mb={3}>
-          <Grid container spacing={3}>
-            <Grid size={{ xs: 12, lg: 8 }}>
-              <Grid container spacing={3}>
-                <Grid size={{ xs: 12, xl: 6 }}>
-                  <MasterCard number={4562112245947852} holder="jack peterson" expires="11/22" />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6, xl: 3 }}>
-                  <DefaultInfoCard
-                    icon="account_balance"
-                    title="salary"
-                    description="Belong Interactive"
-                    value="+$2000"
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6, xl: 3 }}>
-                  <DefaultInfoCard
-                    icon="paypal"
-                    title="paypal"
-                    description="Freelance Payment"
-                    value="$455.00"
-                  />
-                </Grid>
-                <Grid size={{ xs: 12 }}>
-                  <PaymentMethod />
-                </Grid>
-              </Grid>
-            </Grid>
-            <Grid size={{ xs: 12, lg: 4 }}>
-              <Invoices />
-            </Grid>
-          </Grid>
+          <MDTypography variant="h4" fontWeight="bold" color="info">
+            Attendance Overview
+          </MDTypography>
+          <MDTypography variant="button" color="text">
+            Check attendance and absence percentage for each subject
+          </MDTypography>
         </MDBox>
-        <MDBox mb={3}>
-          <Grid container spacing={3}>
-            <Grid size={{ xs: 12, md: 7 }}>
-              <BillingInformation />
+
+        <Grid container spacing={3}>
+          {attendanceData.map((item, index) => (
+            <Grid size={{ xs: 12, md: 6, lg: 4 }} key={index}>
+              <Card>
+                <MDBox p={3}>
+                  <MDBox
+                    display="flex"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    mb={2}
+                  >
+                    <MDTypography variant="h5" fontWeight="bold">
+                      {item.subject}
+                    </MDTypography>
+
+                    <MDBox
+                      px={1.5}
+                      py={0.5}
+                      borderRadius="lg"
+                      bgColor={item.color}
+                      coloredShadow={item.color}
+                    >
+                      <MDTypography variant="button" color="white" fontWeight="bold">
+                        {item.percentage}%
+                      </MDTypography>
+                    </MDBox>
+                  </MDBox>
+
+                  <MDBox mb={1}>
+                    <MDTypography variant="button" color="text">
+                      Attended: <strong>{item.attended}</strong> days
+                    </MDTypography>
+                  </MDBox>
+
+                  <MDBox mb={2}>
+                    <MDTypography variant="button" color="text">
+                      Absent: <strong>{item.absent}</strong> days
+                    </MDTypography>
+                  </MDBox>
+
+                  <MDBox mb={1}>
+                    <MDTypography variant="button" color="text">
+                      Attendance Rate
+                    </MDTypography>
+                  </MDBox>
+
+                  <LinearProgress
+                    variant="determinate"
+                    value={item.percentage}
+                    color={item.color}
+                    sx={{ height: "10px", borderRadius: "10px" }}
+                  />
+                </MDBox>
+              </Card>
             </Grid>
-            <Grid size={{ xs: 12, md: 5 }}>
-              <Transactions />
-            </Grid>
-          </Grid>
-        </MDBox>
+          ))}
+        </Grid>
       </MDBox>
+
       <Footer />
     </DashboardLayout>
   );
 }
 
-export default Billing;
+export default Attendance;

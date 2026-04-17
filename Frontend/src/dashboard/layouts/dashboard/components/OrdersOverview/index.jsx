@@ -6,7 +6,6 @@
 
 // @mui material components
 import Card from "@mui/material/Card";
-import Icon from "@mui/material/Icon";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -20,54 +19,45 @@ function OrdersOverview() {
     <Card sx={{ height: "100%" }}>
       <MDBox pt={3} px={3}>
         <MDTypography variant="h6" fontWeight="medium">
-          Orders overview
+          Student Updates
         </MDTypography>
         <MDBox mt={0} mb={2}>
           <MDTypography variant="button" color="text" fontWeight="regular">
-            <MDTypography display="inline" variant="body2" verticalAlign="middle">
-              <Icon sx={{ color: ({ palette: { success } }) => success.main }}>
-                arrow_upward
-              </Icon>
-            </MDTypography>
-            &nbsp;
-            <MDTypography variant="button" color="text" fontWeight="medium">
-              24%
-            </MDTypography>{" "}
-            this month
+            Latest activities and reminders
           </MDTypography>
         </MDBox>
       </MDBox>
 
       <MDBox p={2}>
         <TimelineItem
-          color="success"
-          icon="notifications"
-          title="$2400, Design changes"
-          dateTime="22 DEC 7:20 PM"
-        />
-        <TimelineItem
-          color="error"
-          icon="inventory_2"
-          title="New order #1832412"
-          dateTime="21 DEC 11 PM"
-        />
-        <TimelineItem
           color="info"
-          icon="shopping_cart"
-          title="Server payments for April"
-          dateTime="21 DEC 9:34 PM"
+          icon="assignment"
+          title="English assignment due tomorrow"
+          dateTime="Tomorrow - 8:00 AM"
+        />
+        <TimelineItem
+          color="success"
+          icon="menu_book"
+          title="New Math lesson uploaded"
+          dateTime="Today - 10:30 AM"
         />
         <TimelineItem
           color="warning"
-          icon="payment"
-          title="New card added for order #4395133"
-          dateTime="20 DEC 2:20 AM"
+          icon="quiz"
+          title="Science quiz this week"
+          dateTime="Thursday - 12:00 PM"
         />
         <TimelineItem
-          color="primary"
-          icon="vpn_key"
-          title="New card added for order #4395133"
-          dateTime="18 DEC 4:54 AM"
+          color="error"
+          icon="event_busy"
+          title="2 absences in Arabic"
+          dateTime="This month"
+        />
+        <TimelineItem
+          color="dark"
+          icon="notifications"
+          title="Check your attendance report"
+          dateTime="Updated recently"
           lastItem
         />
       </MDBox>

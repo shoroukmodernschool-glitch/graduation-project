@@ -7,7 +7,8 @@ import AdminDashboard from "./layouts/dashboard/admin";
 const StudentDashboard = lazy(() => import("./layouts/student"));
 const Profile = lazy(() => import("./layouts/profile"));
 const Tables = lazy(() => import("./layouts/tables"));
-const Billing = lazy(() => import("./layouts/billing"));
+const Assignments = lazy(() => import("./layouts/assignments"));
+const Attendance = lazy(() => import("./layouts/attendance"));
 const Notifications = lazy(() => import("./layouts/notifications"));
 
 const routes = [
@@ -40,16 +41,16 @@ const routes = [
     name: "Assignments",
     key: "assignments",
     icon: <Icon>assignment</Icon>,
-    route: "/billing",
-    component: <Billing />,
+    route: "/assignments",
+    component: <Assignments />,
   },
   {
     type: "collapse",
     name: "Attendance",
     key: "attendance",
     icon: <Icon>fact_check</Icon>,
-    route: "/billing",
-    component: <Billing />,
+    route: "/attendance",
+    component: <Attendance />,
   },
   {
     type: "collapse",

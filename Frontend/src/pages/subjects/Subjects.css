@@ -1,44 +1,44 @@
-.hello-stu{
-  color:#3B82F6;
-  margin-bottom:20px;
+.hello-stu {
+  color: #000000cc;
+  margin-bottom: 20px;
   margin-left: 20px;
 }
 
-.Subjects{
+.Subjects {
   font-size: 30px;
   margin-bottom: 20px;
   margin-left: 20px;
-  color:#3B82F6;
+  color: #000000cc;
 }
 
 .cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 20px;
-  
+  width: 100%;
 }
 
 .card {
-  padding: 40px 15px; /* بدل 20px */
+  width: 100%;
+  padding: 40px 15px;
   border-radius: 20px;
   transition: 0.3s;
   position: relative;
   height: 220px;
+  box-sizing: border-box;
 }
 
 .card:hover {
   transform: scale(1.05);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
 }
 
-/* 🔥 الجزء المهم */
 .top {
   position: relative;
   margin-bottom: 15px;
   color: white;
 }
 
-/* النص */
 .text h3 {
   margin-left: -22px;
 }
@@ -48,28 +48,23 @@
   opacity: 0.8;
 }
 
-/* 🔥 الأيقونة يمين فوق */
 .icon {
   position: absolute;
   right: 0;
-  top: 15PX;
-
+  top: 15px;
   width: 55px;
   height: 55px;
   border-radius: 15px;
-
   background: rgba(255, 255, 255, 0.25);
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   font-size: 24px;
   font-weight: bold;
   color: white;
 }
 
-.Lessons{
+.Lessons {
   color: white;
 }
 
@@ -94,18 +89,29 @@
 .E {
   background: linear-gradient(135deg, #3b82f6, #06b6d4);
 }
+
 .math {
   background: linear-gradient(135deg, #16a34a, #4ade80);
 }
+
 .Science {
   background: linear-gradient(135deg, #dc2626, #f87171);
 }
+
 .arabic {
   background: linear-gradient(135deg, #111111, #3f3f46);
 }
+
 .Social-Studies {
   background: linear-gradient(135deg, #8b5e3c, #c19a6b);
 }
+
 .computer {
-  background: linear-gradient(135deg, #ec4899, #f9a8d4);
+  background: linear-gradient(135deg, #ec4899, #f472b6);
+}
+
+.religion {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  opacity: 1 !important;
 }

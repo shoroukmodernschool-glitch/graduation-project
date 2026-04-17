@@ -36,14 +36,15 @@ import UpperSchool from "./pages/ACADEMIC_LEVELS/UpperSchool";
 import Dashboard from "./dashboard/layouts/dashboard/student";
 import Profile from "./dashboard/layouts/profile";
 import Tables from "./dashboard/layouts/tables";
-import Billing from "./dashboard/layouts/billing";
+import Assignments from "./dashboard/layouts/assignments";
+import Attendance from "./dashboard/layouts/attendance";
 import Notifications from "./dashboard/layouts/notifications";
 
 import AdminDashboard from "./dashboard/layouts/dashboard/admin";
 
-
 /* Subjects */
 import Subjects from "./pages/subjects/Subjects";
+import SubjectDetails from "./pages/subject-details/SubjectDetails";
 
 function App() {
   const location = useLocation();
@@ -55,7 +56,8 @@ function App() {
     location.pathname.includes("student-dashboard") ||
     location.pathname.includes("/profile") ||
     location.pathname.includes("/tables") ||
-    location.pathname.includes("/billing") ||
+    location.pathname.includes("/assignments") ||
+    location.pathname.includes("/attendance") ||
     location.pathname.includes("/notifications");
 
   useEffect(() => {
@@ -93,32 +95,26 @@ function App() {
       )}
 
       <Routes>
-        {/* Home */}
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
 
-        {/* Login */}
         <Route path="/login" element={<Login />} />
         <Route path="/login-parent" element={<LoginParent />} />
         <Route path="/login-teacher" element={<LoginTeacher />} />
         <Route path="/login-admin" element={<LoginAdmin />} />
 
-        {/* Signup */}
         <Route path="/signup" element={<SignUp />} />
         <Route path="/signup-parent" element={<SignupParent />} />
         <Route path="/signup-teacher" element={<SignupTeacher />} />
         <Route path="/signup-admin" element={<SignupAdmin />} />
 
-        {/* Contact */}
         <Route path="/contact" element={<Contact />} />
 
-        {/* Academic */}
         <Route path="/early-childhood" element={<EarlyChildhood />} />
         <Route path="/lower-school" element={<LowerSchool />} />
         <Route path="/middle-school" element={<MiddleSchool />} />
         <Route path="/upper-school" element={<UpperSchool />} />
 
-        {/* Student Dashboard */}
         <Route
           path="/student-dashboard"
           element={
@@ -127,11 +123,11 @@ function App() {
             </ProtectedRoute>
           }
         />
-<Route path="/admin" element={<AdminDashboard />} />
-        {/* Subjects */}
-        <Route path="/subjects" element={<Subjects />} />
 
-        {/* Protected Pages */}
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/subjects" element={<Subjects />} />
+        <Route path="/subject/:id" element={<SubjectDetails />} />
+
         <Route
           path="/profile"
           element={
@@ -151,10 +147,19 @@ function App() {
         />
 
         <Route
-          path="/billing"
+          path="/assignments"
           element={
             <ProtectedRoute>
-              <Billing />
+              <Assignments />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/attendance"
+          element={
+            <ProtectedRoute>
+              <Attendance />
             </ProtectedRoute>
           }
         />
@@ -168,7 +173,6 @@ function App() {
           }
         />
 
-        {/* fallback */}
         <Route path="*" element={<Home />} />
       </Routes>
     </>
