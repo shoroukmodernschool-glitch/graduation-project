@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FirebaseController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\SignupOtpController;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,6 +38,11 @@ Route::post('/forgot-password/verify-code', [ForgotPasswordController::class, 'v
 
 // ✅ Forgot Password - Reset Password
 Route::post('/forgot-password/reset-password', [ForgotPasswordController::class, 'resetPassword']);
+
+// ✅ Signup OTP
+Route::post('/signup/send-otp', [SignupOtpController::class, 'sendOtp']);
+Route::post('/signup/resend-otp', [SignupOtpController::class, 'resendOtp']);
+Route::post('/signup/verify-otp', [SignupOtpController::class, 'verifyOtp']);
 
 // 🔥 Route محمي بالـ Firebase
 Route::middleware('firebase.auth')->get('/protected', function (Request $request) {
