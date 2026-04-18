@@ -24,11 +24,12 @@ function Dashboard() {
   const [student, setStudent] = useState(null);
   const [subjectsCount, setSubjectsCount] = useState(0);
   const [attendance, setAttendance] = useState([]);
+  const [notificationsCount, setNotificationsCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
 
-  const { sales, tasks } = reportsLineChartData;
+  const { sales } = reportsLineChartData;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -38,10 +39,7 @@ function Dashboard() {
       }
 
       try {
-        const q = query(
-          collection(db, "student"),
-          where("uid", "==", user.uid)
-        );
+        const q = query(collection(db, "student"), where("uid", "==", user.uid));
 
         const querySnapshot = await getDocs(q);
         const data = querySnapshot.docs.map((doc) => ({
@@ -52,7 +50,6 @@ function Dashboard() {
         const currentStudent = data[0] || null;
         setStudent(currentStudent);
 
-        // Subjects Count
         if (currentStudent?.grade) {
           const subjectQuery = query(
             collection(db, "subject"),
@@ -63,19 +60,26 @@ function Dashboard() {
           setSubjectsCount(subjectSnapshot.size);
         }
 
-        // Attendance
-        if (currentStudent?.id) {
+        if (currentStudent?.student_id || currentStudent?.id) {
+          const studentCode = currentStudent.student_id || currentStudent.id;
+
           const attendanceQuery = query(
             collection(db, "attendance"),
-            where("student_id", "==", currentStudent.id)
+            where("student_id", "==", studentCode)
           );
 
           const attendanceSnapshot = await getDocs(attendanceQuery);
-          const attendanceData = attendanceSnapshot.docs.map((doc) =>
-            doc.data()
-          );
+          const attendanceData = attendanceSnapshot.docs.map((doc) => doc.data());
 
           setAttendance(attendanceData);
+        }
+
+        try {
+          const notificationsSnapshot = await getDocs(collection(db, "notifications"));
+          setNotificationsCount(notificationsSnapshot.size);
+        } catch (error) {
+          console.error("Notifications error:", error);
+          setNotificationsCount(0);
         }
       } catch (error) {
         console.error("Error:", error);
@@ -87,24 +91,17 @@ function Dashboard() {
     return () => unsubscribe();
   }, []);
 
-  const presentCount = attendance.filter(
-    (a) => a.status === "present"
-  ).length;
+  const presentCount = attendance.filter((a) => a.status === "present").length;
 
   const attendancePercentage =
-    attendance.length > 0
-      ? Math.round((presentCount / attendance.length) * 100)
-      : 0;
+    attendance.length > 0 ? Math.round((presentCount / attendance.length) * 100) : 0;
 
   return (
     <DashboardLayout>
-
-      {/* ✅ Navbar بس */}
       <DashboardNavbar />
 
       <MDBox py={3}>
         <Grid container spacing={3}>
-
           <Grid size={{ xs: 12, md: 6, lg: 3 }}>
             <MDBox mb={1.5}>
               <ComplexStatisticsCard
@@ -151,7 +148,7 @@ function Dashboard() {
                   loading
                     ? "Loading..."
                     : attendance.length > 0
-                    ? attendancePercentage + "%"
+                    ? `${attendancePercentage}%`
                     : "No Data"
                 }
                 percentage={{
@@ -164,30 +161,28 @@ function Dashboard() {
           </Grid>
 
           <Grid size={{ xs: 12, md: 6, lg: 3 }}>
-            <MDBox mb={1.5}>
+            <MDBox
+              mb={1.5}
+              onClick={() => navigate("/notifications")}
+              sx={{ cursor: "pointer" }}
+            >
               <ComplexStatisticsCard
                 color="primary"
-                icon="assignment"
-                title="Assignments"
-                count={
-                  loading
-                    ? "Loading..."
-                    : student?.assignments ?? "No Data"
-                }
+                icon="notifications"
+                title="Notifications"
+                count={loading ? "..." : notificationsCount}
                 percentage={{
-                  color: "warning",
-                  amount: "2 pending",
-                  label: "tasks",
+                  color: "primary",
+                  amount: "Latest",
+                  label: "updates",
                 }}
               />
             </MDBox>
           </Grid>
-
         </Grid>
 
         <MDBox mt={4.5}>
           <Grid container spacing={3}>
-
             <Grid size={{ xs: 12, md: 6, lg: 4 }}>
               <MDBox mb={3}>
                 <ReportsBarChart
@@ -216,14 +211,13 @@ function Dashboard() {
               <MDBox mb={3}>
                 <ReportsLineChart
                   color="dark"
-                  title="Tasks Completion"
-                  description="Assignments completion rate"
+                  title="Notifications Overview"
+                  description="Latest student updates"
                   date="just updated"
-                  chart={tasks}
+                  chart={sales}
                 />
               </MDBox>
             </Grid>
-
           </Grid>
         </MDBox>
 
@@ -237,8 +231,8 @@ function Dashboard() {
             </Grid>
           </Grid>
         </MDBox>
-
       </MDBox>
+
       <Footer />
     </DashboardLayout>
   );

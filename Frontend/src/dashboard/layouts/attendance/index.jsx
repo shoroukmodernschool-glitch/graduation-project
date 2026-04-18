@@ -1,11 +1,5 @@
-/**
-=========================================================
-* Material Dashboard 2 React - v2.2.0
-=========================================================
-*/
-
 import Card from "@mui/material/Card";
-import LinearProgress from "@mui/material/LinearProgress";
+import Grid from "@mui/material/Grid";
 
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
@@ -15,49 +9,42 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 
 function Attendance() {
-  const attendanceData = [
-    {
-      subject: "English",
-      attended: 18,
-      absent: 2,
-      percentage: 90,
-      color: "info",
-    },
-    {
-      subject: "Math",
-      attended: 15,
-      absent: 5,
-      percentage: 75,
-      color: "success",
-    },
-    {
-      subject: "Science",
-      attended: 17,
-      absent: 3,
-      percentage: 85,
-      color: "error",
-    },
-    {
-      subject: "Arabic",
-      attended: 16,
-      absent: 4,
-      percentage: 80,
-      color: "dark",
-    },
-    {
-      subject: "Social Studies",
-      attended: 14,
-      absent: 6,
-      percentage: 70,
-      color: "warning",
-    },
-    {
-      subject: "Computer",
-      attended: 19,
-      absent: 1,
-      percentage: 95,
-      color: "secondary",
-    },
+  const summaryData = {
+    totalSchoolDays: 30,
+    attendanceRate: 83,
+  };
+
+  const monthlyAttendance = [
+    { day: 1, status: "P", color: "success" },
+    { day: 2, status: "P", color: "success" },
+    { day: 3, status: "A", color: "error" },
+    { day: 4, status: "P", color: "success" },
+    { day: 5, status: "P", color: "success" },
+    { day: 6, status: "L", color: "warning" },
+    { day: 7, status: "P", color: "success" },
+    { day: 8, status: "P", color: "success" },
+    { day: 9, status: "P", color: "success" },
+    { day: 10, status: "A", color: "error" },
+    { day: 11, status: "P", color: "success" },
+    { day: 12, status: "P", color: "success" },
+    { day: 13, status: "L", color: "warning" },
+    { day: 14, status: "P", color: "success" },
+    { day: 15, status: "P", color: "success" },
+    { day: 16, status: "P", color: "success" },
+    { day: 17, status: "P", color: "success" },
+    { day: 18, status: "A", color: "error" },
+    { day: 19, status: "P", color: "success" },
+    { day: 20, status: "P", color: "success" },
+    { day: 21, status: "P", color: "success" },
+    { day: 22, status: "P", color: "success" },
+    { day: 23, status: "A", color: "error" },
+    { day: 24, status: "P", color: "success" },
+    { day: 25, status: "P", color: "success" },
+    { day: 26, status: "P", color: "success" },
+    { day: 27, status: "L", color: "warning" },
+    { day: 28, status: "P", color: "success" },
+    { day: 29, status: "P", color: "success" },
+    { day: 30, status: "P", color: "success" },
   ];
 
   return (
@@ -65,107 +52,122 @@ function Attendance() {
       <DashboardNavbar />
 
       <MDBox py={3}>
-        <MDBox mb={3}>
-          <MDTypography variant="h4" fontWeight="bold" color="info">
-            Attendance Overview
-          </MDTypography>
-          <MDTypography variant="button" color="text">
-            Check attendance and absence percentage for each subject
-          </MDTypography>
-        </MDBox>
-
-        <MDBox
-          display="grid"
-          gridTemplateColumns="repeat(auto-fit, minmax(260px, 1fr))"
-          gap={3}
+        {/* Attendance Center */}
+        <Card
+          sx={{
+            borderRadius: "24px",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+            background: "linear-gradient(135deg, #f8fbff 0%, #eef5ff 100%)",
+            mb: 3,
+            width: "95%",
+            margin: "0 auto",
+          }}
         >
-          {attendanceData.map((item, index) => (
+          <MDBox p={{ xs: 2.5, md: 4 }}>
+            <MDTypography variant="h3" fontWeight="bold">
+              Attendance Center
+            </MDTypography>
+
+            <MDTypography variant="button" color="text" mt={1} mb={3} display="block">
+              Track and manage attendance in a simple full-page view.
+            </MDTypography>
+
+            <MDBox display="flex" gap={2}>
+              <MDBox px={2} py={1} borderRadius="lg" sx={{ background: "#fff" }}>
+                Total Days: {summaryData.totalSchoolDays}
+              </MDBox>
+
+              <MDBox px={2} py={1} borderRadius="lg" sx={{ background: "#fff" }}>
+                Attendance Rate: {summaryData.attendanceRate}%
+              </MDBox>
+            </MDBox>
+          </MDBox>
+        </Card>
+
+        {/* Monthly Attendance */}
+        <Grid container>
+          <Grid item xs={12}>
             <Card
-              key={index}
               sx={{
-                height: "100%",
-                minHeight: "245px",
-                borderRadius: "16px",
-                boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
+                borderRadius: "24px",
+                boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+                overflow: "hidden",
+                width: "95%",
+                margin: "0 auto",
+                mt: 4, 
               }}
             >
-              <MDBox p={3} height="100%" display="flex" flexDirection="column">
+              <MDBox px={3} py={2.5} sx={{ borderBottom: "1px solid #edf2f7" }}>
+                <MDTypography variant="h5" fontWeight="bold">
+                  Monthly Attendance
+                </MDTypography>
+
+                <MDTypography variant="button" color="text">
+                  Full attendance view for the whole month
+                </MDTypography>
+              </MDBox>
+
+              <MDBox px={2} py={3}>
                 <MDBox
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="flex-start"
-                  mb={3}
-                  gap={1}
+                  sx={{
+                    display: "grid",
+                    width: "100%",
+                    gridTemplateColumns: {
+                      xs: "repeat(2, 1fr)",
+                      sm: "repeat(3, 1fr)",
+                      md: "repeat(5, 1fr)",
+                      lg: "repeat(7, 1fr)",
+                      xl: "repeat(9, 1fr)",
+                    },
+                    gap: 2,
+                  }}
                 >
-                  <MDTypography
-                    variant="h4"
-                    fontWeight="bold"
-                    sx={{
-                      fontSize: "1.8rem",
-                      lineHeight: 1.2,
-                      flex: 1,
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {item.subject}
-                  </MDTypography>
-
-                  <MDBox
-                    px={1.8}
-                    py={0.8}
-                    borderRadius="lg"
-                    bgColor={item.color}
-                    coloredShadow={item.color}
-                    sx={{
-                      minWidth: "54px",
-                      textAlign: "center",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <MDTypography
-                      variant="button"
-                      color="white"
-                      fontWeight="bold"
-                      sx={{ fontSize: "0.95rem" }}
+                  {monthlyAttendance.map((item, index) => (
+                    <MDBox
+                      key={index}
+                      p={2}
+                      borderRadius="2xl"
+                      sx={{
+                        background: "#f9fbfd",
+                        border: "1px solid #edf2f7",
+                        minHeight: "120px",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        width: "100%",
+                      }}
                     >
-                      {item.percentage}%
-                    </MDTypography>
-                  </MDBox>
-                </MDBox>
+                      <MDTypography>Day {item.day}</MDTypography>
 
-                <MDBox mb={1.5}>
-                  <MDTypography variant="button" color="text" sx={{ fontSize: "1rem" }}>
-                    Attended: <strong>{item.attended}</strong> days
-                  </MDTypography>
-                </MDBox>
+                      <MDBox
+                        width="50px"
+                        height="50px"
+                        borderRadius="50%"
+                        bgColor={item.color}
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                      >
+                        <MDTypography color="white">
+                          {item.status}
+                        </MDTypography>
+                      </MDBox>
 
-                <MDBox mb={2.5}>
-                  <MDTypography variant="button" color="text" sx={{ fontSize: "1rem" }}>
-                    Absent: <strong>{item.absent}</strong> days
-                  </MDTypography>
-                </MDBox>
-
-                <MDBox mt="auto">
-                  <MDBox mb={1}>
-                    <MDTypography variant="button" color="text" sx={{ fontSize: "1rem" }}>
-                      Attendance Rate
-                    </MDTypography>
-                  </MDBox>
-
-                  <LinearProgress
-                    variant="determinate"
-                    value={item.percentage}
-                    color={item.color}
-                    sx={{
-                      height: "10px",
-                      borderRadius: "10px",
-                    }}
-                  />
+                      <MDTypography variant="caption">
+                        {item.status === "P"
+                          ? "Present"
+                          : item.status === "A"
+                          ? "Absent"
+                          : "Late"}
+                      </MDTypography>
+                    </MDBox>
+                  ))}
                 </MDBox>
               </MDBox>
             </Card>
-          ))}
-        </MDBox>
+          </Grid>
+        </Grid>
       </MDBox>
 
       <Footer />

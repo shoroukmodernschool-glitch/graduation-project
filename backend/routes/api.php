@@ -6,6 +6,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FirebaseController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\SignupOtpController;
+use App\Http\Controllers\ChatbotController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -43,6 +45,9 @@ Route::post('/forgot-password/reset-password', [ForgotPasswordController::class,
 Route::post('/signup/send-otp', [SignupOtpController::class, 'sendOtp']);
 Route::post('/signup/resend-otp', [SignupOtpController::class, 'resendOtp']);
 Route::post('/signup/verify-otp', [SignupOtpController::class, 'verifyOtp']);
+
+Route::post('/chatbot/message', [ChatbotController::class, 'sendMessage']);
+
 
 // 🔥 Route محمي بالـ Firebase
 Route::middleware('firebase.auth')->get('/protected', function (Request $request) {

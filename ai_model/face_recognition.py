@@ -9,33 +9,37 @@ from firebase_admin import credentials, firestore
 from insightface.app import FaceAnalysis
 from datetime import datetime
 
-SIMILARITY_THRESHOLD = 0.68
+SIMILARITY_THRESHOLD = 0.66
 
 # Performance
-DETECTION_FRAME_SKIP = 2
-DETECTION_INTERVAL_SEC = 0.10
-DETECTION_WIDTH = 280
-MAX_FACES = 3
+DETECTION_FRAME_SKIP = 4
+DETECTION_INTERVAL_SEC = 0.18
+DETECTION_WIDTH = 256
+MAX_FACES = 2
 
 # Attendance cooldown
-ATTENDANCE_COOLDOWN_SEC = 10
+ATTENDANCE_COOLDOWN_SEC = 0
 
 # Ignore very small faces to reduce false matches
 MIN_FACE_SIZE = 45
 
 # Smooth box movement
-BOX_SMOOTHING_ALPHA = 0.65
+BOX_SMOOTHING_ALPHA = 0.55
 
 # Stable identity / tracking
-REQUIRED_MATCH_FRAMES = 2
-TRACK_TTL_SEC = 0.60
-TRACK_MATCH_DISTANCE = 140
+REQUIRED_MATCH_FRAMES = 1
+TRACK_TTL_SEC = 0.9
+TRACK_MATCH_DISTANCE = 170
 
 
 class VideoStream:
     def __init__(self, src=0):
         self.src = src
         self.stream = cv2.VideoCapture(src, cv2.CAP_DSHOW)
+        self.stream.set(cv2.CAP_PROP_FRAME_WIDTH, 800)
+        self.stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 600)
+        self.stream.set(cv2.CAP_PROP_FPS, 30)
+        self.stream.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
         if self.stream.isOpened():
             self.grabbed, self.frame = self.stream.read()
@@ -134,12 +138,16 @@ def load_faces_from_firestore(firestore_db, face_analyzer):
     for doc in docs:
         data = doc.to_dict()
 
-        student_id = data.get("id")
+        student_id = data.get("student_id")
         first_name = data.get("firstName", "").strip()
         last_name = data.get("lastName", "").strip()
         face_images = data.get("faceImages")
 
-        if not student_id or not first_name or not face_images:
+        if not student_id:
+            print(f"[SKIP] Missing student_id for: {doc.id}")
+            continue
+
+        if not first_name or not face_images:
             print(f"[SKIP] Invalid student document: {doc.id}")
             continue
 
@@ -358,18 +366,100 @@ def mark_attendance(firestore_db, student_id, student_name):
     doc_ref = firestore_db.collection("attendance").document(doc_id)
     doc = doc_ref.get()
 
-    if not doc.exists:
-        doc_ref.set({
-            "studentId": student_id,
-            "name": student_name,
-            "date": today,
-            "time": current_time,
-            "status": "present",
-            "method": "face_recognition"
-        })
-        print(f"[ATTENDANCE] Marked present: {student_name}")
-    else:
-        print(f"[ATTENDANCE] Already marked today: {student_name}")
+    if doc.exists:
+        return "already_marked"
+
+    doc_ref.set({
+        "studentId": student_id,
+        "name": student_name,
+        "date": today,
+        "time": current_time,
+        "status": "present",
+        "method": "face_recognition"
+    })
+    print(f"[ATTENDANCE] Marked present: {student_name}")
+    return "inserted"
+
+
+class RecognitionWorker:
+    def __init__(self, analyzer, face_db):
+        self.analyzer = analyzer
+        self.face_db = face_db
+        self.lock = threading.Lock()
+        self.stop_event = threading.Event()
+
+        self.pending_frame = None
+        self.latest_tracks = []
+        self.last_processed_time = 0
+
+        self.thread = threading.Thread(target=self.run, daemon=True)
+
+    def start(self):
+        self.thread.start()
+        return self
+
+    def submit_frame(self, frame):
+        with self.lock:
+            self.pending_frame = frame.copy()
+
+    def get_tracks(self):
+        with self.lock:
+            return [track.copy() for track in self.latest_tracks]
+
+    def set_tracks(self, tracks):
+        with self.lock:
+            self.latest_tracks = [track.copy() for track in tracks]
+
+    def run(self):
+        tracks = []
+        frame_count = 0
+
+        while not self.stop_event.is_set():
+            with self.lock:
+                frame = None if self.pending_frame is None else self.pending_frame.copy()
+                self.pending_frame = None
+
+            if frame is None:
+                time.sleep(0.005)
+                continue
+
+            frame_count += 1
+            now = time.time()
+
+            if frame_count % DETECTION_FRAME_SKIP != 0:
+                continue
+
+            if now - self.last_processed_time < DETECTION_INTERVAL_SEC:
+                continue
+
+            small = cv2.resize(
+                frame,
+                (DETECTION_WIDTH, int(frame.shape[0] * DETECTION_WIDTH / frame.shape[1]))
+            )
+
+            results = recognize(small, self.analyzer, self.face_db)
+
+            detections = []
+            for bbox, name, student_id, sim, color in results:
+                x1, y1, x2, y2 = bbox
+
+                scale_x = frame.shape[1] / small.shape[1]
+                scale_y = frame.shape[0] / small.shape[0]
+
+                x1 = int(x1 * scale_x)
+                x2 = int(x2 * scale_x)
+                y1 = int(y1 * scale_y)
+                y2 = int(y2 * scale_y)
+
+                detections.append(((x1, y1, x2, y2), name, student_id, sim, color))
+
+            tracks = update_tracks(tracks, detections, now)
+            self.set_tracks(tracks)
+            self.last_processed_time = now
+
+    def stop(self):
+        self.stop_event.set()
+        self.thread.join(timeout=1.0)
 
 
 def generate_frames():
@@ -390,10 +480,11 @@ def generate_frames():
 
     time.sleep(2)
 
-    frame_count = 0
-    last_time = 0
-    tracks = []
+    worker = RecognitionWorker(analyzer, face_db).start()
+
     last_seen = {}
+    handled_students = set()
+    already_announced = set()
 
     try:
         while True:
@@ -403,44 +494,34 @@ def generate_frames():
                 time.sleep(0.01)
                 continue
 
-            frame_count += 1
+            worker.submit_frame(frame)
+            tracks = worker.get_tracks()
             now = time.time()
 
-            if frame_count % DETECTION_FRAME_SKIP == 0 and now - last_time >= DETECTION_INTERVAL_SEC:
-                small = cv2.resize(
-                    frame,
-                    (DETECTION_WIDTH, int(frame.shape[0] * DETECTION_WIDTH / frame.shape[1]))
-                )
+            for track in tracks:
+                student_id = track["stable_student_id"]
+                student_name = track["stable_name"]
 
-                results = recognize(small, analyzer, face_db)
+                if student_id is None or student_name == "Unknown":
+                    continue
 
-                detections = []
-                for bbox, name, student_id, sim, color in results:
-                    x1, y1, x2, y2 = bbox
+                if student_id in handled_students:
+                    continue
 
-                    scale_x = frame.shape[1] / small.shape[1]
-                    scale_y = frame.shape[0] / small.shape[0]
+                last_seen_time = last_seen.get(student_id, 0)
+                if now - last_seen_time < ATTENDANCE_COOLDOWN_SEC:
+                    continue
 
-                    x1 = int(x1 * scale_x)
-                    x2 = int(x2 * scale_x)
-                    y1 = int(y1 * scale_y)
-                    y2 = int(y2 * scale_y)
+                status = mark_attendance(firestore_db, student_id, student_name)
+                last_seen[student_id] = now
 
-                    detections.append(((x1, y1, x2, y2), name, student_id, sim, color))
-
-                tracks = update_tracks(tracks, detections, now)
-
-                for track in tracks:
-                    student_id = track["stable_student_id"]
-                    student_name = track["stable_name"]
-
-                    if student_id is not None and student_name != "Unknown":
-                        last_seen_time = last_seen.get(student_id, 0)
-                        if now - last_seen_time >= ATTENDANCE_COOLDOWN_SEC:
-                            mark_attendance(firestore_db, student_id, student_name)
-                            last_seen[student_id] = now
-
-                last_time = now
+                if status == "inserted":
+                    handled_students.add(student_id)
+                elif status == "already_marked":
+                    if student_id not in already_announced:
+                        print(f"[ATTENDANCE] Already marked before: {student_name}")
+                        already_announced.add(student_id)
+                    handled_students.add(student_id)
 
             for track in tracks:
                 x1, y1, x2, y2 = track["bbox"]
@@ -448,10 +529,12 @@ def generate_frames():
                 sim = track["stable_sim"]
                 color = track["stable_color"]
 
+                label = name if name == "Unknown" else f"{name} {sim*100:.1f}%"
+
                 cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                 cv2.putText(
                     frame,
-                    f"{name} {sim*100:.1f}%",
+                    label,
                     (x1, max(20, y1 - 10)),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     0.6,
@@ -470,6 +553,7 @@ def generate_frames():
                 b"Content-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n"
             )
     finally:
+        worker.stop()
         vs.stop()
 
 

@@ -7,7 +7,7 @@ import AdminDashboard from "./layouts/dashboard/admin";
 const StudentDashboard = lazy(() => import("./layouts/student"));
 const Profile = lazy(() => import("./layouts/profile"));
 const Tables = lazy(() => import("./layouts/tables"));
-const Assignments = lazy(() => import("./layouts/assignments"));
+
 const Attendance = lazy(() => import("./layouts/attendance"));
 const Notifications = lazy(() => import("./layouts/notifications"));
 
@@ -36,14 +36,7 @@ const routes = [
     route: "/subjects",
     component: <Subjects />,
   },
-  {
-    type: "collapse",
-    name: "Assignments",
-    key: "assignments",
-    icon: <Icon>assignment</Icon>,
-    route: "/assignments",
-    component: <Assignments />,
-  },
+  
   {
     type: "collapse",
     name: "Attendance",

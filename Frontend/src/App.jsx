@@ -36,7 +36,7 @@ import UpperSchool from "./pages/ACADEMIC_LEVELS/UpperSchool";
 import Dashboard from "./dashboard/layouts/dashboard/student";
 import Profile from "./dashboard/layouts/profile";
 import Tables from "./dashboard/layouts/tables";
-import Assignments from "./dashboard/layouts/assignments";
+
 import Attendance from "./dashboard/layouts/attendance";
 import Notifications from "./dashboard/layouts/notifications";
 
@@ -45,6 +45,9 @@ import AdminDashboard from "./dashboard/layouts/dashboard/admin";
 /* Subjects */
 import Subjects from "./pages/subjects/Subjects";
 import SubjectDetails from "./pages/subject-details/SubjectDetails";
+
+/* Chatbot */
+import ChatbotPage from "./pages/chatbot/chatbot";
 
 function App() {
   const location = useLocation();
@@ -115,6 +118,8 @@ function App() {
         <Route path="/middle-school" element={<MiddleSchool />} />
         <Route path="/upper-school" element={<UpperSchool />} />
 
+        <Route path="/chatbot" element={<ChatbotPage />} />
+
         <Route
           path="/student-dashboard"
           element={
@@ -146,14 +151,6 @@ function App() {
           }
         />
 
-        <Route
-          path="/assignments"
-          element={
-            <ProtectedRoute>
-              <Assignments />
-            </ProtectedRoute>
-          }
-        />
 
         <Route
           path="/attendance"
