@@ -6,6 +6,9 @@ import MDBox from "components/MDBox";
 
 import Sidenav from "examples/Sidenav";
 import routes from "dashboard/routes.js";
+import studentRoutes from "dashboard/studentRoutes";
+import adminRoutes from "dashboard/adminRoutes";
+import parentRoutes from "dashboard/parentRoutes";
 
 import { useMaterialUIController, setLayout } from "context";
 
@@ -16,11 +19,21 @@ function DashboardLayout({ children }) {
 
   useEffect(() => {
     setLayout(dispatch, "dashboard");
-  }, [pathname]);
+  }, [pathname, dispatch]);
+
+  let currentRoutes = routes;
+
+  if (pathname.includes("parent")) {
+    currentRoutes = parentRoutes;
+  } else if (pathname.includes("student")) {
+    currentRoutes = studentRoutes;
+  } else if (pathname.includes("admin")) {
+    currentRoutes = adminRoutes;
+  }
 
   return (
     <>
-      <Sidenav brandName="Dashboard" routes={routes} />
+      <Sidenav brandName="Dashboard" routes={currentRoutes} />
 
       <MDBox
         sx={({ breakpoints, transitions, functions: { pxToRem } }) => ({

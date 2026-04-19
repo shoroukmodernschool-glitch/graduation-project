@@ -4,8 +4,9 @@ import Navbar from "../../components/Navbar";
 import { useState } from "react";
 import { FaEnvelope, FaEye, FaEyeSlash } from "react-icons/fa";
 
-import { auth } from "../../firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth, db } from "../../firebase";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 
 export default function LoginParent() {
   const navigate = useNavigate();
@@ -18,12 +19,10 @@ export default function LoginParent() {
     e.preventDefault();
 
     try {
-      console.log("🔥 Start Login...");
+      console.log("🔥 Start Parent Login...");
 
-      // ✅ امسح أي user قديم (عشان مشكلة اليوزر اللي اتمسح)
-      await auth.signOut();
+      await signOut(auth);
 
-      // ✅ تسجيل الدخول
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
@@ -33,13 +32,35 @@ export default function LoginParent() {
       console.log("✅ Firebase login success");
 
       const user = userCredential.user;
+      console.log("👤 UID:", user.uid);
 
-      // 🔥 هات توكن جديد دايمًا
+      // 1) هات بيانات اليوزر من Firestore
+      // غيّر اسم الكولكشن لو عندك اسمه parents أو parent
+      const parentRef = doc(db, "parents", user.uid);
+      const parentSnap = await getDoc(parentRef);
+
+      // لو مش موجود في parents
+      if (!parentSnap.exists()) {
+        await signOut(auth);
+        alert("هذا الحساب ليس حساب Parent");
+        return;
+      }
+
+      const parentData = parentSnap.data();
+      console.log("📄 Parent Firestore Data:", parentData);
+
+      // 2) تأكد من الـ role
+      if (parentData.role !== "parent") {
+        await signOut(auth);
+        alert("غير مسموح، هذا الحساب ليس Parent");
+        return;
+      }
+
+      // 3) هات توكن جديد
       const token = await user.getIdToken(true);
-
       console.log("🟢 TOKEN:", token);
 
-      // 🚀 ابعت التوكن للباك
+      // 4) ابعت التوكن للباك
       const res = await fetch("http://127.0.0.1:8000/api/protected", {
         method: "GET",
         headers: {
@@ -54,11 +75,15 @@ export default function LoginParent() {
       const data = await res.json();
       console.log("🟣 Laravel Response:", data);
 
+      if (!res.ok) {
+        alert("الباك رفض التوكن");
+        return;
+      }
+
       alert("Login successful ✅");
 
-      // ✅ روح للداشبورد
-      // navigate("/parent-dashboard");
-
+      // 5) دخله على داشبورد البيرنت
+      navigate("/parent-dashboard");
     } catch (error) {
       console.error("❌ Login Error:", error);
       alert("Error حصل ❌ بص الـ console");
@@ -143,7 +168,7 @@ export default function LoginParent() {
             </Link>
           </div>
 
-          <button className="submit-btn parent">
+          <button className="submit-btn parent" type="submit">
             Submit
           </button>
         </form>

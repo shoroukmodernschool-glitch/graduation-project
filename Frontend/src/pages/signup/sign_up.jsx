@@ -3,10 +3,6 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "../../firebase";
-
 export default function SignUp() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -58,6 +54,11 @@ export default function SignUp() {
       setVerificationCode("");
       setVerificationMessage("");
       setShowCodePopup(false);
+
+      setErrors((prev) => ({
+        ...prev,
+        emailVerification: ""
+      }));
     }
   };
 
@@ -94,6 +95,19 @@ export default function SignUp() {
     return newErrors;
   };
 
+  const fileToBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      if (!file) {
+        resolve("");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+
   const handleSendCode = async () => {
     if (!formData.email.trim()) {
       setErrors((prev) => ({
@@ -115,7 +129,7 @@ export default function SignUp() {
       setEmailLoading(true);
       setVerificationMessage("");
 
-      const res = await fetch("http://127.0.0.1:8000/api/send-verification-code", {
+      const res = await fetch("http://127.0.0.1:8000/api/signup/send-otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -155,7 +169,7 @@ export default function SignUp() {
       setVerifyLoading(true);
       setVerificationMessage("");
 
-      const res = await fetch("http://127.0.0.1:8000/api/verify-code", {
+      const res = await fetch("http://127.0.0.1:8000/api/signup/verify-otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -163,7 +177,7 @@ export default function SignUp() {
         },
         body: JSON.stringify({
           email: formData.email,
-          code: verificationCode
+          otp: verificationCode
         })
       });
 
@@ -201,47 +215,40 @@ export default function SignUp() {
 
     try {
       setSignupLoading(true);
+      setVerificationMessage("");
 
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
+      const imageBase64 = await fileToBase64(imageFile);
+
+      localStorage.setItem(
+        "pendingSignupData",
+        JSON.stringify({
+          ...formData,
+          imageBase64
+        })
       );
 
-      const user = userCredential.user;
-
-      let imageURL = "";
-
-      if (imageFile) {
-        const formDataUpload = new FormData();
-        formDataUpload.append("file", imageFile);
-        formDataUpload.append("upload_preset", "react_upload");
-
-        const res = await fetch(
-          "https://api.cloudinary.com/v1_1/dzoppqvhy/image/upload",
-          {
-            method: "POST",
-            body: formDataUpload
-          }
-        );
-
-        const data = await res.json();
-        imageURL = data.secure_url || "";
-      }
-
-      await setDoc(doc(db, "student", user.uid), {
-        ...formData,
-        faceImage: imageURL,
-        role: "student",
-        email_verified: isEmailVerified,
-        createdAt: serverTimestamp()
+      const res = await fetch("http://127.0.0.1:8000/api/signup/send-otp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json"
+        },
+        body: JSON.stringify({
+          email: formData.email
+        })
       });
 
-      alert("Account Created ✅");
-      navigate("/profile");
+      const data = await res.json();
+
+      if (!res.ok) {
+        setVerificationMessage(data.error || data.message || "Failed to send code");
+        return;
+      }
+
+      navigate("/verify-code");
     } catch (error) {
       console.error("Signup error:", error);
-      alert(error.message);
+      setVerificationMessage("Server connection failed while sending code");
     } finally {
       setSignupLoading(false);
     }
@@ -459,7 +466,7 @@ export default function SignUp() {
               cursor: signupLoading ? "not-allowed" : "pointer"
             }}
           >
-            {signupLoading ? "Creating Account..." : "Confirm"}
+            {signupLoading ? "Sending OTP..." : "Confirm"}
           </button>
         </form>
       </div>

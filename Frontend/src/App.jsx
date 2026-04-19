@@ -22,6 +22,7 @@ import SignUp from "./pages/signup/sign_up";
 import SignupParent from "./pages/signup/signup_parent";
 import SignupTeacher from "./pages/signup/signup_Teacher";
 import SignupAdmin from "./pages/signup/SignupAdmin";
+import VerifyCode from "./pages/signup/VerifyCode"; // ✅ إضافة
 
 /* Contact */
 import Contact from "./pages/contactus/contact";
@@ -42,6 +43,9 @@ import Notifications from "./dashboard/layouts/notifications";
 
 import AdminDashboard from "./dashboard/layouts/dashboard/admin";
 
+/* Parent Dashboard */
+import ParentDashboard from "./dashboard/layouts/dashboard/parent";
+
 /* Subjects */
 import Subjects from "./pages/subjects/Subjects";
 import SubjectDetails from "./pages/subject-details/SubjectDetails";
@@ -54,14 +58,18 @@ function App() {
   const [students, setStudents] = useState([]);
 
   const hideNavbar =
-    location.pathname.includes("login") ||
-    location.pathname.includes("signup") ||
-    location.pathname.includes("student-dashboard") ||
-    location.pathname.includes("/profile") ||
-    location.pathname.includes("/tables") ||
-    location.pathname.includes("/assignments") ||
-    location.pathname.includes("/attendance") ||
-    location.pathname.includes("/notifications");
+  location.pathname.includes("login") ||
+  location.pathname.includes("signup") ||
+  location.pathname.includes("student-dashboard") ||
+  location.pathname.includes("parent-dashboard") ||
+  location.pathname.includes("parent-attendance") ||
+  location.pathname.includes("parent-notifications") ||
+  location.pathname.includes("parent-profile") ||
+  location.pathname.includes("admin") ||
+  location.pathname.includes("/profile") ||
+  location.pathname.includes("/tables") ||
+  location.pathname.includes("/attendance") ||
+  location.pathname.includes("/notifications");
 
   useEffect(() => {
     console.log("App Loaded");
@@ -111,6 +119,8 @@ function App() {
         <Route path="/signup-teacher" element={<SignupTeacher />} />
         <Route path="/signup-admin" element={<SignupAdmin />} />
 
+        <Route path="/verify-code" element={<VerifyCode />} /> {/* ✅ إضافة */}
+
         <Route path="/contact" element={<Contact />} />
 
         <Route path="/early-childhood" element={<EarlyChildhood />} />
@@ -125,6 +135,15 @@ function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/parent-dashboard"
+          element={
+            <ProtectedRoute>
+              <ParentDashboard />
             </ProtectedRoute>
           }
         />
@@ -150,7 +169,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
 
         <Route
           path="/attendance"
