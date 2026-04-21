@@ -58,19 +58,21 @@ function App() {
   const [students, setStudents] = useState([]);
 
   const hideNavbar =
-  location.pathname.includes("login") ||
-  location.pathname.includes("signup") ||
-  location.pathname.includes("student-dashboard") ||
-  location.pathname.includes("parent-dashboard") ||
-  location.pathname.includes("parent-attendance") ||
-  location.pathname.includes("parent-notifications") ||
-  location.pathname.includes("parent-profile") ||
-  location.pathname.includes("admin") ||
-  location.pathname.includes("/profile") ||
-  location.pathname.includes("/tables") ||
-  location.pathname.includes("/attendance") ||
-  location.pathname.includes("/notifications");
 
+  location.pathname.startsWith("/login") ||
+  location.pathname.startsWith("/signup") ||
+  location.pathname.startsWith("/student-dashboard") ||
+  location.pathname.startsWith("/parent-dashboard") ||
+  location.pathname.startsWith("/parent-attendance") ||
+  location.pathname.startsWith("/parent-notifications") ||
+  location.pathname.startsWith("/parent-profile") ||
+  location.pathname.startsWith("/admin") ||
+  location.pathname.startsWith("/profile") ||
+  location.pathname.startsWith("/tables") ||
+  location.pathname.startsWith("/attendance") ||
+  location.pathname.startsWith("/notifications") ||
+  location.pathname.startsWith("/subjects") ||
+  location.pathname.startsWith("/subject");
   useEffect(() => {
     console.log("App Loaded");
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 
 import AppBar from "@mui/material/AppBar";
@@ -36,6 +36,7 @@ import { doc, getDoc } from "firebase/firestore";
 function DashboardNavbar({ absolute, light, isMini }) {
   const [navbarType, setNavbarType] = useState();
   const [controller, dispatch] = useMaterialUIController();
+  const navigate = useNavigate();
 
   const {
     miniSidenav,
@@ -121,6 +122,11 @@ function DashboardNavbar({ absolute, light, isMini }) {
     setDarkMode(dispatch, !darkMode);
   };
 
+  const handleNotificationClick = () => {
+    handleCloseMenu();
+    navigate("/notifications");
+  };
+
   const renderMenu = () => (
     <Menu
       anchorEl={openMenu}
@@ -133,9 +139,9 @@ function DashboardNavbar({ absolute, light, isMini }) {
       onClose={handleCloseMenu}
       sx={{ mt: 2 }}
     >
-      <NotificationItem icon={<Icon>email</Icon>} title="Check new messages" />
-      <NotificationItem icon={<Icon>podcasts</Icon>} title="Manage Podcast sessions" />
-      <NotificationItem icon={<Icon>shopping_cart</Icon>} title="Payment successfully completed" />
+      <MDBox onClick={handleNotificationClick}>
+        <NotificationItem icon={<Icon>email</Icon>} title="Check new messages" />
+      </MDBox>
     </Menu>
   );
 
@@ -182,11 +188,14 @@ function DashboardNavbar({ absolute, light, isMini }) {
                 </Icon>
               </IconButton>
 
-              <Link to="/authentication/sign-in/basic">
-                <IconButton sx={navbarIconButton} size="small" disableRipple>
-                  <Icon sx={iconsStyle}>account_circle</Icon>
-                </IconButton>
-              </Link>
+              <IconButton
+                sx={navbarIconButton}
+                size="small"
+                disableRipple
+                onClick={() => navigate("/profile")}
+              >
+                <Icon sx={iconsStyle}>account_circle</Icon>
+              </IconButton>
 
               <IconButton
                 size="small"

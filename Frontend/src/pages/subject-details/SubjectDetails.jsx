@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { db } from "../../firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
+import DashboardNavbar from "../../dashboard/examples/Navbars/DashboardNavbar";
 import "./SubjectDetails.css";
 
 const subjectData = {
@@ -300,6 +301,8 @@ export default function SubjectDetails() {
 
   return (
     <div className={`subject-page ${subject.color}`}>
+      <DashboardNavbar />
+
       <div className="subject-container">
         <header className="subject-hero">
           <button className="back-btn" onClick={() => navigate("/subjects")}>

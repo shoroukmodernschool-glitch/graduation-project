@@ -4,8 +4,7 @@ import { auth, db } from "../../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
 
-import Sidenav from "../../dashboard/examples/Sidenav";
-import routes from "../../dashboard/routes";
+import DashboardLayout from "../../dashboard/examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "../../dashboard/examples/Navbars/DashboardNavbar";
 
 import "./Subjects.css";
@@ -135,20 +134,16 @@ export default function Subjects() {
   }, []);
 
   return (
-    <div style={{ display: "flex" }}>
-      <Sidenav routes={routes} />
-
-      <div
-        style={{
-          flex: 1,
-          padding: "30px",
-          width: "100%",
-          overflowX: "hidden",
-          boxSizing: "border-box",
-        }}
-      >
-        <DashboardNavbar />
-
+    <DashboardLayout>
+      <DashboardNavbar />
+<div
+  style={{
+    padding: "20px 24px 30px 0px",
+    width: "100%",
+    overflowX: "hidden",
+    boxSizing: "border-box",
+  }}
+>
         <h1 className="hello-stu">
           Welcome, Student <i className="fa-regular fa-hand-spock"></i>
         </h1>
@@ -201,6 +196,6 @@ export default function Subjects() {
           </div>
         )}
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

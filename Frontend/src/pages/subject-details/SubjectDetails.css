@@ -1,7 +1,9 @@
 .subject-page {
   min-height: 100vh;
-  padding: 100px 0 50px; /* بدل 30px */
-  background: #f3f4f6;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
 }
 
 .subject-container {
