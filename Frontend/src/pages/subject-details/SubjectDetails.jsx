@@ -1,5 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { db } from "../../firebase";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import "./SubjectDetails.css";
 
 const subjectData = {
@@ -11,8 +13,20 @@ const subjectData = {
     attendance: 50,
     examsCount: 2,
     lessons: [
-      { id: 1, title: "Introduction", date: "12 October" },
-      { id: 2, title: "Grammar", date: "15 October" },
+      {
+        id: 1,
+        title: "Introduction",
+        date: "12 October",
+        videoUrl: "",
+        pdfUrl: "",
+      },
+      {
+        id: 2,
+        title: "Grammar",
+        date: "15 October",
+        videoUrl: "",
+        pdfUrl: "",
+      },
     ],
     assignments: [
       { id: 1, title: "Assignment 1", deadline: "20 October", status: "Not Submitted" },
@@ -32,8 +46,20 @@ const subjectData = {
     attendance: 70,
     examsCount: 2,
     lessons: [
-      { id: 1, title: "Numbers", date: "10 October" },
-      { id: 2, title: "Fractions", date: "14 October" },
+      {
+        id: 1,
+        title: "Numbers",
+        date: "10 October",
+        videoUrl: "",
+        pdfUrl: "",
+      },
+      {
+        id: 2,
+        title: "Fractions",
+        date: "14 October",
+        videoUrl: "",
+        pdfUrl: "",
+      },
     ],
     assignments: [
       { id: 1, title: "Solve Sheet 1", deadline: "18 October", status: "Submitted" },
@@ -53,8 +79,20 @@ const subjectData = {
     attendance: 60,
     examsCount: 2,
     lessons: [
-      { id: 1, title: "Plants", date: "11 October" },
-      { id: 2, title: "Atoms", date: "16 October" },
+      {
+        id: 1,
+        title: "Plants",
+        date: "11 October",
+        videoUrl: "",
+        pdfUrl: "",
+      },
+      {
+        id: 2,
+        title: "Atoms",
+        date: "16 October",
+        videoUrl: "",
+        pdfUrl: "",
+      },
     ],
     assignments: [
       { id: 1, title: "Lab Report", deadline: "21 October", status: "Not Submitted" },
@@ -74,8 +112,20 @@ const subjectData = {
     attendance: 80,
     examsCount: 2,
     lessons: [
-      { id: 1, title: "Introduction", date: "12 October" },
-      { id: 2, title: "Grammar", date: "15 October" },
+      {
+        id: 1,
+        title: "Introduction",
+        date: "12 October",
+        videoUrl: "",
+        pdfUrl: "",
+      },
+      {
+        id: 2,
+        title: "Grammar",
+        date: "15 October",
+        videoUrl: "",
+        pdfUrl: "",
+      },
     ],
     assignments: [
       { id: 1, title: "Assignment 1", deadline: "20 October", status: "Not Submitted" },
@@ -95,8 +145,20 @@ const subjectData = {
     attendance: 90,
     examsCount: 1,
     lessons: [
-      { id: 1, title: "Moral Values", date: "9 October" },
-      { id: 2, title: "Good Behavior", date: "13 October" },
+      {
+        id: 1,
+        title: "Moral Values",
+        date: "9 October",
+        videoUrl: "",
+        pdfUrl: "",
+      },
+      {
+        id: 2,
+        title: "Good Behavior",
+        date: "13 October",
+        videoUrl: "",
+        pdfUrl: "",
+      },
     ],
     assignments: [
       { id: 1, title: "Short Report", deadline: "19 October", status: "Submitted" },
@@ -112,8 +174,20 @@ const subjectData = {
     attendance: 85,
     examsCount: 1,
     lessons: [
-      { id: 1, title: "Computer Basics", date: "8 October" },
-      { id: 2, title: "Parts of Computer", date: "12 October" },
+      {
+        id: 1,
+        title: "Computer Basics",
+        date: "8 October",
+        videoUrl: "",
+        pdfUrl: "",
+      },
+      {
+        id: 2,
+        title: "Parts of Computer",
+        date: "12 October",
+        videoUrl: "",
+        pdfUrl: "",
+      },
     ],
     assignments: [
       { id: 1, title: "Write About Hardware", deadline: "22 October", status: "Not Submitted" },
@@ -129,8 +203,20 @@ const subjectData = {
     attendance: 75,
     examsCount: 1,
     lessons: [
-      { id: 1, title: "Maps", date: "7 October" },
-      { id: 2, title: "Egypt Governorates", date: "11 October" },
+      {
+        id: 1,
+        title: "Maps",
+        date: "7 October",
+        videoUrl: "",
+        pdfUrl: "",
+      },
+      {
+        id: 2,
+        title: "Egypt Governorates",
+        date: "11 October",
+        videoUrl: "",
+        pdfUrl: "",
+      },
     ],
     assignments: [
       { id: 1, title: "Map Activity", deadline: "25 October", status: "Submitted" },
@@ -143,24 +229,74 @@ export default function SubjectDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("lessons");
+  const [firebaseSubject, setFirebaseSubject] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const subjectName = decodeURIComponent(id || "");
 
-  const subject = useMemo(() => {
-    return (
-      subjectData[subjectName] || {
-        color: "english-theme",
-        teacher: "Mr. Ahmed Mohamed",
-        lessonsCount: 0,
-        assignmentsCount: 0,
-        attendance: 0,
-        examsCount: 0,
-        lessons: [],
-        assignments: [],
-        exams: [],
+  useEffect(() => {
+    const fetchSubject = async () => {
+      try {
+        setLoading(true);
+
+        const subjectQuery = query(
+          collection(db, "subject"),
+          where("subject_name", "==", subjectName)
+        );
+
+        const snapshot = await getDocs(subjectQuery);
+
+        if (!snapshot.empty) {
+          const subjectDoc = snapshot.docs[0];
+          setFirebaseSubject({
+            id: subjectDoc.id,
+            ...subjectDoc.data(),
+          });
+        } else {
+          setFirebaseSubject(null);
+        }
+      } catch (error) {
+        console.error("Error fetching subject data:", error);
+        setFirebaseSubject(null);
+      } finally {
+        setLoading(false);
       }
-    );
+    };
+
+    if (subjectName) {
+      fetchSubject();
+    }
   }, [subjectName]);
+
+  const subject = useMemo(() => {
+    const localSubject = subjectData[subjectName] || {
+      color: "english-theme",
+      teacher: "Mr. Ahmed Mohamed",
+      lessonsCount: 0,
+      assignmentsCount: 0,
+      attendance: 0,
+      examsCount: 0,
+      lessons: [],
+      assignments: [],
+      exams: [],
+    };
+
+    return {
+      ...localSubject,
+      teacher: firebaseSubject?.teacher_id
+        ? `Teacher ID: ${firebaseSubject.teacher_id}`
+        : localSubject.teacher,
+      lessonsCount: firebaseSubject?.lessonsCount ?? localSubject.lessonsCount,
+      assignmentsCount: firebaseSubject?.assignmentsCount ?? localSubject.assignmentsCount,
+      attendance: firebaseSubject?.attendance ?? localSubject.attendance,
+      examsCount: firebaseSubject?.examsCount ?? localSubject.examsCount,
+    };
+  }, [subjectName, firebaseSubject]);
+
+  const openResource = (url) => {
+    if (!url) return;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <div className={`subject-page ${subject.color}`}>
@@ -186,28 +322,28 @@ export default function SubjectDetails() {
 
               <div>
                 <p className="small-label">Teacher</p>
-                <h3>{subject.teacher}</h3>
+                <h3>{loading ? "Loading..." : subject.teacher}</h3>
               </div>
             </div>
 
             <div className="attendance-box">
-              <span>{subject.attendance}% Attendance</span>
+              <span>{loading ? "..." : `${subject.attendance}% Attendance`}</span>
             </div>
           </div>
 
           <div className="mini-stat-card">
             <p>Lessons</p>
-            <h3>{subject.lessonsCount}</h3>
+            <h3>{loading ? "..." : subject.lessonsCount}</h3>
           </div>
 
           <div className="mini-stat-card">
             <p>Assignments</p>
-            <h3>{subject.assignmentsCount}</h3>
+            <h3>{loading ? "..." : subject.assignmentsCount}</h3>
           </div>
 
           <div className="mini-stat-card">
             <p>Exams</p>
-            <h3>{subject.examsCount}</h3>
+            <h3>{loading ? "..." : subject.examsCount}</h3>
           </div>
         </section>
 
@@ -258,10 +394,18 @@ export default function SubjectDetails() {
                   </p>
 
                   <div className="btns">
-                    <button className="primary-btn">
+                    <button
+                      className="primary-btn"
+                      onClick={() => openResource(lesson.videoUrl)}
+                      disabled={!lesson.videoUrl}
+                    >
                       <i className="fa-brands fa-youtube"></i> Watch Video
                     </button>
-                    <button className="secondary-btn">
+                    <button
+                      className="secondary-btn"
+                      onClick={() => openResource(lesson.pdfUrl)}
+                      disabled={!lesson.pdfUrl}
+                    >
                       <i className="fa-regular fa-file-lines"></i> PDF
                     </button>
                   </div>

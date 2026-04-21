@@ -1,6 +1,11 @@
+import { useEffect, useState } from "react";
 import Card from "@mui/material/Card";
 import Divider from "@mui/material/Divider";
 import Icon from "@mui/material/Icon";
+
+import { onAuthStateChanged } from "firebase/auth";
+import { collection, getDocs, orderBy, query } from "firebase/firestore";
+import { auth, db } from "../../../firebase";
 
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
@@ -11,53 +16,111 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 
 function Notifications() {
-  const notifications = [
-    {
-      id: 1,
-      type: "Assignment Reminder",
-      title: "English homework is due tomorrow",
-      message: "Submit your essay about school life before 10:00 PM.",
-      time: "10 mins ago",
-      color: "warning",
-      icon: "assignment",
-    },
-    {
-      id: 2,
-      type: "Attendance Alert",
-      title: "Your Math attendance dropped to 75%",
-      message: "Please attend the upcoming classes regularly to improve your attendance rate.",
-      time: "30 mins ago",
-      color: "error",
-      icon: "fact_check",
-    },
-    {
-      id: 3,
-      type: "Exam Update",
-      title: "Science quiz scheduled for Monday",
-      message: "The quiz will cover chapters 3 and 4. Be ready.",
-      time: "1 hour ago",
-      color: "info",
-      icon: "quiz",
-    },
-    {
-      id: 4,
-      type: "Teacher Message",
-      title: "New note from Arabic teacher",
-      message: "Please review chapter 3 and prepare the summary for next class.",
-      time: "2 hours ago",
-      color: "dark",
-      icon: "message",
-    },
-    {
-      id: 5,
-      type: "School Announcement",
-      title: "Parent meeting this Thursday",
-      message: "The school will hold a parent meeting at 12:00 PM in the main hall.",
-      time: "Today",
-      color: "success",
-      icon: "campaign",
-    },
-  ];
+  const [notifications, setNotifications] = useState([]);
+  const [summary, setSummary] = useState({
+    unread: 0,
+    pendingAssignments: 0,
+    attendanceAlerts: 0,
+  });
+
+  const formatTimeAgo = (date) => {
+    const now = new Date();
+    const diffInMs = now - date;
+    const diffInMinutes = Math.floor(diffInMs / 60000);
+    const diffInHours = Math.floor(diffInMs / 3600000);
+    const diffInDays = Math.floor(diffInMs / 86400000);
+
+    if (diffInMinutes < 1) return "Just now";
+    if (diffInMinutes < 60) return `${diffInMinutes} mins ago`;
+    if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? "s" : ""} ago`;
+    if (diffInDays === 1) return "Yesterday";
+    return `${diffInDays} days ago`;
+  };
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setNotifications([]);
+        setSummary({
+          unread: 0,
+          pendingAssignments: 0,
+          attendanceAlerts: 0,
+        });
+        return;
+      }
+
+      try {
+        const notificationsRef = collection(db, "notifications");
+        const q = query(notificationsRef, orderBy("createdAt", "desc"));
+
+        const snapshot = await getDocs(q);
+
+        console.log("Current UID:", user.uid);
+        console.log("Notifications count:", snapshot.size);
+        console.log(
+          "Notifications data:",
+          snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+        );
+
+        const allData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        const data = allData.filter((item) => item.userId === user.uid);
+
+        const formattedNotifications = data.map((item) => ({
+          ...item,
+          color:
+            item.type === "assignment"
+              ? "warning"
+              : item.type === "attendance"
+              ? "error"
+              : item.type === "exam"
+              ? "info"
+              : item.type === "message"
+              ? "dark"
+              : item.type === "announcement"
+              ? "success"
+              : "info",
+          icon:
+            item.type === "assignment"
+              ? "assignment"
+              : item.type === "attendance"
+              ? "fact_check"
+              : item.type === "exam"
+              ? "quiz"
+              : item.type === "message"
+              ? "message"
+              : item.type === "announcement"
+              ? "campaign"
+              : "notifications",
+          time: item.createdAt?.toDate
+            ? formatTimeAgo(item.createdAt.toDate())
+            : "Just now",
+          typeLabel: item.tag || item.type || "Notification",
+        }));
+
+        setNotifications(formattedNotifications);
+
+        setSummary({
+          unread: data.filter((item) => item.read === false).length,
+          pendingAssignments: data.filter((item) => item.type === "assignment").length,
+          attendanceAlerts: data.filter((item) => item.type === "attendance").length,
+        });
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+        setNotifications([]);
+        setSummary({
+          unread: 0,
+          pendingAssignments: 0,
+          attendanceAlerts: 0,
+        });
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const getChipStyles = (color) => {
     const styles = {
@@ -114,71 +177,77 @@ function Notifications() {
                 Recent Notifications
               </MDTypography>
 
-              {notifications.map((item, index) => {
-                const chip = getChipStyles(item.color);
+              {notifications.length > 0 ? (
+                notifications.map((item, index) => {
+                  const chip = getChipStyles(item.color);
 
-                return (
-                  <MDBox key={item.id}>
-                    <MDBox display="flex" alignItems="flex-start" gap={2}>
-                      <MDBox
-                        width="42px"
-                        height="42px"
-                        display="flex"
-                        justifyContent="center"
-                        alignItems="center"
-                        borderRadius="xl"
-                        bgColor={item.color}
-                        coloredShadow={item.color}
-                        flexShrink={0}
-                      >
-                        <Icon sx={{ color: "#fff !important", fontSize: "20px !important" }}>
-                          {item.icon}
-                        </Icon>
-                      </MDBox>
-
-                      <MDBox flex={1}>
+                  return (
+                    <MDBox key={item.id}>
+                      <MDBox display="flex" alignItems="flex-start" gap={2}>
                         <MDBox
+                          width="42px"
+                          height="42px"
                           display="flex"
-                          justifyContent="space-between"
-                          alignItems="flex-start"
-                          gap={2}
-                          mb={0.5}
-                          flexWrap="wrap"
+                          justifyContent="center"
+                          alignItems="center"
+                          borderRadius="xl"
+                          bgColor={item.color}
+                          coloredShadow={item.color}
+                          flexShrink={0}
                         >
-                          <MDTypography variant="h6" fontWeight="bold">
-                            {item.title}
-                          </MDTypography>
-
-                          <MDBox
-                            px={1.5}
-                            py={0.5}
-                            borderRadius="lg"
-                            sx={{
-                              backgroundColor: chip.bg,
-                              color: chip.text,
-                              fontSize: "0.75rem",
-                              fontWeight: 700,
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {item.type}
-                          </MDBox>
+                          <Icon sx={{ color: "#fff !important", fontSize: "20px !important" }}>
+                            {item.icon}
+                          </Icon>
                         </MDBox>
 
-                        <MDTypography variant="button" color="text" display="block" mb={1}>
-                          {item.message}
-                        </MDTypography>
+                        <MDBox flex={1}>
+                          <MDBox
+                            display="flex"
+                            justifyContent="space-between"
+                            alignItems="flex-start"
+                            gap={2}
+                            mb={0.5}
+                            flexWrap="wrap"
+                          >
+                            <MDTypography variant="h6" fontWeight="bold">
+                              {item.title}
+                            </MDTypography>
 
-                        <MDTypography variant="caption" color="text">
-                          {item.time}
-                        </MDTypography>
+                            <MDBox
+                              px={1.5}
+                              py={0.5}
+                              borderRadius="lg"
+                              sx={{
+                                backgroundColor: chip.bg,
+                                color: chip.text,
+                                fontSize: "0.75rem",
+                                fontWeight: 700,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {item.typeLabel}
+                            </MDBox>
+                          </MDBox>
+
+                          <MDTypography variant="button" color="text" display="block" mb={1}>
+                            {item.message}
+                          </MDTypography>
+
+                          <MDTypography variant="caption" color="text">
+                            {item.time}
+                          </MDTypography>
+                        </MDBox>
                       </MDBox>
-                    </MDBox>
 
-                    {index !== notifications.length - 1 && <Divider sx={{ my: 2 }} />}
-                  </MDBox>
-                );
-              })}
+                      {index !== notifications.length - 1 && <Divider sx={{ my: 2 }} />}
+                    </MDBox>
+                  );
+                })
+              ) : (
+                <MDTypography variant="button" color="text">
+                  No notifications found.
+                </MDTypography>
+              )}
             </MDBox>
           </Card>
 
@@ -194,25 +263,18 @@ function Notifications() {
                     Unread Notifications
                   </MDTypography>
                   <MDTypography variant="h4" fontWeight="bold">
-                    5
+                    {summary.unread}
                   </MDTypography>
                 </MDBox>
 
-                <MDBox mb={2}>
-                  <MDTypography variant="button" color="text">
-                    Pending Assignments
-                  </MDTypography>
-                  <MDTypography variant="h4" fontWeight="bold">
-                    2
-                  </MDTypography>
-                </MDBox>
+               
 
                 <MDBox>
                   <MDTypography variant="button" color="text">
                     Attendance Alerts
                   </MDTypography>
                   <MDTypography variant="h4" fontWeight="bold">
-                    1
+                    {summary.attendanceAlerts}
                   </MDTypography>
                 </MDBox>
               </MDBox>
@@ -229,10 +291,7 @@ function Notifications() {
                     Mark All as Read
                   </MDButton>
 
-                  <MDButton variant="outlined" color="dark" fullWidth>
-                    View Assignments
-                  </MDButton>
-
+                  
                   <MDButton variant="outlined" color="success" fullWidth>
                     Check Attendance
                   </MDButton>

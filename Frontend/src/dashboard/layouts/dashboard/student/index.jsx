@@ -60,19 +60,19 @@ function Dashboard() {
           setSubjectsCount(subjectSnapshot.size);
         }
 
-        if (currentStudent?.student_id || currentStudent?.id) {
-          const studentCode = currentStudent.student_id || currentStudent.id;
+        if (currentStudent?.student_id) {
+  const studentCode = String(currentStudent.student_id).trim();
 
-          const attendanceQuery = query(
-            collection(db, "attendance"),
-            where("student_id", "==", studentCode)
-          );
+  const attendanceQuery = query(
+    collection(db, "attendance"),
+    where("studentId", "==", studentCode) // ✅ الصح
+  );
 
-          const attendanceSnapshot = await getDocs(attendanceQuery);
-          const attendanceData = attendanceSnapshot.docs.map((doc) => doc.data());
+  const attendanceSnapshot = await getDocs(attendanceQuery);
+  const attendanceData = attendanceSnapshot.docs.map((doc) => doc.data());
 
-          setAttendance(attendanceData);
-        }
+  setAttendance(attendanceData);
+}
 
         try {
           const notificationsSnapshot = await getDocs(collection(db, "notifications"));

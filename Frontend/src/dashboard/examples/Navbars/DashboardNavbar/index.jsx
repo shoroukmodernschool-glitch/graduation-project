@@ -9,7 +9,6 @@ import Menu from "@mui/material/Menu";
 import Icon from "@mui/material/Icon";
 
 import MDBox from "components/MDBox";
-import MDInput from "components/MDInput";
 
 import Breadcrumbs from "examples/Breadcrumbs";
 import NotificationItem from "examples/Items/NotificationItem";
@@ -89,9 +88,20 @@ function DashboardNavbar({ absolute, light, isMini }) {
             const data = studentSnap.data();
             const fullName = `${data.firstName || ""} ${data.lastName || ""}`.trim();
             setUserName(fullName || "User");
-          } else {
-            setUserName("User");
+            return;
           }
+
+          const parentRef = doc(db, "parents", user.uid);
+          const parentSnap = await getDoc(parentRef);
+
+          if (parentSnap.exists()) {
+            const data = parentSnap.data();
+            const fullName = `${data.firstName || ""} ${data.lastName || ""}`.trim();
+            setUserName(fullName || data.name || data.fullName || "User");
+            return;
+          }
+
+          setUserName("User");
         } catch (error) {
           console.error("Error:", error);
           setUserName("User");
@@ -159,10 +169,6 @@ function DashboardNavbar({ absolute, light, isMini }) {
 
         {isMini ? null : (
           <MDBox sx={(theme) => navbarRow(theme, { isMini })}>
-            <MDBox pr={1}>
-              <MDInput label="Search here" />
-            </MDBox>
-
             <MDBox color={light ? "white" : "inherit"}>
               <IconButton
                 size="small"
