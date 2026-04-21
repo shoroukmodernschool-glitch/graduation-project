@@ -2,23 +2,23 @@ import Grid from "@mui/material/Grid";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { db, auth } from "../../../../firebase";
+import { db, auth } from "../../../firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 
 import MDBox from "components/MDBox";
-import DashboardLayout from "../../../examples/LayoutContainers/DashboardLayout";
-import DashboardNavbar from "../../../examples/Navbars/DashboardNavbar";
-import Footer from "../../../examples/Footer";
-import ReportsBarChart from "../../../examples/Charts/BarCharts/ReportsBarChart";
-import ReportsLineChart from "../../../examples/Charts/LineCharts/ReportsLineChart";
-import ComplexStatisticsCard from "../../../examples/Cards/StatisticsCards/ComplexStatisticsCard";
+import DashboardLayout from "../../examples/LayoutContainers/DashboardLayout";
+import DashboardNavbar from "../../examples/Navbars/DashboardNavbar";
+import Footer from "../../examples/Footer";
+import ReportsBarChart from "../../examples/Charts/BarCharts/ReportsBarChart";
+import ReportsLineChart from "../../examples/Charts/LineCharts/ReportsLineChart";
+import ComplexStatisticsCard from "../../examples/Cards/StatisticsCards/ComplexStatisticsCard";
 
-import reportsBarChartData from "../data/reportsBarChartData";
-import reportsLineChartData from "../data/reportsLineChartData";
+import reportsBarChartData from "../../layouts/dashboard/data/reportsBarChartData";
+import reportsLineChartData from "../../layouts/dashboard/data/reportsLineChartData";
 
-import Projects from "../components/Projects";
-import OrdersOverview from "../components/OrdersOverview";
+import Projects from "../../layouts/dashboard/components/Projects";
+import OrdersOverview from "../../layouts/dashboard/components/OrdersOverview";
 
 function Dashboard() {
   const [student, setStudent] = useState(null);

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { db } from "../../firebase";
+import { db } from "../../../firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import DashboardNavbar from "../../dashboard/examples/Navbars/DashboardNavbar";
+import DashboardNavbar from "../../examples/Navbars/DashboardNavbar";
 import "./SubjectDetails.css";
 
 const subjectData = {

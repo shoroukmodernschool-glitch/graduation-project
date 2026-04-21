@@ -6,7 +6,7 @@ import MDBox from "components/MDBox";
 
 import Sidenav from "examples/Sidenav";
 import routes from "dashboard/routes.js";
-import studentRoutes from "dashboard/studentRoutes";
+import studentRoutes from "../../../student/studentRoutes";
 import adminRoutes from "dashboard/adminRoutes";
 import parentRoutes from "dashboard/parentRoutes";
 

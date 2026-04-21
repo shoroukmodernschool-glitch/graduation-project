@@ -1,6 +1,7 @@
 import { lazy } from "react";
 import Icon from "@mui/material/Icon";
-import Subjects from "../pages/subjects/Subjects";
+import Subjects from "./student/subjects/Subjects";
+import SubjectDetails from "./student/subject-details/SubjectDetails";
 import AdminDashboard from "./layouts/dashboard/admin";
 
 // layouts

@@ -1,11 +1,18 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { auth, db } from "../../firebase";
+import { auth, db } from "../../../firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  doc,
+  getDoc,
+} from "firebase/firestore";
 
-import DashboardLayout from "../../dashboard/examples/LayoutContainers/DashboardLayout";
-import DashboardNavbar from "../../dashboard/examples/Navbars/DashboardNavbar";
+import DashboardLayout from "../../examples/LayoutContainers/DashboardLayout";
+import DashboardNavbar from "../../examples/Navbars/DashboardNavbar";
 
 import "./Subjects.css";
 
@@ -82,13 +89,13 @@ export default function Subjects() {
             collection(db, "subject"),
             where("stage", "==", studentStage),
             where("grade", "==", studentGrade),
-            where("section", "==", studentSection)
+            where("section", "==", studentSection),
           );
         } else {
           subjectsQuery = query(
             collection(db, "subject"),
             where("stage", "==", studentStage),
-            where("grade", "==", studentGrade)
+            where("grade", "==", studentGrade),
           );
         }
 
@@ -136,14 +143,14 @@ export default function Subjects() {
   return (
     <DashboardLayout>
       <DashboardNavbar />
-<div
-  style={{
-    padding: "20px 24px 30px 0px",
-    width: "100%",
-    overflowX: "hidden",
-    boxSizing: "border-box",
-  }}
->
+      <div
+        style={{
+          padding: "20px 24px 30px 0px",
+          width: "100%",
+          overflowX: "hidden",
+          boxSizing: "border-box",
+        }}
+      >
         <h1 className="hello-stu">
           Welcome, Student <i className="fa-regular fa-hand-spock"></i>
         </h1>
@@ -168,7 +175,9 @@ export default function Subjects() {
                 <div
                   key={subject.id}
                   className={`card ${className}`}
-                  onClick={() => navigate(`/subject/${encodeURIComponent(name)}`)}
+                  onClick={() =>
+                    navigate(`/subject/${encodeURIComponent(name)}`)
+                  }
                   style={{ cursor: "pointer" }}
                 >
                   <div className="top">

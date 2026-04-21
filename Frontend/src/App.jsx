@@ -34,12 +34,12 @@ import MiddleSchool from "./pages/ACADEMIC_LEVELS/MiddleSchool";
 import UpperSchool from "./pages/ACADEMIC_LEVELS/UpperSchool";
 
 /* Student Dashboard */
-import Dashboard from "./dashboard/layouts/dashboard/student";
-import Profile from "./dashboard/layouts/profile";
+import Dashboard from "./dashboard/student/student";
+import Profile from "./dashboard/student/profile";
 import Tables from "./dashboard/layouts/tables";
 
-import Attendance from "./dashboard/layouts/attendance";
-import Notifications from "./dashboard/layouts/notifications";
+import Attendance from "./dashboard/student/attendance";
+import Notifications from "./dashboard/student/notifications";
 
 import AdminDashboard from "./dashboard/layouts/dashboard/admin";
 
@@ -47,8 +47,8 @@ import AdminDashboard from "./dashboard/layouts/dashboard/admin";
 import ParentDashboard from "./dashboard/layouts/dashboard/parent";
 
 /* Subjects */
-import Subjects from "./pages/subjects/Subjects";
-import SubjectDetails from "./pages/subject-details/SubjectDetails";
+import Subjects from "./dashboard/student/subjects/Subjects";
+import SubjectDetails from "./dashboard/student/subject-details/SubjectDetails";
 
 /* Chatbot */
 import ChatbotPage from "./pages/chatbot/chatbot";
