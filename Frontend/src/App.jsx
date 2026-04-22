@@ -46,6 +46,14 @@ import AdminDashboard from "./dashboard/layouts/dashboard/admin";
 /* Parent Dashboard */
 import ParentDashboard from "./dashboard/layouts/dashboard/parent";
 
+/* Teacher Dashboard */
+import TeacherDashboard from "./dashboard/Teacher/teacher";
+import TeacherSubjects from "./dashboard/Teacher/subjects/Subjects";
+import TeacherStudents from "./dashboard/Teacher/students/Students";
+import TeacherAttendance from "./dashboard/Teacher/attendance/Attendance";
+import TeacherNotifications from "./dashboard/Teacher/notifications/Notifications";
+import TeacherProfile from "./dashboard/Teacher/profile/Profile";
+
 /* Subjects */
 import Subjects from "./dashboard/student/subjects/Subjects";
 import SubjectDetails from "./dashboard/student/subject-details/SubjectDetails";
@@ -58,21 +66,27 @@ function App() {
   const [students, setStudents] = useState([]);
 
   const hideNavbar =
+    location.pathname.startsWith("/login") ||
+    location.pathname.startsWith("/signup") ||
+    location.pathname.startsWith("/student-dashboard") ||
+    location.pathname.startsWith("/parent-dashboard") ||
+    location.pathname.startsWith("/parent-attendance") ||
+    location.pathname.startsWith("/parent-notifications") ||
+    location.pathname.startsWith("/parent-profile") ||
+    location.pathname.startsWith("/teacher-dashboard") ||
+    location.pathname.startsWith("/teacher-subjects") ||
+    location.pathname.startsWith("/teacher-students") ||
+    location.pathname.startsWith("/teacher-attendance") ||
+    location.pathname.startsWith("/teacher-notifications") ||
+    location.pathname.startsWith("/teacher-profile") ||
+    location.pathname.startsWith("/admin") ||
+    location.pathname.startsWith("/profile") ||
+    location.pathname.startsWith("/tables") ||
+    location.pathname.startsWith("/attendance") ||
+    location.pathname.startsWith("/notifications") ||
+    location.pathname.startsWith("/subjects") ||
+    location.pathname.startsWith("/subject");
 
-  location.pathname.startsWith("/login") ||
-  location.pathname.startsWith("/signup") ||
-  location.pathname.startsWith("/student-dashboard") ||
-  location.pathname.startsWith("/parent-dashboard") ||
-  location.pathname.startsWith("/parent-attendance") ||
-  location.pathname.startsWith("/parent-notifications") ||
-  location.pathname.startsWith("/parent-profile") ||
-  location.pathname.startsWith("/admin") ||
-  location.pathname.startsWith("/profile") ||
-  location.pathname.startsWith("/tables") ||
-  location.pathname.startsWith("/attendance") ||
-  location.pathname.startsWith("/notifications") ||
-  location.pathname.startsWith("/subjects") ||
-  location.pathname.startsWith("/subject");
   useEffect(() => {
     console.log("App Loaded");
 
@@ -146,6 +160,60 @@ function App() {
           element={
             <ProtectedRoute>
               <ParentDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/teacher-dashboard"
+          element={
+            <ProtectedRoute>
+              <TeacherDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/teacher-subjects"
+          element={
+            <ProtectedRoute>
+              <TeacherSubjects />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/teacher-students"
+          element={
+            <ProtectedRoute>
+              <TeacherStudents />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/teacher-attendance"
+          element={
+            <ProtectedRoute>
+              <TeacherAttendance />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/teacher-notifications"
+          element={
+            <ProtectedRoute>
+              <TeacherNotifications />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/teacher-profile"
+          element={
+            <ProtectedRoute>
+              <TeacherProfile />
             </ProtectedRoute>
           }
         />

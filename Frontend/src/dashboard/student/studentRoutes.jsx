@@ -4,11 +4,11 @@ import Subjects from "./subjects/Subjects";
 import SubjectDetails from "./subject-details/SubjectDetails";
 
 // layouts
-const StudentDashboard = lazy(() => import("../layouts/student"));
-const Profile = lazy(() => import("../layouts/profile"));
-const Tables = lazy(() => import("../layouts/tables"));
-const Attendance = lazy(() => import("../layouts/attendance"));
-const Notifications = lazy(() => import("../layouts/notifications"));
+const StudentDashboard = lazy(() => import("./dashboard"));
+const Profile = lazy(() => import("./profile"));
+const Tables = lazy(() => import("./student"));
+const Attendance = lazy(() => import("./attendance"));
+const Notifications = lazy(() => import("./notifications"));
 
 const studentRoutes = [
   {

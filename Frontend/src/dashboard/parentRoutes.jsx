@@ -2,9 +2,9 @@ import { lazy } from "react";
 import Icon from "@mui/material/Icon";
 
 const ParentDashboard = lazy(() => import("./layouts/dashboard/parent"));
-const Profile = lazy(() => import("./layouts/profile"));
-const Attendance = lazy(() => import("./layouts/attendance"));
-const Notifications = lazy(() => import("./layouts/notifications"));
+const Profile = lazy(() => import("./student/profile"));
+const Attendance = lazy(() => import("./student/attendance"));
+const Notifications = lazy(() => import("./student/notifications"));
 
 const parentRoutes = [
   {

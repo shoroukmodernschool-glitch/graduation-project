@@ -7,6 +7,7 @@ import MDBox from "components/MDBox";
 import Sidenav from "examples/Sidenav";
 import routes from "dashboard/routes.js";
 import studentRoutes from "../../../student/studentRoutes";
+import teacherRoutes from "../../../Teacher/teacherRoutes";
 import adminRoutes from "dashboard/adminRoutes";
 import parentRoutes from "dashboard/parentRoutes";
 
@@ -25,7 +26,17 @@ function DashboardLayout({ children }) {
 
   if (pathname.includes("parent")) {
     currentRoutes = parentRoutes;
-  } else if (pathname.includes("student")) {
+  } else if (pathname.includes("teacher")) {
+    currentRoutes = teacherRoutes;
+  } else if (
+    pathname.includes("student") ||
+    pathname === "/tables" ||
+    pathname === "/attendance" ||
+    pathname === "/notifications" ||
+    pathname === "/subjects" ||
+    pathname.startsWith("/subject/") ||
+    pathname === "/profile"
+  ) {
     currentRoutes = studentRoutes;
   } else if (pathname.includes("admin")) {
     currentRoutes = adminRoutes;

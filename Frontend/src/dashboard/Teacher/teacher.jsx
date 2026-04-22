@@ -1,0 +1,452 @@
+import Grid from "@mui/material/Grid";
+import Card from "@mui/material/Card";
+import Icon from "@mui/material/Icon";
+import Divider from "@mui/material/Divider";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+import { db, auth } from "../../firebase";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
+
+import MDBox from "../../components/MDBox";
+import MDTypography from "../../components/MDTypography";
+import MDButton from "../../components/MDButton";
+
+import DashboardLayout from "../examples/LayoutContainers/DashboardLayout";
+import DashboardNavbar from "../examples/Navbars/DashboardNavbar";
+import Footer from "../examples/Footer";
+
+function TeacherDashboard() {
+  const [teacher, setTeacher] = useState(null);
+  const [subjectsCount, setSubjectsCount] = useState(0);
+  const [studentsCount, setStudentsCount] = useState(0);
+  const [notificationsCount, setNotificationsCount] = useState(0);
+  const [attendanceCount, setAttendanceCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const q = query(collection(db, "teachers"), where("uid", "==", user.uid));
+        const querySnapshot = await getDocs(q);
+
+        const data = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        const currentTeacher = data[0] || null;
+        setTeacher(currentTeacher);
+
+        if (currentTeacher?.subject) {
+          const subjectQuery = query(
+            collection(db, "subject"),
+            where("name", "==", currentTeacher.subject)
+          );
+          const subjectSnapshot = await getDocs(subjectQuery);
+          setSubjectsCount(subjectSnapshot.size || 1);
+        } else {
+          setSubjectsCount(0);
+        }
+
+        try {
+          const studentsSnapshot = await getDocs(collection(db, "student"));
+          setStudentsCount(studentsSnapshot.size);
+        } catch (error) {
+          console.error("Students error:", error);
+          setStudentsCount(0);
+        }
+
+        try {
+          const notificationsSnapshot = await getDocs(collection(db, "notifications"));
+          setNotificationsCount(notificationsSnapshot.size);
+        } catch (error) {
+          console.error("Notifications error:", error);
+          setNotificationsCount(0);
+        }
+
+        try {
+          const attendanceSnapshot = await getDocs(collection(db, "attendance"));
+          setAttendanceCount(attendanceSnapshot.size);
+        } catch (error) {
+          console.error("Attendance error:", error);
+          setAttendanceCount(0);
+        }
+      } catch (error) {
+        console.error("Error:", error);
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const teacherName =
+    teacher?.name || teacher?.fullName || teacher?.teacher_name || "Teacher";
+
+  const infoCards = [
+    {
+      title: "Subjects",
+      value: loading ? "..." : subjectsCount,
+      icon: "menu_book",
+      route: "/teacher-subjects",
+    },
+    {
+      title: "Students",
+      value: loading ? "..." : studentsCount,
+      icon: "groups",
+      route: "/teacher-students",
+    },
+    {
+      title: "Attendance",
+      value: loading ? "..." : attendanceCount,
+      icon: "fact_check",
+      route: "/teacher-attendance",
+    },
+    {
+      title: "Notifications",
+      value: loading ? "..." : notificationsCount,
+      icon: "notifications",
+      route: "/teacher-notifications",
+    },
+  ];
+
+  return (
+    <DashboardLayout>
+      <DashboardNavbar />
+
+      <MDBox py={3}>
+        <Card
+          sx={{
+            borderRadius: "20px",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+            overflow: "hidden",
+            mb: 4,
+          }}
+        >
+          <MDBox
+            px={4}
+            py={4}
+            sx={{
+              background: "linear-gradient(135deg, #1f2937 0%, #334155 100%)",
+            }}
+          >
+            <Grid container spacing={3} alignItems="center">
+              <Grid item xs={12}>
+                <MDTypography variant="h3" color="white" fontWeight="bold">
+                  Welcome back, {teacherName}
+                </MDTypography>
+                <MDTypography variant="button" color="white" opacity={0.8}>
+                  Manage your classes, review attendance, and follow up with students from one place.
+                </MDTypography>
+              </Grid>
+            </Grid>
+          </MDBox>
+        </Card>
+
+        <Grid container spacing={3} mb={4}>
+          {infoCards.map((card, index) => (
+            <Grid item xs={12} sm={6} xl={3} key={index}>
+              <Card
+                onClick={() => navigate(card.route)}
+                sx={{
+                  p: 2.5,
+                  borderRadius: "18px",
+                  boxShadow: "0 8px 24px rgba(15,23,42,0.08)",
+                  cursor: "pointer",
+                  transition: "0.25s",
+                  height: "100%",
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: "0 12px 28px rgba(15,23,42,0.14)",
+                  },
+                }}
+              >
+                <MDBox display="flex" justifyContent="space-between" alignItems="flex-start">
+                  <MDBox>
+                    <MDTypography variant="button" color="text">
+                      {card.title}
+                    </MDTypography>
+                    <MDTypography variant="h3" fontWeight="bold">
+                      {card.value}
+                    </MDTypography>
+                  </MDBox>
+
+                  <MDBox
+                    sx={{
+                      width: "52px",
+                      height: "52px",
+                      borderRadius: "14px",
+                      display: "grid",
+                      placeItems: "center",
+                      backgroundColor: "#f3f4f6",
+                    }}
+                  >
+                    <Icon sx={{ color: "#111827" }}>{card.icon}</Icon>
+                  </MDBox>
+                </MDBox>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+
+        <Grid container spacing={3}>
+          <Grid item xs={12} lg={7}>
+            <Card
+              sx={{
+                p: 3,
+                borderRadius: "18px",
+                boxShadow: "0 8px 24px rgba(15,23,42,0.08)",
+                height: "100%",
+              }}
+            >
+              <MDBox mb={2}>
+                <MDTypography variant="h5" fontWeight="bold">
+                  Quick Actions
+                </MDTypography>
+                <MDTypography variant="button" color="text">
+                  أهم الحاجات اللي المدرس هيستخدمها بسرعة
+                </MDTypography>
+              </MDBox>
+
+              <Divider />
+
+              <Grid container spacing={2} mt={0.5}>
+                <Grid item xs={12} md={6}>
+                  <Card
+                    sx={{
+                      p: 2,
+                      borderRadius: "16px",
+                      backgroundColor: "#f8fafc",
+                      boxShadow: "none",
+                      border: "1px solid #e5e7eb",
+                    }}
+                  >
+                    <MDBox display="flex" alignItems="center" gap={1.5} mb={1}>
+                      <Icon sx={{ color: "#111827" }}>menu_book</Icon>
+                      <MDTypography variant="h6">Open Subjects</MDTypography>
+                    </MDBox>
+                    <MDTypography variant="button" color="text">
+                      Review assigned subjects and related content.
+                    </MDTypography>
+                    <MDBox mt={2}>
+                      <MDButton
+                        variant="gradient"
+                        color="dark"
+                        size="small"
+                        onClick={() => navigate("/teacher-subjects")}
+                      >
+                        Go to Subjects
+                      </MDButton>
+                    </MDBox>
+                  </Card>
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Card
+                    sx={{
+                      p: 2,
+                      borderRadius: "16px",
+                      backgroundColor: "#f8fafc",
+                      boxShadow: "none",
+                      border: "1px solid #e5e7eb",
+                    }}
+                  >
+                    <MDBox display="flex" alignItems="center" gap={1.5} mb={1}>
+                      <Icon sx={{ color: "#111827" }}>groups</Icon>
+                      <MDTypography variant="h6">View Students</MDTypography>
+                    </MDBox>
+                    <MDTypography variant="button" color="text">
+                      Check students and follow their data quickly.
+                    </MDTypography>
+                    <MDBox mt={2}>
+                      <MDButton
+                        variant="outlined"
+                        color="dark"
+                        size="small"
+                        onClick={() => navigate("/teacher-students")}
+                      >
+                        Open Students
+                      </MDButton>
+                    </MDBox>
+                  </Card>
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Card
+                    sx={{
+                      p: 2,
+                      borderRadius: "16px",
+                      backgroundColor: "#f8fafc",
+                      boxShadow: "none",
+                      border: "1px solid #e5e7eb",
+                    }}
+                  >
+                    <MDBox display="flex" alignItems="center" gap={1.5} mb={1}>
+                      <Icon sx={{ color: "#111827" }}>fact_check</Icon>
+                      <MDTypography variant="h6">Attendance</MDTypography>
+                    </MDBox>
+                    <MDTypography variant="button" color="text">
+                      Open attendance page and review latest records.
+                    </MDTypography>
+                    <MDBox mt={2}>
+                      <MDButton
+                        variant="outlined"
+                        color="dark"
+                        size="small"
+                        onClick={() => navigate("/teacher-attendance")}
+                      >
+                        Open Attendance
+                      </MDButton>
+                    </MDBox>
+                  </Card>
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Card
+                    sx={{
+                      p: 2,
+                      borderRadius: "16px",
+                      backgroundColor: "#f8fafc",
+                      boxShadow: "none",
+                      border: "1px solid #e5e7eb",
+                    }}
+                  >
+                    <MDBox display="flex" alignItems="center" gap={1.5} mb={1}>
+                      <Icon sx={{ color: "#111827" }}>notifications</Icon>
+                      <MDTypography variant="h6">Notifications</MDTypography>
+                    </MDBox>
+                    <MDTypography variant="button" color="text">
+                      Read recent updates and important alerts.
+                    </MDTypography>
+                    <MDBox mt={2}>
+                      <MDButton
+                        variant="outlined"
+                        color="dark"
+                        size="small"
+                        onClick={() => navigate("/teacher-notifications")}
+                      >
+                        Open Notifications
+                      </MDButton>
+                    </MDBox>
+                  </Card>
+                </Grid>
+              </Grid>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} lg={5}>
+            <Card
+              sx={{
+                p: 3,
+                borderRadius: "18px",
+                boxShadow: "0 8px 24px rgba(15,23,42,0.08)",
+                height: "100%",
+              }}
+            >
+              <MDTypography variant="h5" fontWeight="bold" mb={1}>
+                Overview
+              </MDTypography>
+              <MDTypography variant="button" color="text">
+                ملخص سريع عن حساب المدرس والبيانات الحالية
+              </MDTypography>
+
+              <MDBox mt={3}>
+                <MDBox
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  py={1.5}
+                >
+                  <MDTypography variant="button" color="text">
+                    Teacher Name
+                  </MDTypography>
+                  <MDTypography variant="button" fontWeight="bold">
+                    {loading ? "Loading..." : teacherName}
+                  </MDTypography>
+                </MDBox>
+
+                <Divider />
+
+                <MDBox
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  py={1.5}
+                >
+                  <MDTypography variant="button" color="text">
+                    Assigned Subjects
+                  </MDTypography>
+                  <MDTypography variant="button" fontWeight="bold">
+                    {loading ? "..." : subjectsCount}
+                  </MDTypography>
+                </MDBox>
+
+                <Divider />
+
+                <MDBox
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  py={1.5}
+                >
+                  <MDTypography variant="button" color="text">
+                    Total Students
+                  </MDTypography>
+                  <MDTypography variant="button" fontWeight="bold">
+                    {loading ? "..." : studentsCount}
+                  </MDTypography>
+                </MDBox>
+
+                <Divider />
+
+                <MDBox
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  py={1.5}
+                >
+                  <MDTypography variant="button" color="text">
+                    Notifications
+                  </MDTypography>
+                  <MDTypography variant="button" fontWeight="bold">
+                    {loading ? "..." : notificationsCount}
+                  </MDTypography>
+                </MDBox>
+
+                <Divider />
+
+                <MDBox
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  py={1.5}
+                >
+                  <MDTypography variant="button" color="text">
+                    Attendance Records
+                  </MDTypography>
+                  <MDTypography variant="button" fontWeight="bold">
+                    {loading ? "..." : attendanceCount}
+                  </MDTypography>
+                </MDBox>
+              </MDBox>
+            </Card>
+          </Grid>
+        </Grid>
+      </MDBox>
+
+      <Footer />
+    </DashboardLayout>
+  );
+}
+
+export default TeacherDashboard;

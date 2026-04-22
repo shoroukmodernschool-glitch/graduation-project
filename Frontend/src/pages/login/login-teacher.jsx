@@ -4,8 +4,9 @@ import { useState } from "react";
 import Navbar from "../../components/Navbar";
 import { FaEnvelope, FaEye, FaEyeSlash } from "react-icons/fa";
 
-import { auth } from "../../firebase";
+import { auth, db } from "../../firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 
 export default function LoginTeacher() {
   const navigate = useNavigate();
@@ -34,17 +35,27 @@ export default function LoginTeacher() {
       // 🔥 نجيب التوكن
       const token = await user.getIdToken();
 
+      // ✅ نجيب بيانات المدرس من Firestore
+      const teacherRef = doc(db, "teachers", user.uid);
+      const teacherSnap = await getDoc(teacherRef);
+
+      if (!teacherSnap.exists()) {
+        alert("❌ You are not registered as a teacher");
+        return;
+      }
+
       // ✅ نخزن البيانات المهمة
       localStorage.setItem("token", token);
       localStorage.setItem("uid", user.uid);
       localStorage.setItem("email", user.email);
+      localStorage.setItem("role", "teacher");
 
       console.log("🟢 TOKEN:", token);
       console.log("🟢 UID:", user.uid);
 
       alert("Login successful ✅");
 
-      // ✅ يروح للدashboard
+      // ✅ يروح لدashboard المدرس
       navigate("/teacher-dashboard");
 
     } catch (error) {
