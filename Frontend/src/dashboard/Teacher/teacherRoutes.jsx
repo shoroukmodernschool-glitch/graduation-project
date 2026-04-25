@@ -10,7 +10,7 @@ import Profile from "./profile/Profile";
 const teacherRoutes = [
   {
     type: "collapse",
-    name: "Dashboard",
+    name: "Dashboard teacher",
     key: "teacher-dashboard",
     icon: <Icon fontSize="small">dashboard</Icon>,
     route: "/teacher-dashboard",

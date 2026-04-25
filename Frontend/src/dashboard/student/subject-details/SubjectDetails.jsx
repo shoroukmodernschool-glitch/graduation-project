@@ -1,298 +1,169 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { db } from "../../../firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { auth, db } from "../../../firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  doc,
+  getDoc,
+} from "firebase/firestore";
 import DashboardNavbar from "../../examples/Navbars/DashboardNavbar";
 import "./SubjectDetails.css";
 
-const subjectData = {
-  English: {
-    color: "english-theme",
-    teacher: "Mr. Ahmed Mohamed",
-    lessonsCount: 10,
-    assignmentsCount: 5,
-    attendance: 50,
-    examsCount: 2,
-    lessons: [
-      {
-        id: 1,
-        title: "Introduction",
-        date: "12 October",
-        videoUrl: "",
-        pdfUrl: "",
-      },
-      {
-        id: 2,
-        title: "Grammar",
-        date: "15 October",
-        videoUrl: "",
-        pdfUrl: "",
-      },
-    ],
-    assignments: [
-      { id: 1, title: "Assignment 1", deadline: "20 October", status: "Not Submitted" },
-      { id: 2, title: "Assignment 2", deadline: "24 October", status: "Submitted" },
-    ],
-    exams: [
-      { id: 1, title: "Grammar Quiz", duration: "10 minutes" },
-      { id: 2, title: "Vocabulary Quiz", duration: "20 minutes" },
-    ],
-  },
-
-  Math: {
-    color: "math-theme",
-    teacher: "Mr. Ahmed Mohamed",
-    lessonsCount: 8,
-    assignmentsCount: 4,
-    attendance: 70,
-    examsCount: 2,
-    lessons: [
-      {
-        id: 1,
-        title: "Numbers",
-        date: "10 October",
-        videoUrl: "",
-        pdfUrl: "",
-      },
-      {
-        id: 2,
-        title: "Fractions",
-        date: "14 October",
-        videoUrl: "",
-        pdfUrl: "",
-      },
-    ],
-    assignments: [
-      { id: 1, title: "Solve Sheet 1", deadline: "18 October", status: "Submitted" },
-      { id: 2, title: "Solve Sheet 2", deadline: "23 October", status: "Not Submitted" },
-    ],
-    exams: [
-      { id: 1, title: "Numbers Quiz", duration: "15 minutes" },
-      { id: 2, title: "Fractions Quiz", duration: "20 minutes" },
-    ],
-  },
-
-  Science: {
-    color: "science-theme",
-    teacher: "Mr. Ahmed Mohamed",
-    lessonsCount: 12,
-    assignmentsCount: 6,
-    attendance: 60,
-    examsCount: 2,
-    lessons: [
-      {
-        id: 1,
-        title: "Plants",
-        date: "11 October",
-        videoUrl: "",
-        pdfUrl: "",
-      },
-      {
-        id: 2,
-        title: "Atoms",
-        date: "16 October",
-        videoUrl: "",
-        pdfUrl: "",
-      },
-    ],
-    assignments: [
-      { id: 1, title: "Lab Report", deadline: "21 October", status: "Not Submitted" },
-      { id: 2, title: "Science Worksheet", deadline: "27 October", status: "Submitted" },
-    ],
-    exams: [
-      { id: 1, title: "Plants Quiz", duration: "10 minutes" },
-      { id: 2, title: "Atoms Quiz", duration: "15 minutes" },
-    ],
-  },
-
-  Arabic: {
-    color: "arabic-theme",
-    teacher: "Mr. Ahmed Mohamed",
-    lessonsCount: 9,
-    assignmentsCount: 3,
-    attendance: 80,
-    examsCount: 2,
-    lessons: [
-      {
-        id: 1,
-        title: "Introduction",
-        date: "12 October",
-        videoUrl: "",
-        pdfUrl: "",
-      },
-      {
-        id: 2,
-        title: "Grammar",
-        date: "15 October",
-        videoUrl: "",
-        pdfUrl: "",
-      },
-    ],
-    assignments: [
-      { id: 1, title: "Assignment 1", deadline: "20 October", status: "Not Submitted" },
-      { id: 2, title: "Assignment 2", deadline: "24 October", status: "Submitted" },
-    ],
-    exams: [
-      { id: 1, title: "Grammar Quiz", duration: "10 minutes" },
-      { id: 2, title: "Vocabulary Quiz", duration: "20 minutes" },
-    ],
-  },
-
-  Religion: {
-    color: "religion-theme",
-    teacher: "Mr. Ahmed Mohamed",
-    lessonsCount: 7,
-    assignmentsCount: 2,
-    attendance: 90,
-    examsCount: 1,
-    lessons: [
-      {
-        id: 1,
-        title: "Moral Values",
-        date: "9 October",
-        videoUrl: "",
-        pdfUrl: "",
-      },
-      {
-        id: 2,
-        title: "Good Behavior",
-        date: "13 October",
-        videoUrl: "",
-        pdfUrl: "",
-      },
-    ],
-    assignments: [
-      { id: 1, title: "Short Report", deadline: "19 October", status: "Submitted" },
-    ],
-    exams: [{ id: 1, title: "Values Quiz", duration: "10 minutes" }],
-  },
-
-  Computer: {
-    color: "computer-theme",
-    teacher: "Mr. Ahmed Mohamed",
-    lessonsCount: 6,
-    assignmentsCount: 3,
-    attendance: 85,
-    examsCount: 1,
-    lessons: [
-      {
-        id: 1,
-        title: "Computer Basics",
-        date: "8 October",
-        videoUrl: "",
-        pdfUrl: "",
-      },
-      {
-        id: 2,
-        title: "Parts of Computer",
-        date: "12 October",
-        videoUrl: "",
-        pdfUrl: "",
-      },
-    ],
-    assignments: [
-      { id: 1, title: "Write About Hardware", deadline: "22 October", status: "Not Submitted" },
-    ],
-    exams: [{ id: 1, title: "Basics Quiz", duration: "15 minutes" }],
-  },
-
-  "Social Studies": {
-    color: "social-theme",
-    teacher: "Mr. Ahmed Mohamed",
-    lessonsCount: 6,
-    assignmentsCount: 2,
-    attendance: 75,
-    examsCount: 1,
-    lessons: [
-      {
-        id: 1,
-        title: "Maps",
-        date: "7 October",
-        videoUrl: "",
-        pdfUrl: "",
-      },
-      {
-        id: 2,
-        title: "Egypt Governorates",
-        date: "11 October",
-        videoUrl: "",
-        pdfUrl: "",
-      },
-    ],
-    assignments: [
-      { id: 1, title: "Map Activity", deadline: "25 October", status: "Submitted" },
-    ],
-    exams: [{ id: 1, title: "Maps Quiz", duration: "10 minutes" }],
-  },
+const subjectThemes = {
+  English: "english-theme",
+  Math: "math-theme",
+  Science: "science-theme",
+  Arabic: "arabic-theme",
+  Religion: "religion-theme",
+  Computer: "computer-theme",
+  "Social Studies": "social-theme",
+  Geography: "social-theme",
+  History: "social-theme",
+  Physics: "science-theme",
+  Chemistry: "science-theme",
+  Biology: "science-theme",
+  Philosophy: "social-theme",
 };
 
 export default function SubjectDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [activeTab, setActiveTab] = useState("lessons");
   const [firebaseSubject, setFirebaseSubject] = useState(null);
+  const [lessons, setLessons] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const subjectName = decodeURIComponent(id || "");
 
   useEffect(() => {
-    const fetchSubject = async () => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setFirebaseSubject(null);
+        setLessons([]);
+        setAssignments([]);
+        setExams([]);
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
 
-        const subjectQuery = query(
-          collection(db, "subject"),
-          where("subject_name", "==", subjectName)
+        const studentRef = doc(db, "student", user.uid);
+        const studentSnap = await getDoc(studentRef);
+
+        if (!studentSnap.exists()) {
+          setFirebaseSubject(null);
+          setLessons([]);
+          setAssignments([]);
+          setExams([]);
+          setLoading(false);
+          return;
+        }
+
+        const studentData = studentSnap.data();
+        const studentGrade = String(studentData.grade).trim();
+        const studentStage = String(studentData.stage).toLowerCase().trim();
+
+        const snapshot = await getDocs(collection(db, "subject"));
+
+        const subjectsData = snapshot.docs.map((docItem) => ({
+          id: docItem.id,
+          ref: docItem.ref,
+          ...docItem.data(),
+        }));
+
+        const selectedSubject = subjectsData.find((subject) => {
+          const subjectRealName = subject.subject_name || subject.name || subject.title || "";
+          const subjectGrade = String(subject.grade).trim();
+          const subjectStage = String(subject.stage).toLowerCase().trim();
+
+          return (
+            subjectRealName === subjectName &&
+            subjectGrade === studentGrade &&
+            subjectStage === studentStage
+          );
+        });
+
+        if (!selectedSubject) {
+          setFirebaseSubject(null);
+          setLessons([]);
+          setAssignments([]);
+          setExams([]);
+          setLoading(false);
+          return;
+        }
+
+        setFirebaseSubject(selectedSubject);
+
+        const lessonsSnapshot = await getDocs(collection(db, "subject", selectedSubject.id, "lessons"));
+        const assignmentsSnapshot = await getDocs(
+          collection(db, "subject", selectedSubject.id, "assignments")
+        );
+        const examsSnapshot = await getDocs(collection(db, "subject", selectedSubject.id, "exams"));
+
+        setLessons(
+          lessonsSnapshot.docs.map((docItem, index) => ({
+            id: index + 1,
+            firebaseId: docItem.id,
+            ...docItem.data(),
+          }))
         );
 
-        const snapshot = await getDocs(subjectQuery);
+        setAssignments(
+          assignmentsSnapshot.docs.map((docItem, index) => ({
+            id: index + 1,
+            firebaseId: docItem.id,
+            ...docItem.data(),
+          }))
+        );
 
-        if (!snapshot.empty) {
-          const subjectDoc = snapshot.docs[0];
-          setFirebaseSubject({
-            id: subjectDoc.id,
-            ...subjectDoc.data(),
-          });
-        } else {
-          setFirebaseSubject(null);
-        }
+        setExams(
+          examsSnapshot.docs.map((docItem, index) => ({
+            id: index + 1,
+            firebaseId: docItem.id,
+            ...docItem.data(),
+          }))
+        );
       } catch (error) {
         console.error("Error fetching subject data:", error);
         setFirebaseSubject(null);
+        setLessons([]);
+        setAssignments([]);
+        setExams([]);
       } finally {
         setLoading(false);
       }
-    };
+    });
 
-    if (subjectName) {
-      fetchSubject();
-    }
+    return () => unsubscribe();
   }, [subjectName]);
 
   const subject = useMemo(() => {
-    const localSubject = subjectData[subjectName] || {
-      color: "english-theme",
-      teacher: "Mr. Ahmed Mohamed",
-      lessonsCount: 0,
-      assignmentsCount: 0,
-      attendance: 0,
-      examsCount: 0,
-      lessons: [],
-      assignments: [],
-      exams: [],
-    };
-
     return {
-      ...localSubject,
-      teacher: firebaseSubject?.teacher_id
-        ? `Teacher ID: ${firebaseSubject.teacher_id}`
-        : localSubject.teacher,
-      lessonsCount: firebaseSubject?.lessonsCount ?? localSubject.lessonsCount,
-      assignmentsCount: firebaseSubject?.assignmentsCount ?? localSubject.assignmentsCount,
-      attendance: firebaseSubject?.attendance ?? localSubject.attendance,
-      examsCount: firebaseSubject?.examsCount ?? localSubject.examsCount,
+      color: subjectThemes[subjectName] || "english-theme",
+      teacher:
+        firebaseSubject?.teacherName ||
+        firebaseSubject?.teacher_name ||
+        firebaseSubject?.teacher ||
+        firebaseSubject?.teacher_id ||
+        "No teacher assigned",
+      lessonsCount: lessons.length,
+      assignmentsCount: assignments.length,
+      attendance: firebaseSubject?.attendance ?? 0,
+      examsCount: exams.length,
+      lessons,
+      assignments,
+      exams,
     };
-  }, [subjectName, firebaseSubject]);
+  }, [subjectName, firebaseSubject, lessons, assignments, exams]);
 
   const openResource = (url) => {
     if (!url) return;
@@ -379,21 +250,22 @@ export default function SubjectDetails() {
               <div className="empty-card">No lessons available.</div>
             ) : (
               subject.lessons.map((lesson) => (
-                <div className="content-card" key={lesson.id}>
+                <div className="content-card" key={lesson.firebaseId || lesson.id}>
                   <div className="card-head">
                     <div className="card-icon">
                       <i className="fa-solid fa-book-open"></i>
                     </div>
                     <div>
                       <h3>Lesson {lesson.id}</h3>
-                      <h4>{lesson.title}</h4>
+                      <h4>{lesson.title || "Untitled Lesson"}</h4>
                     </div>
                   </div>
 
                   <hr />
 
                   <p className="meta-line">
-                    <i className="fa-regular fa-calendar"></i> {lesson.date}
+                    <i className="fa-regular fa-calendar"></i>{" "}
+                    {lesson.date || lesson.createdAt || "-"}
                   </p>
 
                   <div className="btns">
@@ -424,20 +296,20 @@ export default function SubjectDetails() {
               <div className="empty-card">No assignments available.</div>
             ) : (
               subject.assignments.map((assignment) => (
-                <div className="content-card" key={assignment.id}>
+                <div className="content-card" key={assignment.firebaseId || assignment.id}>
                   <div className="card-head">
                     <div className="card-icon">
                       <i className="fa-solid fa-clipboard-list"></i>
                     </div>
                     <div>
                       <h3>Assignment {assignment.id}</h3>
-                      <h4>{assignment.title}</h4>
+                      <h4>{assignment.title || "Untitled Assignment"}</h4>
                     </div>
                   </div>
 
                   <hr />
 
-                  <p className="meta-line">Deadline: {assignment.deadline}</p>
+                  <p className="meta-line">Deadline: {assignment.deadline || "-"}</p>
 
                   <div className="assignment-footer">
                     <span
@@ -447,7 +319,7 @@ export default function SubjectDetails() {
                           : "status-badge not-submitted"
                       }
                     >
-                      {assignment.status}
+                      {assignment.status || "Not Submitted"}
                     </span>
 
                     <div className="btns small-btns">
@@ -469,21 +341,21 @@ export default function SubjectDetails() {
               <div className="empty-card">No exams available.</div>
             ) : (
               subject.exams.map((exam) => (
-                <div className="content-card" key={exam.id}>
+                <div className="content-card" key={exam.firebaseId || exam.id}>
                   <div className="card-head">
                     <div className="card-icon">
                       <i className="fa-solid fa-pen-to-square"></i>
                     </div>
                     <div>
                       <h3>Quiz {exam.id}</h3>
-                      <h4>{exam.title}</h4>
+                      <h4>{exam.title || "Untitled Exam"}</h4>
                     </div>
                   </div>
 
                   <hr />
 
                   <div className="exam-row">
-                    <p className="meta-line">Duration: {exam.duration}</p>
+                    <p className="meta-line">Duration: {exam.duration || "-"}</p>
                     <button className="exam-btn">Start Exam</button>
                   </div>
                 </div>

@@ -1,8 +1,11 @@
-import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
 import Icon from "@mui/material/Icon";
 import Divider from "@mui/material/Divider";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+import { auth, db } from "../../../firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 
 import MDBox from "../../../components/MDBox";
 import MDTypography from "../../../components/MDTypography";
@@ -13,10 +16,49 @@ import DashboardNavbar from "../../examples/Navbars/DashboardNavbar";
 import Footer from "../../examples/Footer";
 
 function Subjects() {
-  const [selectedGrade, setSelectedGrade] = useState("Grade 5");
+  const [teacherSubjects, setTeacherSubjects] = useState([]);
+  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [selectedGrade, setSelectedGrade] = useState("");
 
-  const teacherSubject = "Mathematics";
-  const grades = ["Grade 5", "Grade 6"];
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) return;
+
+      try {
+        let teacherData = null;
+
+        const teacherRef = doc(db, "teachers", user.uid);
+        const teacherSnap = await getDoc(teacherRef);
+
+        if (teacherSnap.exists()) {
+          teacherData = teacherSnap.data();
+        } else {
+          const teacherQuery = query(collection(db, "teachers"), where("email", "==", user.email));
+          const teacherSnapshot = await getDocs(teacherQuery);
+
+          if (!teacherSnapshot.empty) {
+            teacherData = teacherSnapshot.docs[0].data();
+          }
+        }
+
+        const subjects = teacherData?.subjects || [];
+
+        setTeacherSubjects(subjects);
+
+        if (subjects.length > 0) {
+          setSelectedSubject(subjects[0]);
+          setSelectedGrade(`Grade ${subjects[0].grade}`);
+        }
+      } catch (error) {
+        console.error("Error fetching teacher subjects:", error);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const teacherSubject = selectedSubject?.name || "No Subject";
+  const grades = teacherSubjects.map((subject) => `Grade ${subject.grade}`);
 
   const contentCards = [
     {
@@ -45,11 +87,22 @@ function Subjects() {
     },
   ];
 
+  const handleGradeClick = (grade) => {
+    setSelectedGrade(grade);
+
+    const gradeNumber = grade.replace("Grade ", "");
+    const subject = teacherSubjects.find((item) => item.grade === gradeNumber);
+
+    if (subject) {
+      setSelectedSubject(subject);
+    }
+  };
+
   return (
     <DashboardLayout>
       <DashboardNavbar />
 
-      <MDBox py={3}>
+      <MDBox py={3} width="100%">
         <Card
           sx={{
             borderRadius: "20px",
@@ -94,18 +147,13 @@ function Subjects() {
 
           <Divider />
 
-          <MDBox
-            mt={2}
-            display="flex"
-            flexWrap="wrap"
-            gap={1.5}
-          >
+          <MDBox mt={2} display="flex" flexWrap="wrap" gap={1.5}>
             {grades.map((grade) => (
               <MDButton
                 key={grade}
                 variant={selectedGrade === grade ? "gradient" : "outlined"}
                 color="dark"
-                onClick={() => setSelectedGrade(grade)}
+                onClick={() => handleGradeClick(grade)}
                 sx={{
                   borderRadius: "12px",
                 }}
@@ -118,53 +166,59 @@ function Subjects() {
 
         <MDBox mb={3}>
           <MDTypography variant="h4" fontWeight="bold">
-            {selectedGrade} Content
+            {selectedGrade || "No Grade"} Content
           </MDTypography>
           <MDTypography variant="button" color="text">
             Choose the section you want to manage.
           </MDTypography>
         </MDBox>
 
-        <Grid container spacing={3}>
+        <MDBox
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+            gap: "20px",
+            width: "100%",
+          }}
+        >
           {contentCards.map((item, index) => (
-            <Grid item xs={12} md={6} xl={3} key={index}>
-              <Card
-                sx={{
-                  p: 3,
-                  borderRadius: "18px",
-                  boxShadow: "0 8px 24px rgba(15,23,42,0.08)",
-                  height: "100%",
-                  transition: "0.25s",
-                  "&:hover": {
-                    transform: "translateY(-4px)",
-                    boxShadow: "0 12px 28px rgba(15,23,42,0.14)",
-                  },
-                }}
-              >
+            <Card
+              key={index}
+              sx={{
+                p: 2,
+                borderRadius: "18px",
+                boxShadow: "0 8px 24px rgba(15,23,42,0.08)",
+                minHeight: "215px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                transition: "0.25s",
+                "&:hover": {
+                  transform: "translateY(-4px)",
+                  boxShadow: "0 12px 28px rgba(15,23,42,0.14)",
+                },
+              }}
+            >
+              <MDBox display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                 <MDBox
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  mb={2}
+                  sx={{
+                    width: "46px",
+                    height: "46px",
+                    borderRadius: "14px",
+                    display: "grid",
+                    placeItems: "center",
+                    backgroundColor: "#f3f4f6",
+                  }}
                 >
-                  <MDBox
-                    sx={{
-                      width: "54px",
-                      height: "54px",
-                      borderRadius: "14px",
-                      display: "grid",
-                      placeItems: "center",
-                      backgroundColor: "#f3f4f6",
-                    }}
-                  >
-                    <Icon sx={{ color: "#111827" }}>{item.icon}</Icon>
-                  </MDBox>
-
-                  <MDTypography variant="h4" fontWeight="bold">
-                    {item.count}
-                  </MDTypography>
+                  <Icon sx={{ color: "#111827" }}>{item.icon}</Icon>
                 </MDBox>
 
+                <MDTypography variant="h4" fontWeight="bold">
+                  {item.count}
+                </MDTypography>
+              </MDBox>
+
+              <MDBox>
                 <MDTypography variant="h6" fontWeight="bold" mb={1}>
                   {item.title}
                 </MDTypography>
@@ -172,30 +226,20 @@ function Subjects() {
                 <MDTypography variant="button" color="text">
                   {item.description}
                 </MDTypography>
+              </MDBox>
 
-                <MDBox mt={3} display="flex" gap={1}>
-                  <MDButton
-                    variant="gradient"
-                    color="dark"
-                    size="small"
-                    fullWidth
-                  >
-                    View
-                  </MDButton>
+              <MDBox mt={2.5} display="flex" gap={1}>
+                <MDButton variant="gradient" color="dark" size="small" fullWidth>
+                  View
+                </MDButton>
 
-                  <MDButton
-                    variant="outlined"
-                    color="dark"
-                    size="small"
-                    fullWidth
-                  >
-                    Upload
-                  </MDButton>
-                </MDBox>
-              </Card>
-            </Grid>
+                <MDButton variant="outlined" color="dark" size="small" fullWidth>
+                  Upload
+                </MDButton>
+              </MDBox>
+            </Card>
           ))}
-        </Grid>
+        </MDBox>
 
         <MDBox mt={4}>
           <Card
@@ -214,12 +258,7 @@ function Subjects() {
             </MDTypography>
 
             <MDBox mt={2}>
-              <MDBox
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-                py={1.5}
-              >
+              <MDBox display="flex" justifyContent="space-between" alignItems="center" py={1.5}>
                 <MDTypography variant="button" color="text">
                   Subject
                 </MDTypography>
@@ -230,17 +269,12 @@ function Subjects() {
 
               <Divider />
 
-              <MDBox
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-                py={1.5}
-              >
+              <MDBox display="flex" justifyContent="space-between" alignItems="center" py={1.5}>
                 <MDTypography variant="button" color="text">
                   Grade
                 </MDTypography>
                 <MDTypography variant="button" fontWeight="bold">
-                  {selectedGrade}
+                  {selectedGrade || "No Grade"}
                 </MDTypography>
               </MDBox>
             </MDBox>

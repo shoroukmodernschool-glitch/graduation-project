@@ -86,7 +86,9 @@ export default function LoginAdmin() {
         return;
       }
 
-      navigate("/admin", { replace: true });
+      // ✅ التعديل الوحيد هنا
+      navigate("/admin-dashboard", { replace: true });
+
     } catch (error) {
       console.error("❌ Login Error:", error);
 
@@ -190,7 +192,7 @@ export default function LoginAdmin() {
           >
             {loading ? (
               <span className="loading-content">
-                 Logging in..
+                Logging in..
                 <span className="loader"></span>
               </span>
             ) : (

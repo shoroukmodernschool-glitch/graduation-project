@@ -5,8 +5,6 @@ import { onAuthStateChanged } from "firebase/auth";
 import {
   collection,
   getDocs,
-  query,
-  where,
   doc,
   getDoc,
 } from "firebase/firestore";
@@ -71,47 +69,41 @@ export default function Subjects() {
         const studentSnap = await getDoc(studentRef);
 
         if (!studentSnap.exists()) {
-          console.log("No student data found");
           setSubjects([]);
           setLoading(false);
           return;
         }
 
         const studentData = studentSnap.data();
-        const studentStage = studentData.stage || "";
-        const studentGrade = studentData.grade || "";
-        const studentSection = studentData.section || "";
 
-        let subjectsQuery;
+        const studentGrade = String(studentData.grade).trim();
+        const studentStage = String(studentData.stage).toLowerCase().trim();
 
-        if (studentSection && studentSection.trim() !== "") {
-          subjectsQuery = query(
-            collection(db, "subject"),
-            where("stage", "==", studentStage),
-            where("grade", "==", studentGrade),
-            where("section", "==", studentSection),
-          );
-        } else {
-          subjectsQuery = query(
-            collection(db, "subject"),
-            where("stage", "==", studentStage),
-            where("grade", "==", studentGrade),
-          );
-        }
-
-        const snapshot = await getDocs(subjectsQuery);
+        // نجيب كل المواد
+        const snapshot = await getDocs(collection(db, "subject"));
 
         const data = snapshot.docs.map((docItem) => ({
           id: docItem.id,
           ...docItem.data(),
         }));
 
-        const filteredData = data.filter((subject) => {
+        // فلترة بالـ grade + stage
+        const filtered = data.filter((s) => {
+          const subjectGrade = String(s.grade).trim();
+          const subjectStage = String(s.stage).toLowerCase().trim();
+
+          return (
+            subjectGrade === studentGrade &&
+            subjectStage === studentStage
+          );
+        });
+
+        const valid = filtered.filter((subject) => {
           const name = getSubjectName(subject);
           return name !== "Subject";
         });
 
-        const sortedData = filteredData.sort((a, b) => {
+        const sortedData = valid.sort((a, b) => {
           const nameA = getSubjectName(a);
           const nameB = getSubjectName(b);
 

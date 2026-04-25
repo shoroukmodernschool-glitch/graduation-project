@@ -8,7 +8,6 @@ import Sidenav from "examples/Sidenav";
 import routes from "dashboard/routes.js";
 import studentRoutes from "../../../student/studentRoutes";
 import teacherRoutes from "../../../Teacher/teacherRoutes";
-import adminRoutes from "dashboard/adminRoutes";
 import parentRoutes from "dashboard/parentRoutes";
 
 import { useMaterialUIController, setLayout } from "context";
@@ -38,8 +37,6 @@ function DashboardLayout({ children }) {
     pathname === "/profile"
   ) {
     currentRoutes = studentRoutes;
-  } else if (pathname.includes("admin")) {
-    currentRoutes = adminRoutes;
   }
 
   return (

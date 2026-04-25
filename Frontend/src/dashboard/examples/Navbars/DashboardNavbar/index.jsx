@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation, Link, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 
 import AppBar from "@mui/material/AppBar";
@@ -37,6 +37,7 @@ function DashboardNavbar({ absolute, light, isMini }) {
   const [navbarType, setNavbarType] = useState();
   const [controller, dispatch] = useMaterialUIController();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const {
     miniSidenav,
@@ -49,7 +50,7 @@ function DashboardNavbar({ absolute, light, isMini }) {
   const [openMenu, setOpenMenu] = useState(false);
   const [userName, setUserName] = useState("");
 
-  const route = useLocation().pathname.split("/").slice(1);
+  const route = location.pathname.split("/").slice(1);
 
   useEffect(() => {
     if (fixedNavbar) {
@@ -124,7 +125,20 @@ function DashboardNavbar({ absolute, light, isMini }) {
 
   const handleNotificationClick = () => {
     handleCloseMenu();
-    navigate("/notifications");
+
+    if (location.pathname.startsWith("/teacher")) {
+      navigate("/teacher-notifications");
+    } else {
+      navigate("/notifications");
+    }
+  };
+
+  const handleProfileClick = () => {
+    if (location.pathname.startsWith("/teacher")) {
+      navigate("/teacher-profile");
+    } else {
+      navigate("/profile");
+    }
   };
 
   const renderMenu = () => (
@@ -192,7 +206,7 @@ function DashboardNavbar({ absolute, light, isMini }) {
                 sx={navbarIconButton}
                 size="small"
                 disableRipple
-                onClick={() => navigate("/profile")}
+                onClick={handleProfileClick}
               >
                 <Icon sx={iconsStyle}>account_circle</Icon>
               </IconButton>
@@ -247,7 +261,7 @@ DashboardNavbar.defaultProps = {
 DashboardNavbar.propTypes = {
   absolute: PropTypes.bool,
   light: PropTypes.bool,
-  isMini: PropTypes.bool,
+  isMini: false,
 };
 
 export default DashboardNavbar;

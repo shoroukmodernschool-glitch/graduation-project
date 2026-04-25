@@ -41,7 +41,7 @@ import Tables from "./dashboard/layouts/tables";
 import Attendance from "./dashboard/student/attendance";
 import Notifications from "./dashboard/student/notifications";
 
-import AdminDashboard from "./dashboard/layouts/dashboard/admin";
+
 
 /* Parent Dashboard */
 import ParentDashboard from "./dashboard/layouts/dashboard/parent";
@@ -60,6 +60,9 @@ import SubjectDetails from "./dashboard/student/subject-details/SubjectDetails";
 
 /* Chatbot */
 import ChatbotPage from "./pages/chatbot/chatbot";
+
+import AdminDashboard from "./dashboard/admin/AdminDashboard";
+
 
 function App() {
   const location = useLocation();
@@ -146,6 +149,15 @@ function App() {
 
         <Route path="/chatbot" element={<ChatbotPage />} />
 
+
+<Route
+  path="/admin-dashboard"
+  element={
+    <ProtectedRoute>
+      <AdminDashboard />
+    </ProtectedRoute>
+  }
+/>
         <Route
           path="/student-dashboard"
           element={
@@ -260,6 +272,7 @@ function App() {
 
         <Route path="*" element={<Home />} />
       </Routes>
+
     </>
   );
 }

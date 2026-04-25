@@ -214,7 +214,7 @@ function TeacherDashboard() {
                   Quick Actions
                 </MDTypography>
                 <MDTypography variant="button" color="text">
-                  أهم الحاجات اللي المدرس هيستخدمها بسرعة
+                 
                 </MDTypography>
               </MDBox>
 
@@ -357,7 +357,7 @@ function TeacherDashboard() {
                 Overview
               </MDTypography>
               <MDTypography variant="button" color="text">
-                ملخص سريع عن حساب المدرس والبيانات الحالية
+               
               </MDTypography>
 
               <MDBox mt={3}>
