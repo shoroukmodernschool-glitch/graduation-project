@@ -12,9 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // 👇 ضيفنا الـ middleware هنا
         $middleware->alias([
             'firebase.auth' => \App\Http\Middleware\FirebaseAuth::class,
+            'activity.log' => \App\Http\Middleware\ActivityLogMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
