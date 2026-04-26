@@ -2,7 +2,7 @@ import "./Login_form.css";
 import { Link, useNavigate } from "react-router-dom";
 import { FaEnvelope, FaEye, FaEyeSlash } from "react-icons/fa";
 import Navbar from "../../components/Navbar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { auth, db } from "../../firebase";
 import { doc, getDoc } from "firebase/firestore";
@@ -25,6 +25,16 @@ export default function Login() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  // Cooldown State
+  const [cooldown, setCooldown] = useState(0);
+
+  // Cooldown Timer
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown((prev) => prev - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
+
   const openForgotPopup = () => {
     setShowForgotPopup(true);
     setResetEmail("");
@@ -46,6 +56,8 @@ export default function Login() {
   };
 
   const handleSendCode = async () => {
+    if (cooldown > 0) return;
+
     if (!resetEmail.trim()) {
       setForgotMessage("Please enter your email.");
       return;
@@ -86,6 +98,7 @@ export default function Login() {
         return;
       }
 
+      setCooldown(60);
       setForgotMessage(data.message || "Code sent successfully.");
     } catch (error) {
       console.error("Send Code Error:", error);
@@ -395,9 +408,16 @@ export default function Login() {
               type="button"
               onClick={handleSendCode}
               className="forgot-action-btn"
+              disabled={cooldown > 0}
             >
-              Send Code
+              {cooldown > 0 ? `Wait ${cooldown}s` : "Send Code"}
             </button>
+
+            {cooldown > 0 && (
+              <p className="forgot-message">
+                Please wait {cooldown} seconds before requesting another code.
+              </p>
+            )}
 
             <input
               type="text"
