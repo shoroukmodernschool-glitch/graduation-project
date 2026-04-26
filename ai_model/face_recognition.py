@@ -7,23 +7,82 @@ import requests
 import firebase_admin
 from firebase_admin import credentials, firestore
 from insightface.app import FaceAnalysis
+from datetime import datetime
+import os
+from openpyxl import Workbook, load_workbook
+
+
+def save_attendance_to_excel(student_id, student_name):
+    file_path = "attendance_log.xlsx"
+
+    now = datetime.now()
+    today = now.strftime("%Y-%m-%d")
+    current_time = now.strftime("%H:%M:%S")
+
+    if not os.path.exists(file_path):
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = "Attendance"
+        sheet.append(["student_id", "student_name", "date", "time", "status"])
+        workbook.save(file_path)
+
+    workbook = load_workbook(file_path)
+    sheet = workbook["Attendance"]
+
+    for row in sheet.iter_rows(min_row=2, values_only=True):
+        if str(row[0]) == str(student_id) and str(row[2]) == today:
+            workbook.close()
+            return False
+
+    sheet.append([student_id, student_name, today, current_time, "Present"])
+    workbook.save(file_path)
+    workbook.close()
+
+    return True
+
 
 SIMILARITY_THRESHOLD = 0.66
 
+# Performance
 DETECTION_FRAME_SKIP = 4
 DETECTION_INTERVAL_SEC = 0.18
 DETECTION_WIDTH = 256
 MAX_FACES = 2
 
+# Attendance cooldown
 ATTENDANCE_COOLDOWN_SEC = 0
+
+# Ignore very small faces to reduce false matches
 MIN_FACE_SIZE = 45
+
+# Smooth box movement
 BOX_SMOOTHING_ALPHA = 0.55
 
+# Stable identity / tracking
 REQUIRED_MATCH_FRAMES = 1
 TRACK_TTL_SEC = 0.9
 TRACK_MATCH_DISTANCE = 170
 
 BACKEND_ATTENDANCE_URL = "http://127.0.0.1:8000/api/attendance/mark"
+
+
+def send_attendance_to_backend(student_id):
+    try:
+        response = requests.post(
+            BACKEND_ATTENDANCE_URL,
+            json={"student_id": student_id},
+            timeout=2
+        )
+
+        if response.status_code == 200:
+            print(f"[API] Attendance sent for student_id={student_id}")
+        elif response.status_code == 409:
+            print(f"[API] Already recorded for student_id={student_id}")
+        else:
+            print(f"[API ERROR] status={response.status_code} response={response.text}")
+
+    except Exception as e:
+        print(f"[API FAILED] {e}")
 
 
 class VideoStream:
@@ -352,28 +411,34 @@ def update_tracks(tracks, detections, now):
     return updated_tracks
 
 
-def mark_attendance(student_id):
-    try:
-        response = requests.post(
-            BACKEND_ATTENDANCE_URL,
-            json={"student_id": student_id},
-            timeout=5
-        )
+def mark_attendance(firestore_db, student_id, student_name):
+    today = datetime.now().strftime("%Y-%m-%d")
+    current_time = datetime.now().strftime("%H:%M:%S")
 
-        if response.status_code == 200:
-            print(f"[API] Attendance sent for student_id={student_id}")
-            return "inserted"
+    doc_id = f"{student_id}_{today}"
+    doc_ref = firestore_db.collection("attendance").document(doc_id)
+    doc = doc_ref.get()
 
-        if response.status_code == 409:
-            print(f"[API] Already recorded for student_id={student_id}")
-            return "already_marked"
+    if doc.exists:
+        return "already_marked"
 
-        print(f"[API ERROR] status={response.status_code} response={response.text}")
-        return "error"
+    doc_ref.set({
+        "studentId": student_id,
+        "name": student_name,
+        "date": today,
+        "time": current_time,
+        "status": "present",
+        "method": "face_recognition"
+    })
+    print(f"[ATTENDANCE] Marked present: {student_name}")
 
-    except Exception as e:
-        print(f"[API FAILED] {e}")
-        return "error"
+    threading.Thread(
+        target=send_attendance_to_backend,
+        args=(student_id,),
+        daemon=True
+    ).start()
+
+    return "inserted"
 
 
 class RecognitionWorker:
@@ -507,18 +572,22 @@ def generate_frames():
                 if now - last_seen_time < ATTENDANCE_COOLDOWN_SEC:
                     continue
 
-                status = mark_attendance(student_id)
+                status = mark_attendance(firestore_db, student_id, student_name)
                 last_seen[student_id] = now
 
                 if status == "inserted":
-                    print(f"[ATTENDANCE] Marked present via backend: {student_name}")
                     handled_students.add(student_id)
+
+                    threading.Thread(
+                        target=save_attendance_to_excel,
+                        args=(student_id, student_name),
+                        daemon=True
+                    ).start()
 
                 elif status == "already_marked":
                     if student_id not in already_announced:
                         print(f"[ATTENDANCE] Already marked before: {student_name}")
                         already_announced.add(student_id)
-
                     handled_students.add(student_id)
 
             for track in tracks:
@@ -527,7 +596,7 @@ def generate_frames():
                 sim = track["stable_sim"]
                 color = track["stable_color"]
 
-                label = name if name == "Unknown" else f"{name} {sim * 100:.1f}%"
+                label = name if name == "Unknown" else f"{name} {sim*100:.1f}%"
 
                 cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                 cv2.putText(
@@ -550,7 +619,6 @@ def generate_frames():
                 b"--frame\r\n"
                 b"Content-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n"
             )
-
     finally:
         worker.stop()
         vs.stop()
@@ -563,4 +631,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
     

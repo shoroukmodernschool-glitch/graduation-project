@@ -38,6 +38,7 @@ export default function SubjectDetails() {
   const [lessons, setLessons] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [exams, setExams] = useState([]);
+  const [teacherMaterials, setTeacherMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const subjectName = decodeURIComponent(id || "");
@@ -49,6 +50,7 @@ export default function SubjectDetails() {
         setLessons([]);
         setAssignments([]);
         setExams([]);
+        setTeacherMaterials([]);
         setLoading(false);
         return;
       }
@@ -64,13 +66,14 @@ export default function SubjectDetails() {
           setLessons([]);
           setAssignments([]);
           setExams([]);
+          setTeacherMaterials([]);
           setLoading(false);
           return;
         }
 
         const studentData = studentSnap.data();
-        const studentGrade = String(studentData.grade).trim();
-        const studentStage = String(studentData.stage).toLowerCase().trim();
+        const studentGrade = String(studentData.grade || "").trim();
+        const studentStage = String(studentData.stage || "").toLowerCase().trim();
 
         const snapshot = await getDocs(collection(db, "subject"));
 
@@ -82,8 +85,8 @@ export default function SubjectDetails() {
 
         const selectedSubject = subjectsData.find((subject) => {
           const subjectRealName = subject.subject_name || subject.name || subject.title || "";
-          const subjectGrade = String(subject.grade).trim();
-          const subjectStage = String(subject.stage).toLowerCase().trim();
+          const subjectGrade = String(subject.grade || "").trim();
+          const subjectStage = String(subject.stage || "").toLowerCase().trim();
 
           return (
             subjectRealName === subjectName &&
@@ -97,6 +100,7 @@ export default function SubjectDetails() {
           setLessons([]);
           setAssignments([]);
           setExams([]);
+          setTeacherMaterials([]);
           setLoading(false);
           return;
         }
@@ -132,12 +136,35 @@ export default function SubjectDetails() {
             ...docItem.data(),
           }))
         );
+
+        const expectedSubjectId =
+          selectedSubject.subjectId ||
+          selectedSubject.subject_id ||
+          selectedSubject.id ||
+          `grade${studentGrade}_${subjectName.toLowerCase()}`;
+
+        const materialsQuery = query(
+          collection(db, "teacher_materials"),
+          where("grade", "==", studentGrade),
+          where("subjectId", "==", expectedSubjectId)
+        );
+
+        const materialsSnapshot = await getDocs(materialsQuery);
+
+        setTeacherMaterials(
+          materialsSnapshot.docs.map((docItem, index) => ({
+            id: index + 1,
+            firebaseId: docItem.id,
+            ...docItem.data(),
+          }))
+        );
       } catch (error) {
         console.error("Error fetching subject data:", error);
         setFirebaseSubject(null);
         setLessons([]);
         setAssignments([]);
         setExams([]);
+        setTeacherMaterials([]);
       } finally {
         setLoading(false);
       }
@@ -145,6 +172,9 @@ export default function SubjectDetails() {
 
     return () => unsubscribe();
   }, [subjectName]);
+
+  const videos = teacherMaterials.filter((item) => item.type === "video");
+  const pdfs = teacherMaterials.filter((item) => item.type === "pdf");
 
   const subject = useMemo(() => {
     return {
@@ -155,7 +185,7 @@ export default function SubjectDetails() {
         firebaseSubject?.teacher ||
         firebaseSubject?.teacher_id ||
         "No teacher assigned",
-      lessonsCount: lessons.length,
+      lessonsCount: lessons.length + teacherMaterials.length,
       assignmentsCount: assignments.length,
       attendance: firebaseSubject?.attendance ?? 0,
       examsCount: exams.length,
@@ -163,7 +193,7 @@ export default function SubjectDetails() {
       assignments,
       exams,
     };
-  }, [subjectName, firebaseSubject, lessons, assignments, exams]);
+  }, [subjectName, firebaseSubject, lessons, assignments, exams, teacherMaterials]);
 
   const openResource = (url) => {
     if (!url) return;
@@ -246,46 +276,110 @@ export default function SubjectDetails() {
 
         {activeTab === "lessons" && (
           <section className="cards-grid">
-            {subject.lessons.length === 0 ? (
+            {subject.lessons.length === 0 && teacherMaterials.length === 0 ? (
               <div className="empty-card">No lessons available.</div>
             ) : (
-              subject.lessons.map((lesson) => (
-                <div className="content-card" key={lesson.firebaseId || lesson.id}>
-                  <div className="card-head">
-                    <div className="card-icon">
-                      <i className="fa-solid fa-book-open"></i>
+              <>
+                {subject.lessons.map((lesson) => (
+                  <div className="content-card" key={lesson.firebaseId || lesson.id}>
+                    <div className="card-head">
+                      <div className="card-icon">
+                        <i className="fa-solid fa-book-open"></i>
+                      </div>
+                      <div>
+                        <h3>Lesson {lesson.id}</h3>
+                        <h4>{lesson.title || "Untitled Lesson"}</h4>
+                      </div>
                     </div>
-                    <div>
-                      <h3>Lesson {lesson.id}</h3>
-                      <h4>{lesson.title || "Untitled Lesson"}</h4>
+
+                    <hr />
+
+                    <p className="meta-line">
+                      <i className="fa-regular fa-calendar"></i>{" "}
+                      {lesson.date || lesson.createdAt || "-"}
+                    </p>
+
+                    <div className="btns">
+                      <button
+                        className="primary-btn"
+                        onClick={() => openResource(lesson.videoUrl)}
+                        disabled={!lesson.videoUrl}
+                      >
+                        <i className="fa-brands fa-youtube"></i> Watch Video
+                      </button>
+                      <button
+                        className="secondary-btn"
+                        onClick={() => openResource(lesson.pdfUrl)}
+                        disabled={!lesson.pdfUrl}
+                      >
+                        <i className="fa-regular fa-file-lines"></i> PDF
+                      </button>
                     </div>
                   </div>
+                ))}
 
-                  <hr />
+                {videos.map((video) => (
+                  <div className="content-card" key={video.firebaseId}>
+                    <div className="card-head">
+                      <div className="card-icon">
+                        <i className="fa-solid fa-video"></i>
+                      </div>
+                      <div>
+                        <h3>Video {video.id}</h3>
+                        <h4>{video.title || video.fileName || "Untitled Video"}</h4>
+                      </div>
+                    </div>
 
-                  <p className="meta-line">
-                    <i className="fa-regular fa-calendar"></i>{" "}
-                    {lesson.date || lesson.createdAt || "-"}
-                  </p>
+                    <hr />
 
-                  <div className="btns">
-                    <button
-                      className="primary-btn"
-                      onClick={() => openResource(lesson.videoUrl)}
-                      disabled={!lesson.videoUrl}
-                    >
-                      <i className="fa-brands fa-youtube"></i> Watch Video
-                    </button>
-                    <button
-                      className="secondary-btn"
-                      onClick={() => openResource(lesson.pdfUrl)}
-                      disabled={!lesson.pdfUrl}
-                    >
-                      <i className="fa-regular fa-file-lines"></i> PDF
-                    </button>
+                    <p className="meta-line">
+                      <i className="fa-solid fa-chalkboard-user"></i>{" "}
+                      {video.subjectName || subjectName}
+                    </p>
+
+                    <div className="btns">
+                      <button
+                        className="primary-btn"
+                        onClick={() => openResource(video.fileUrl)}
+                        disabled={!video.fileUrl}
+                      >
+                        <i className="fa-brands fa-youtube"></i> Watch Video
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))
+                ))}
+
+                {pdfs.map((pdf) => (
+                  <div className="content-card" key={pdf.firebaseId}>
+                    <div className="card-head">
+                      <div className="card-icon">
+                        <i className="fa-regular fa-file-pdf"></i>
+                      </div>
+                      <div>
+                        <h3>PDF {pdf.id}</h3>
+                        <h4>{pdf.title || pdf.fileName || "Untitled PDF"}</h4>
+                      </div>
+                    </div>
+
+                    <hr />
+
+                    <p className="meta-line">
+                      <i className="fa-solid fa-chalkboard-user"></i>{" "}
+                      {pdf.subjectName || subjectName}
+                    </p>
+
+                    <div className="btns">
+                      <button
+                        className="secondary-btn"
+                        onClick={() => openResource(pdf.fileUrl)}
+                        disabled={!pdf.fileUrl}
+                      >
+                        <i className="fa-regular fa-file-lines"></i> Open PDF
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </>
             )}
           </section>
         )}

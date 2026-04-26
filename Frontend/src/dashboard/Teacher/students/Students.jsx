@@ -7,7 +7,11 @@ import Select from "@mui/material/Select";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import Avatar from "@mui/material/Avatar";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import { db, auth } from "../../../firebase";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 
 import MDBox from "../../../components/MDBox";
 import MDTypography from "../../../components/MDTypography";
@@ -21,59 +25,166 @@ import Footer from "../../examples/Footer";
 function Students() {
   const [selectedGrade, setSelectedGrade] = useState("All Grades");
   const [search, setSearch] = useState("");
+  const [teacher, setTeacher] = useState(null);
+  const [studentsData, setStudentsData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const teacherSubject = "Mathematics";
+  const getFullName = (data) => {
+    const firstName = data?.firstName || "";
+    const lastName = data?.lastName || "";
+    return (
+      data?.name ||
+      data?.fullName ||
+      `${firstName} ${lastName}`.trim() ||
+      "Unknown Student"
+    );
+  };
 
-  const grades = ["All Grades", "Grade 5", "Grade 6"];
+  const getTeacherGrades = (teacherData) => {
+    if (!teacherData?.subjects || !Array.isArray(teacherData.subjects)) return [];
 
-  const studentsData = [
-    {
-      id: 1,
-      name: "Ahmed Mohamed",
-      grade: "Grade 5",
-      className: "5A",
-      email: "ahmed@example.com",
-      attendance: "92%",
-    },
-    {
-      id: 2,
-      name: "Salma Ali",
-      grade: "Grade 5",
-      className: "5B",
-      email: "salma@example.com",
-      attendance: "88%",
-    },
-    {
-      id: 3,
-      name: "Omar Hassan",
-      grade: "Grade 6",
-      className: "6A",
-      email: "omar@example.com",
-      attendance: "95%",
-    },
-    {
-      id: 4,
-      name: "Mariam Tarek",
-      grade: "Grade 6",
-      className: "6B",
-      email: "mariam@example.com",
-      attendance: "90%",
-    },
-  ];
+    return [
+      ...new Set(
+        teacherData.subjects
+          .map((subject) => String(subject.grade || "").trim())
+          .filter(Boolean)
+      ),
+    ];
+  };
+
+  const getTeacherSubjectName = (teacherData) => {
+    if (teacherData?.specialization) return teacherData.specialization;
+
+    if (Array.isArray(teacherData?.subjects) && teacherData.subjects.length > 0) {
+      return [
+        ...new Set(
+          teacherData.subjects
+            .map((subject) => subject.name)
+            .filter(Boolean)
+        ),
+      ].join(", ");
+    }
+
+    return "Assigned Subjects";
+  };
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+
+        const teacherQuery = query(
+          collection(db, "teachers"),
+          where("email", "==", user.email)
+        );
+
+        const teacherSnapshot = await getDocs(teacherQuery);
+
+        const currentTeacher =
+          teacherSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }))[0] || null;
+
+        setTeacher(currentTeacher);
+
+        if (!currentTeacher) {
+          setStudentsData([]);
+          return;
+        }
+
+        const teacherGrades = getTeacherGrades(currentTeacher);
+
+        const studentsSnapshot = await getDocs(collection(db, "student"));
+        const attendanceSnapshot = await getDocs(collection(db, "attendance"));
+
+        const attendanceRecords = attendanceSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        const students = studentsSnapshot.docs
+          .map((doc) => {
+            const data = doc.data();
+
+            const studentId = String(
+              data.student_id || data.studentId || data.id || doc.id
+            );
+
+            const studentAttendanceRecords = attendanceRecords.filter((record) => {
+              const recordStudentId = String(
+                record.student_id || record.studentId || record.studentID || ""
+              );
+
+              return recordStudentId === studentId;
+            });
+
+            const presentRecords = studentAttendanceRecords.filter((record) => {
+              const status = String(record.status || "").toLowerCase();
+              return status === "present" || status === "" || record.present === true;
+            });
+
+            const attendance =
+              studentAttendanceRecords.length > 0
+                ? `${Math.round(
+                    (presentRecords.length / studentAttendanceRecords.length) * 100
+                  )}%`
+                : "0%";
+
+            return {
+              id: doc.id,
+              studentId,
+              name: getFullName(data),
+              grade: String(data.grade || "").trim(),
+              className: data.className || data.class || data.section || "-",
+              email: data.email || "-",
+              attendance,
+            };
+          })
+          .filter((student) => teacherGrades.includes(student.grade));
+
+        setStudentsData(students);
+      } catch (error) {
+        console.error("Teacher students error:", error);
+        setStudentsData([]);
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const teacherSubject = getTeacherSubjectName(teacher);
+
+  const grades = useMemo(() => {
+    const teacherGrades = getTeacherGrades(teacher);
+    return ["All Grades", ...teacherGrades.map((grade) => `Grade ${grade}`)];
+  }, [teacher]);
 
   const filteredStudents = useMemo(() => {
     return studentsData.filter((student) => {
+      const formattedGrade = `Grade ${student.grade}`;
+
       const matchGrade =
-        selectedGrade === "All Grades" || student.grade === selectedGrade;
+        selectedGrade === "All Grades" || formattedGrade === selectedGrade;
+
+      const searchText = search.toLowerCase();
 
       const matchSearch =
-        student.name.toLowerCase().includes(search.toLowerCase()) ||
-        student.className.toLowerCase().includes(search.toLowerCase()) ||
-        student.grade.toLowerCase().includes(search.toLowerCase());
+        student.name.toLowerCase().includes(searchText) ||
+        student.className.toLowerCase().includes(searchText) ||
+        formattedGrade.toLowerCase().includes(searchText) ||
+        student.email.toLowerCase().includes(searchText);
 
       return matchGrade && matchSearch;
     });
-  }, [selectedGrade, search]);
+  }, [selectedGrade, search, studentsData]);
 
   return (
     <DashboardLayout>
@@ -144,7 +255,7 @@ function Students() {
 
           <MDBox mt={2}>
             <MDTypography variant="button" color="text">
-              Showing {filteredStudents.length} student(s)
+              Showing {loading ? "..." : filteredStudents.length} student(s)
             </MDTypography>
           </MDBox>
         </Card>
@@ -177,7 +288,7 @@ function Students() {
                       {student.name}
                     </MDTypography>
                     <MDTypography variant="button" color="text">
-                      {student.grade} - {student.className}
+                      Grade {student.grade} - {student.className}
                     </MDTypography>
                   </MDBox>
                 </MDBox>
@@ -185,12 +296,7 @@ function Students() {
                 <Divider />
 
                 <MDBox mt={2}>
-                  <MDBox
-                    display="flex"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    py={1}
-                  >
+                  <MDBox display="flex" justifyContent="space-between" alignItems="center" py={1}>
                     <MDTypography variant="button" color="text">
                       Subject
                     </MDTypography>
@@ -199,12 +305,7 @@ function Students() {
                     </MDTypography>
                   </MDBox>
 
-                  <MDBox
-                    display="flex"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    py={1}
-                  >
+                  <MDBox display="flex" justifyContent="space-between" alignItems="center" py={1}>
                     <MDTypography variant="button" color="text">
                       Email
                     </MDTypography>
@@ -213,12 +314,7 @@ function Students() {
                     </MDTypography>
                   </MDBox>
 
-                  <MDBox
-                    display="flex"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    py={1}
-                  >
+                  <MDBox display="flex" justifyContent="space-between" alignItems="center" py={1}>
                     <MDTypography variant="button" color="text">
                       Attendance
                     </MDTypography>
@@ -229,23 +325,11 @@ function Students() {
                 </MDBox>
 
                 <MDBox mt={3} display="flex" gap={1}>
-                  <MDButton
-                    variant="gradient"
-                    color="dark"
-                    size="small"
-                    fullWidth
-                    startIcon={<Icon>visibility</Icon>}
-                  >
+                  <MDButton variant="gradient" color="dark" size="small" fullWidth startIcon={<Icon>visibility</Icon>}>
                     View
                   </MDButton>
 
-                  <MDButton
-                    variant="outlined"
-                    color="dark"
-                    size="small"
-                    fullWidth
-                    startIcon={<Icon>assignment</Icon>}
-                  >
+                  <MDButton variant="outlined" color="dark" size="small" fullWidth startIcon={<Icon>assignment</Icon>}>
                     Progress
                   </MDButton>
                 </MDBox>
@@ -254,7 +338,7 @@ function Students() {
           ))}
         </Grid>
 
-        {filteredStudents.length === 0 && (
+        {!loading && filteredStudents.length === 0 && (
           <Card
             sx={{
               p: 4,

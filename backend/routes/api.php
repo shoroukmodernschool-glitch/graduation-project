@@ -9,10 +9,7 @@ use App\Http\Controllers\Auth\SignupOtpController;
 use App\Http\Controllers\Auth\LoginSecurityController;
 use App\Http\Controllers\Auth\AdminOtpController;
 use App\Http\Controllers\ChatbotController;
-<<<<<<< HEAD
-=======
 use App\Http\Controllers\AttendanceController;
->>>>>>> 9254471 (update project)
 
 /*
 |--------------------------------------------------------------------------
@@ -28,14 +25,12 @@ Route::get('/test', function (Request $request) {
     ]);
 });
 
-
 // 🔥 كل دول عليهم Logging تلقائي
 Route::middleware('activity.log')->group(function () {
 
     // ✅ Login
     Route::post('/login', [AuthController::class, 'login']);
 
-<<<<<<< HEAD
     // ✅ Register
     Route::post('/register', [AuthController::class, 'register']);
 
@@ -46,19 +41,12 @@ Route::middleware('activity.log')->group(function () {
     Route::post('/forgot-password/send-code', [ForgotPasswordController::class, 'sendCode']);
     Route::post('/forgot-password/verify-code', [ForgotPasswordController::class, 'verifyCode']);
     Route::post('/forgot-password/reset-password', [ForgotPasswordController::class, 'resetPassword']);
-=======
-// ✅ Forgot Password
-Route::post('/forgot-password/send-code', [ForgotPasswordController::class, 'sendCode']);
-Route::post('/forgot-password/verify-code', [ForgotPasswordController::class, 'verifyCode']);
-Route::post('/forgot-password/reset-password', [ForgotPasswordController::class, 'resetPassword']);
->>>>>>> 9254471 (update project)
 
     // ✅ Signup OTP
     Route::post('/signup/send-otp', [SignupOtpController::class, 'sendOtp']);
     Route::post('/signup/resend-otp', [SignupOtpController::class, 'resendOtp']);
     Route::post('/signup/verify-otp', [SignupOtpController::class, 'verifyOtp']);
 
-<<<<<<< HEAD
     // ✅ Admin OTP Login
     Route::post('/admin/send-login-otp', [AdminOtpController::class, 'sendOtp']);
     Route::post('/admin/verify-login-otp', [AdminOtpController::class, 'verifyOtp']);
@@ -71,10 +59,6 @@ Route::post('/forgot-password/reset-password', [ForgotPasswordController::class,
     // ✅ Chatbot
     Route::post('/chatbot/message', [ChatbotController::class, 'sendMessage']);
 });
-=======
-// ✅ Chatbot
-Route::post('/chatbot/message', [ChatbotController::class, 'sendMessage']);
->>>>>>> 9254471 (update project)
 
 // ✅ Attendance الحقيقي: AI Model هيبعت POST
 Route::post('/attendance/mark', [AttendanceController::class, 'markAttendance']);

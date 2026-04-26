@@ -27,6 +27,39 @@ function TeacherDashboard() {
 
   const navigate = useNavigate();
 
+  const getTeacherName = (teacherData) => {
+    if (!teacherData) return "Teacher";
+
+    if (teacherData.name) return teacherData.name;
+    if (teacherData.fullName) return teacherData.fullName;
+    if (teacherData.teacher_name) return teacherData.teacher_name;
+
+    const firstName = teacherData.firstName || "";
+    const lastName = teacherData.lastName || "";
+
+    return `${firstName} ${lastName}`.trim() || "Teacher";
+  };
+
+  const getTeacherGrades = (teacherData) => {
+    if (!teacherData?.subjects || !Array.isArray(teacherData.subjects)) return [];
+
+    return [
+      ...new Set(
+        teacherData.subjects
+          .map((subject) => String(subject.grade || "").trim())
+          .filter(Boolean)
+      ),
+    ];
+  };
+
+  const getTeacherSubjectIds = (teacherData) => {
+    if (!teacherData?.subjects || !Array.isArray(teacherData.subjects)) return [];
+
+    return teacherData.subjects
+      .map((subject) => subject.subjectId)
+      .filter(Boolean);
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -35,53 +68,120 @@ function TeacherDashboard() {
       }
 
       try {
-        const q = query(collection(db, "teachers"), where("uid", "==", user.uid));
-        const querySnapshot = await getDocs(q);
+        setLoading(true);
 
-        const data = querySnapshot.docs.map((doc) => ({
+        const teacherQuery = query(
+          collection(db, "teachers"),
+          where("email", "==", user.email)
+        );
+
+        const teacherSnapshot = await getDocs(teacherQuery);
+
+        const teacherData = teacherSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
 
-        const currentTeacher = data[0] || null;
+        const currentTeacher = teacherData[0] || null;
         setTeacher(currentTeacher);
 
-        if (currentTeacher?.subject) {
-          const subjectQuery = query(
-            collection(db, "subject"),
-            where("name", "==", currentTeacher.subject)
-          );
-          const subjectSnapshot = await getDocs(subjectQuery);
-          setSubjectsCount(subjectSnapshot.size || 1);
+        if (!currentTeacher) {
+          setSubjectsCount(0);
+          setStudentsCount(0);
+          setNotificationsCount(0);
+          setAttendanceCount(0);
+          return;
+        }
+
+        const teacherGrades = getTeacherGrades(currentTeacher);
+        const teacherSubjectIds = getTeacherSubjectIds(currentTeacher);
+
+        if (Array.isArray(currentTeacher.subjects)) {
+          setSubjectsCount(currentTeacher.subjects.length);
+        } else if (currentTeacher.subject) {
+          setSubjectsCount(1);
         } else {
           setSubjectsCount(0);
         }
 
+        let teacherStudents = [];
+
         try {
           const studentsSnapshot = await getDocs(collection(db, "student"));
-          setStudentsCount(studentsSnapshot.size);
+
+          teacherStudents = studentsSnapshot.docs
+            .map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }))
+            .filter((student) => {
+              const studentGrade = String(student.grade || "").trim();
+              return teacherGrades.includes(studentGrade);
+            });
+
+          setStudentsCount(teacherStudents.length);
         } catch (error) {
           console.error("Students error:", error);
           setStudentsCount(0);
         }
 
         try {
-          const notificationsSnapshot = await getDocs(collection(db, "notifications"));
-          setNotificationsCount(notificationsSnapshot.size);
-        } catch (error) {
-          console.error("Notifications error:", error);
-          setNotificationsCount(0);
-        }
+          const studentIds = teacherStudents.map((student) =>
+            String(student.student_id || student.studentId || student.id)
+          );
 
-        try {
           const attendanceSnapshot = await getDocs(collection(db, "attendance"));
-          setAttendanceCount(attendanceSnapshot.size);
+
+          const teacherAttendance = attendanceSnapshot.docs
+            .map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }))
+            .filter((record) => {
+              const attendanceStudentId = String(
+                record.student_id || record.studentId || record.studentID || ""
+              );
+
+              return (
+                studentIds.includes(attendanceStudentId) ||
+                teacherGrades.includes(String(record.grade || "").trim())
+              );
+            });
+
+          setAttendanceCount(teacherAttendance.length);
         } catch (error) {
           console.error("Attendance error:", error);
           setAttendanceCount(0);
         }
+
+        try {
+          const notificationsSnapshot = await getDocs(collection(db, "notifications"));
+
+          const teacherNotifications = notificationsSnapshot.docs
+            .map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }))
+            .filter((notification) => {
+              return (
+                notification.teacherId === currentTeacher.id ||
+                notification.teacher_id === currentTeacher.teacherId ||
+                notification.teacherEmail === currentTeacher.email ||
+                notification.email === currentTeacher.email ||
+                notification.targetRole === "teacher" ||
+                notification.role === "teacher" ||
+                teacherSubjectIds.includes(notification.subjectId) ||
+                teacherGrades.includes(String(notification.grade || "").trim())
+              );
+            });
+
+          setNotificationsCount(teacherNotifications.length);
+        } catch (error) {
+          console.error("Notifications error:", error);
+          setNotificationsCount(0);
+        }
       } catch (error) {
-        console.error("Error:", error);
+        console.error("Teacher dashboard error:", error);
       } finally {
         setLoading(false);
       }
@@ -90,8 +190,7 @@ function TeacherDashboard() {
     return () => unsubscribe();
   }, []);
 
-  const teacherName =
-    teacher?.name || teacher?.fullName || teacher?.teacher_name || "Teacher";
+  const teacherName = getTeacherName(teacher);
 
   const infoCards = [
     {
@@ -213,133 +312,47 @@ function TeacherDashboard() {
                 <MDTypography variant="h5" fontWeight="bold">
                   Quick Actions
                 </MDTypography>
-                <MDTypography variant="button" color="text">
-                 
-                </MDTypography>
               </MDBox>
 
               <Divider />
 
               <Grid container spacing={2} mt={0.5}>
-                <Grid item xs={12} md={6}>
-                  <Card
-                    sx={{
-                      p: 2,
-                      borderRadius: "16px",
-                      backgroundColor: "#f8fafc",
-                      boxShadow: "none",
-                      border: "1px solid #e5e7eb",
-                    }}
-                  >
-                    <MDBox display="flex" alignItems="center" gap={1.5} mb={1}>
-                      <Icon sx={{ color: "#111827" }}>menu_book</Icon>
-                      <MDTypography variant="h6">Open Subjects</MDTypography>
-                    </MDBox>
-                    <MDTypography variant="button" color="text">
-                      Review assigned subjects and related content.
-                    </MDTypography>
-                    <MDBox mt={2}>
-                      <MDButton
-                        variant="gradient"
-                        color="dark"
-                        size="small"
-                        onClick={() => navigate("/teacher-subjects")}
-                      >
-                        Go to Subjects
-                      </MDButton>
-                    </MDBox>
-                  </Card>
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Card
-                    sx={{
-                      p: 2,
-                      borderRadius: "16px",
-                      backgroundColor: "#f8fafc",
-                      boxShadow: "none",
-                      border: "1px solid #e5e7eb",
-                    }}
-                  >
-                    <MDBox display="flex" alignItems="center" gap={1.5} mb={1}>
-                      <Icon sx={{ color: "#111827" }}>groups</Icon>
-                      <MDTypography variant="h6">View Students</MDTypography>
-                    </MDBox>
-                    <MDTypography variant="button" color="text">
-                      Check students and follow their data quickly.
-                    </MDTypography>
-                    <MDBox mt={2}>
-                      <MDButton
-                        variant="outlined"
-                        color="dark"
-                        size="small"
-                        onClick={() => navigate("/teacher-students")}
-                      >
-                        Open Students
-                      </MDButton>
-                    </MDBox>
-                  </Card>
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Card
-                    sx={{
-                      p: 2,
-                      borderRadius: "16px",
-                      backgroundColor: "#f8fafc",
-                      boxShadow: "none",
-                      border: "1px solid #e5e7eb",
-                    }}
-                  >
-                    <MDBox display="flex" alignItems="center" gap={1.5} mb={1}>
-                      <Icon sx={{ color: "#111827" }}>fact_check</Icon>
-                      <MDTypography variant="h6">Attendance</MDTypography>
-                    </MDBox>
-                    <MDTypography variant="button" color="text">
-                      Open attendance page and review latest records.
-                    </MDTypography>
-                    <MDBox mt={2}>
-                      <MDButton
-                        variant="outlined"
-                        color="dark"
-                        size="small"
-                        onClick={() => navigate("/teacher-attendance")}
-                      >
-                        Open Attendance
-                      </MDButton>
-                    </MDBox>
-                  </Card>
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Card
-                    sx={{
-                      p: 2,
-                      borderRadius: "16px",
-                      backgroundColor: "#f8fafc",
-                      boxShadow: "none",
-                      border: "1px solid #e5e7eb",
-                    }}
-                  >
-                    <MDBox display="flex" alignItems="center" gap={1.5} mb={1}>
-                      <Icon sx={{ color: "#111827" }}>notifications</Icon>
-                      <MDTypography variant="h6">Notifications</MDTypography>
-                    </MDBox>
-                    <MDTypography variant="button" color="text">
-                      Read recent updates and important alerts.
-                    </MDTypography>
-                    <MDBox mt={2}>
-                      <MDButton
-                        variant="outlined"
-                        color="dark"
-                        size="small"
-                        onClick={() => navigate("/teacher-notifications")}
-                      >
-                        Open Notifications
-                      </MDButton>
-                    </MDBox>
-                  </Card>
-                </Grid>
+                {[
+                  ["menu_book", "Open Subjects", "Review assigned subjects and related content.", "/teacher-subjects", "Go to Subjects"],
+                  ["groups", "View Students", "Check students and follow their data quickly.", "/teacher-students", "Open Students"],
+                  ["fact_check", "Attendance", "Open attendance page and review latest records.", "/teacher-attendance", "Open Attendance"],
+                  ["notifications", "Notifications", "Read recent updates and important alerts.", "/teacher-notifications", "Open Notifications"],
+                ].map((item, index) => (
+                  <Grid item xs={12} md={6} key={index}>
+                    <Card
+                      sx={{
+                        p: 2,
+                        borderRadius: "16px",
+                        backgroundColor: "#f8fafc",
+                        boxShadow: "none",
+                        border: "1px solid #e5e7eb",
+                      }}
+                    >
+                      <MDBox display="flex" alignItems="center" gap={1.5} mb={1}>
+                        <Icon sx={{ color: "#111827" }}>{item[0]}</Icon>
+                        <MDTypography variant="h6">{item[1]}</MDTypography>
+                      </MDBox>
+                      <MDTypography variant="button" color="text">
+                        {item[2]}
+                      </MDTypography>
+                      <MDBox mt={2}>
+                        <MDButton
+                          variant={index === 0 ? "gradient" : "outlined"}
+                          color="dark"
+                          size="small"
+                          onClick={() => navigate(item[3])}
+                        >
+                          {item[4]}
+                        </MDButton>
+                      </MDBox>
+                    </Card>
+                  </Grid>
+                ))}
               </Grid>
             </Card>
           </Grid>
@@ -356,88 +369,32 @@ function TeacherDashboard() {
               <MDTypography variant="h5" fontWeight="bold" mb={1}>
                 Overview
               </MDTypography>
-              <MDTypography variant="button" color="text">
-               
-              </MDTypography>
 
               <MDBox mt={3}>
-                <MDBox
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  py={1.5}
-                >
-                  <MDTypography variant="button" color="text">
-                    Teacher Name
-                  </MDTypography>
-                  <MDTypography variant="button" fontWeight="bold">
-                    {loading ? "Loading..." : teacherName}
-                  </MDTypography>
-                </MDBox>
-
-                <Divider />
-
-                <MDBox
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  py={1.5}
-                >
-                  <MDTypography variant="button" color="text">
-                    Assigned Subjects
-                  </MDTypography>
-                  <MDTypography variant="button" fontWeight="bold">
-                    {loading ? "..." : subjectsCount}
-                  </MDTypography>
-                </MDBox>
-
-                <Divider />
-
-                <MDBox
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  py={1.5}
-                >
-                  <MDTypography variant="button" color="text">
-                    Total Students
-                  </MDTypography>
-                  <MDTypography variant="button" fontWeight="bold">
-                    {loading ? "..." : studentsCount}
-                  </MDTypography>
-                </MDBox>
-
-                <Divider />
-
-                <MDBox
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  py={1.5}
-                >
-                  <MDTypography variant="button" color="text">
-                    Notifications
-                  </MDTypography>
-                  <MDTypography variant="button" fontWeight="bold">
-                    {loading ? "..." : notificationsCount}
-                  </MDTypography>
-                </MDBox>
-
-                <Divider />
-
-                <MDBox
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  py={1.5}
-                >
-                  <MDTypography variant="button" color="text">
-                    Attendance Records
-                  </MDTypography>
-                  <MDTypography variant="button" fontWeight="bold">
-                    {loading ? "..." : attendanceCount}
-                  </MDTypography>
-                </MDBox>
+                {[
+                  ["Teacher Name", loading ? "Loading..." : teacherName],
+                  ["Assigned Subjects", loading ? "..." : subjectsCount],
+                  ["Total Students", loading ? "..." : studentsCount],
+                  ["Notifications", loading ? "..." : notificationsCount],
+                  ["Attendance Records", loading ? "..." : attendanceCount],
+                ].map((row, index) => (
+                  <MDBox key={index}>
+                    <MDBox
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      py={1.5}
+                    >
+                      <MDTypography variant="button" color="text">
+                        {row[0]}
+                      </MDTypography>
+                      <MDTypography variant="button" fontWeight="bold">
+                        {row[1]}
+                      </MDTypography>
+                    </MDBox>
+                    {index !== 4 && <Divider />}
+                  </MDBox>
+                ))}
               </MDBox>
             </Card>
           </Grid>
