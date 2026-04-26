@@ -10,6 +10,7 @@ use App\Http\Controllers\Auth\LoginSecurityController;
 use App\Http\Controllers\Auth\AdminOtpController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\AttendanceExcelController;
 
 /*
 |--------------------------------------------------------------------------
@@ -57,6 +58,9 @@ Route::middleware('activity.log')->group(function () {
 
     // ✅ Chatbot
     Route::post('/chatbot/message', [ChatbotController::class, 'sendMessage']);
+
+    // ✅ Check attendance from Excel
+    Route::post('/check-attendance-excel', [AttendanceExcelController::class, 'check']);
 });
 
 // ✅ Attendance الحقيقي: AI Model هيبعت POST

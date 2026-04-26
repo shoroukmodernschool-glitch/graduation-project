@@ -4,13 +4,31 @@ import "./chatbot.css";
 
 export default function ChatbotPage() {
   const [message, setMessage] = useState("");
+  const [waitingForAttendanceId, setWaitingForAttendanceId] = useState(false);
+
   const [messages, setMessages] = useState([
     {
       sender: "bot",
       text: "أهلاً بيكي، أنا شات بوت المدرسة. اسأليني عن الغياب أو الدرجات أو الجدول.",
     },
   ]);
+
   const [loading, setLoading] = useState(false);
+
+  const checkAttendanceFromExcel = async (studentId) => {
+    try {
+      const response = await axios.post(
+        "http://127.0.0.1:8000/api/check-attendance-excel",
+        {
+          student_id: studentId,
+        }
+      );
+
+      return response.data.reply || "مفيش رد دلوقتي.";
+    } catch (error) {
+      return "حصل خطأ في الاتصال بالسيرفر.";
+    }
+  };
 
   const sendMessage = async () => {
     if (!message.trim()) return;
@@ -26,6 +44,39 @@ export default function ChatbotPage() {
     setLoading(true);
 
     try {
+      if (waitingForAttendanceId) {
+        const reply = await checkAttendanceFromExcel(currentMessage);
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "bot",
+            text: reply,
+          },
+        ]);
+
+        setWaitingForAttendanceId(false);
+        return;
+      }
+
+      if (
+        currentMessage.includes("غيابي") ||
+        currentMessage.includes("حضوري") ||
+        currentMessage.includes("الحضور") ||
+        currentMessage.includes("اتسجل")
+      ) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "bot",
+            text: "ممكن تبعت الـ ID الخاص بيك؟",
+          },
+        ]);
+
+        setWaitingForAttendanceId(true);
+        return;
+      }
+
       const response = await axios.post(
         "http://127.0.0.1:8000/api/chatbot/message",
         {

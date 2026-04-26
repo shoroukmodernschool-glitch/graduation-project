@@ -2,30 +2,9 @@
 
 namespace App\Http\Middleware;
 
-<<<<<<< HEAD
 use App\Models\ActivityLog;
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
-
-class ActivityLogMiddleware
-{
-    public function handle(Request $request, Closure $next): Response
-    {
-        $response = $next($request);
-
-        ActivityLog::create([
-            'user_email' => $request->input('email'),
-            'user_role' => $request->input('role'),
-            'action' => 'API_REQUEST',
-            'description' => $request->method() . ' ' . $request->path() . ' - status ' . $response->getStatusCode(),
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-        ]);
-=======
-use Closure;
-use Illuminate\Http\Request;
-use App\Models\ActivityLog;
 use Throwable;
 
 class ActivityLogMiddleware
@@ -35,15 +14,12 @@ class ActivityLogMiddleware
         $response = $next($request);
 
         try {
-            // نحاول نجيب الإيميل من الريكوست
             $email = $request->input('email');
 
-            // لو مش موجود، نجيب UID من Firebase
             if (!$email && $request->attributes->has('firebase_uid')) {
                 $email = $request->attributes->get('firebase_uid');
             }
 
-            // تأمين user agent
             $userAgent = $request->userAgent();
             $userAgent = $userAgent ? substr($userAgent, 0, 255) : null;
 
@@ -55,11 +31,9 @@ class ActivityLogMiddleware
                 'ip_address' => $request->ip(),
                 'user_agent' => $userAgent,
             ]);
-
         } catch (Throwable $e) {
             // متوقفش السيستم لو حصل error
         }
->>>>>>> b4d232c60d77b7854e16fec7e5c1952fe59f2aee
 
         return $response;
     }
