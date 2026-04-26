@@ -357,47 +357,7 @@ function TeacherDashboard() {
             </Card>
           </Grid>
 
-          <Grid item xs={12} lg={5}>
-            <Card
-              sx={{
-                p: 3,
-                borderRadius: "18px",
-                boxShadow: "0 8px 24px rgba(15,23,42,0.08)",
-                height: "100%",
-              }}
-            >
-              <MDTypography variant="h5" fontWeight="bold" mb={1}>
-                Overview
-              </MDTypography>
-
-              <MDBox mt={3}>
-                {[
-                  ["Teacher Name", loading ? "Loading..." : teacherName],
-                  ["Assigned Subjects", loading ? "..." : subjectsCount],
-                  ["Total Students", loading ? "..." : studentsCount],
-                  ["Notifications", loading ? "..." : notificationsCount],
-                  ["Attendance Records", loading ? "..." : attendanceCount],
-                ].map((row, index) => (
-                  <MDBox key={index}>
-                    <MDBox
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      py={1.5}
-                    >
-                      <MDTypography variant="button" color="text">
-                        {row[0]}
-                      </MDTypography>
-                      <MDTypography variant="button" fontWeight="bold">
-                        {row[1]}
-                      </MDTypography>
-                    </MDBox>
-                    {index !== 4 && <Divider />}
-                  </MDBox>
-                ))}
-              </MDBox>
-            </Card>
-          </Grid>
+          
         </Grid>
       </MDBox>
 

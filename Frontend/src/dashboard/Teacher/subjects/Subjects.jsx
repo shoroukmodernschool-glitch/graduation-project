@@ -2,6 +2,7 @@ import Card from "@mui/material/Card";
 import Icon from "@mui/material/Icon";
 import Divider from "@mui/material/Divider";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { auth, db } from "../../../firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -28,6 +29,8 @@ const CLOUDINARY_CLOUD_NAME = "dzoppqvhy";
 const CLOUDINARY_UPLOAD_PRESET = "react_upload";
 
 function Subjects() {
+  const navigate = useNavigate();
+
   const [teacherSubjects, setTeacherSubjects] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [selectedGrade, setSelectedGrade] = useState("");
@@ -36,28 +39,37 @@ function Subjects() {
   const [activeView, setActiveView] = useState("");
   const [uploading, setUploading] = useState(false);
 
+  const getSubjectId = (subject, grade) => {
+    const gradeNumber = String(grade).replace("Grade ", "").trim();
+    const subjectName = String(subject?.name || "").toLowerCase().trim();
+
+    return subject?.subjectId || `grade${gradeNumber}_${subjectName}`;
+  };
+
   const fetchMaterials = async (subject, grade) => {
     if (!subject || !grade) return;
 
-    const gradeNumber = grade.replace("Grade ", "");
+    const gradeNumber = String(grade).replace("Grade ", "").trim();
+    const subjectId = getSubjectId(subject, grade);
 
     try {
       const materialsQuery = query(
         collection(db, "teacher_materials"),
-        where("subjectId", "==", subject.subjectId),
+        where("subjectId", "==", subjectId),
         where("grade", "==", gradeNumber)
       );
 
       const snapshot = await getDocs(materialsQuery);
 
       setMaterials(
-        snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
+        snapshot.docs.map((docItem) => ({
+          id: docItem.id,
+          ...docItem.data(),
         }))
       );
     } catch (error) {
       console.error("Error fetching materials:", error);
+      setMaterials([]);
     }
   };
 
@@ -97,13 +109,16 @@ function Subjects() {
         setTeacher(fullTeacher);
 
         const subjects = teacherData?.subjects || [];
-
         setTeacherSubjects(subjects);
 
         if (subjects.length > 0) {
-          setSelectedSubject(subjects[0]);
-          setSelectedGrade(`Grade ${subjects[0].grade}`);
-          await fetchMaterials(subjects[0], `Grade ${subjects[0].grade}`);
+          const firstSubject = subjects[0];
+          const firstGrade = `Grade ${firstSubject.grade}`;
+
+          setSelectedSubject(firstSubject);
+          setSelectedGrade(firstGrade);
+
+          await fetchMaterials(firstSubject, firstGrade);
         }
       } catch (error) {
         console.error("Error fetching teacher subjects:", error);
@@ -142,7 +157,8 @@ function Subjects() {
       icon: "quiz",
       count: 0,
       description: "Create and organize quizzes and exams.",
-      disabled: true,
+      disabled: false,
+      uploadDisabled: true,
     },
     {
       title: "Assignments",
@@ -157,8 +173,11 @@ function Subjects() {
   const handleGradeClick = async (grade) => {
     setSelectedGrade(grade);
 
-    const gradeNumber = grade.replace("Grade ", "");
-    const subject = teacherSubjects.find((item) => item.grade === gradeNumber);
+    const gradeNumber = String(grade).replace("Grade ", "").trim();
+
+    const subject = teacherSubjects.find(
+      (item) => String(item.grade).trim() === gradeNumber
+    );
 
     if (subject) {
       setSelectedSubject(subject);
@@ -172,7 +191,7 @@ function Subjects() {
 
     formData.append("file", file);
     formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-    formData.append("folder", `teacher_materials/${selectedSubject.subjectId}`);
+    formData.append("folder", `teacher_materials/${getSubjectId(selectedSubject, selectedGrade)}`);
 
     const response = await fetch(
       `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`,
@@ -201,7 +220,8 @@ function Subjects() {
       setUploading(true);
 
       const fileUrl = await uploadToCloudinary(file);
-      const gradeNumber = selectedGrade.replace("Grade ", "");
+      const gradeNumber = String(selectedGrade).replace("Grade ", "").trim();
+      const subjectId = getSubjectId(selectedSubject, selectedGrade);
 
       await addDoc(collection(db, "teacher_materials"), {
         type,
@@ -210,7 +230,7 @@ function Subjects() {
         fileName: file.name,
         fileSize: file.size,
         subjectName: selectedSubject.name,
-        subjectId: selectedSubject.subjectId,
+        subjectId,
         grade: gradeNumber,
         teacherId: teacher.id,
         teacherEmail: teacher.email,
@@ -365,7 +385,19 @@ function Subjects() {
                   size="small"
                   fullWidth
                   disabled={item.disabled}
-                  onClick={() => setActiveView(item.type)}
+                  onClick={() => {
+                    if (item.type === "exam") {
+                      navigate("/teacher-exams", {
+                        state: {
+                          subject: selectedSubject,
+                          grade: selectedGrade,
+                          teacher: teacher,
+                        },
+                      });
+                    } else {
+                      setActiveView(item.type);
+                    }
+                  }}
                 >
                   View
                 </MDButton>
@@ -376,11 +408,11 @@ function Subjects() {
                   color="dark"
                   size="small"
                   fullWidth
-                  disabled={item.disabled || uploading}
+                  disabled={item.disabled || item.uploadDisabled || uploading}
                 >
                   {uploading ? "Uploading..." : "Upload"}
 
-                  {!item.disabled && (
+                  {!item.disabled && !item.uploadDisabled && (
                     <input
                       type="file"
                       hidden

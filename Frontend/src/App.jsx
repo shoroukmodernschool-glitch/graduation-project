@@ -22,7 +22,7 @@ import SignUp from "./pages/signup/sign_up";
 import SignupParent from "./pages/signup/signup_parent";
 import SignupTeacher from "./pages/signup/signup_Teacher";
 import SignupAdmin from "./pages/signup/SignupAdmin";
-import VerifyCode from "./pages/signup/VerifyCode"; // ✅ إضافة
+import VerifyCode from "./pages/signup/VerifyCode";
 
 /* Contact */
 import Contact from "./pages/contactus/contact";
@@ -37,11 +37,8 @@ import UpperSchool from "./pages/ACADEMIC_LEVELS/UpperSchool";
 import Dashboard from "./dashboard/student/student";
 import Profile from "./dashboard/student/profile";
 import Tables from "./dashboard/layouts/tables";
-
 import Attendance from "./dashboard/student/attendance";
 import Notifications from "./dashboard/student/notifications";
-
-
 
 /* Parent Dashboard */
 import ParentDashboard from "./dashboard/layouts/dashboard/parent";
@@ -53,6 +50,7 @@ import TeacherStudents from "./dashboard/Teacher/students/Students";
 import TeacherAttendance from "./dashboard/Teacher/attendance/Attendance";
 import TeacherNotifications from "./dashboard/Teacher/notifications/Notifications";
 import TeacherProfile from "./dashboard/Teacher/profile/Profile";
+import TeacherExams from "./dashboard/Teacher/exams/TeacherExams";
 
 /* Subjects */
 import Subjects from "./dashboard/student/subjects/Subjects";
@@ -62,7 +60,6 @@ import SubjectDetails from "./dashboard/student/subject-details/SubjectDetails";
 import ChatbotPage from "./pages/chatbot/chatbot";
 
 import AdminDashboard from "./dashboard/admin/AdminDashboard";
-
 
 function App() {
   const location = useLocation();
@@ -82,6 +79,7 @@ function App() {
     location.pathname.startsWith("/teacher-attendance") ||
     location.pathname.startsWith("/teacher-notifications") ||
     location.pathname.startsWith("/teacher-profile") ||
+    location.pathname.startsWith("/teacher-exams") ||
     location.pathname.startsWith("/admin") ||
     location.pathname.startsWith("/profile") ||
     location.pathname.startsWith("/tables") ||
@@ -138,7 +136,7 @@ function App() {
         <Route path="/signup-teacher" element={<SignupTeacher />} />
         <Route path="/signup-admin" element={<SignupAdmin />} />
 
-        <Route path="/verify-code" element={<VerifyCode />} /> {/* ✅ إضافة */}
+        <Route path="/verify-code" element={<VerifyCode />} />
 
         <Route path="/contact" element={<Contact />} />
 
@@ -149,15 +147,15 @@ function App() {
 
         <Route path="/chatbot" element={<ChatbotPage />} />
 
+        <Route
+          path="/admin-dashboard"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
 
-<Route
-  path="/admin-dashboard"
-  element={
-    <ProtectedRoute>
-      <AdminDashboard />
-    </ProtectedRoute>
-  }
-/>
         <Route
           path="/student-dashboard"
           element={
@@ -230,6 +228,15 @@ function App() {
           }
         />
 
+        <Route
+          path="/teacher-exams"
+          element={
+            <ProtectedRoute>
+              <TeacherExams />
+            </ProtectedRoute>
+          }
+        />
+
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/subjects" element={<Subjects />} />
         <Route path="/subject/:id" element={<SubjectDetails />} />
@@ -272,7 +279,6 @@ function App() {
 
         <Route path="*" element={<Home />} />
       </Routes>
-
     </>
   );
 }

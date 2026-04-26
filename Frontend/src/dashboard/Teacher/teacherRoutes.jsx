@@ -6,6 +6,7 @@ import Students from "./students/Students";
 import Attendance from "./attendance/Attendance";
 import Notifications from "./notifications/Notifications";
 import Profile from "./profile/Profile";
+import TeacherExams from "./exams/TeacherExams";
 
 const teacherRoutes = [
   {
@@ -55,6 +56,13 @@ const teacherRoutes = [
     icon: <Icon fontSize="small">person</Icon>,
     route: "/teacher-profile",
     component: <Profile />,
+  },
+  {
+    type: "route",
+    name: "Teacher Exams",
+    key: "teacher-exams",
+    route: "/teacher-exams",
+    component: <TeacherExams />,
   },
 ];
 
