@@ -17,7 +17,6 @@ use App\Http\Controllers\AttendanceController;
 |--------------------------------------------------------------------------
 */
 
-// ✅ Route للتجربة
 Route::get('/test', function (Request $request) {
     return response()->json([
         'full_header' => $request->header('Authorization'),
@@ -25,6 +24,7 @@ Route::get('/test', function (Request $request) {
     ]);
 });
 
+<<<<<<< HEAD
 // 🔥 كل دول عليهم Logging تلقائي
 Route::middleware('activity.log')->group(function () {
 
@@ -64,6 +64,32 @@ Route::middleware('activity.log')->group(function () {
 Route::post('/attendance/mark', [AttendanceController::class, 'markAttendance']);
 
 // 🔥 Route محمي بالـ Firebase
+=======
+Route::middleware('activity.log')->group(function () {
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/verify-token', [FirebaseController::class, 'verifyToken']);
+
+    Route::post('/forgot-password/send-code', [ForgotPasswordController::class, 'sendCode']);
+    Route::post('/forgot-password/verify-code', [ForgotPasswordController::class, 'verifyCode']);
+    Route::post('/forgot-password/reset-password', [ForgotPasswordController::class, 'resetPassword']);
+
+    Route::post('/signup/send-otp', [SignupOtpController::class, 'sendOtp']);
+    Route::post('/signup/resend-otp', [SignupOtpController::class, 'resendOtp']);
+    Route::post('/signup/verify-otp', [SignupOtpController::class, 'verifyOtp']);
+
+    Route::post('/admin/send-login-otp', [AdminOtpController::class, 'sendOtp']);
+    Route::post('/admin/verify-login-otp', [AdminOtpController::class, 'verifyOtp']);
+
+    Route::post('/login/check-lock', [LoginSecurityController::class, 'checkLock']);
+    Route::post('/login/record-failed', [LoginSecurityController::class, 'recordFailed']);
+    Route::post('/login/clear-attempts', [LoginSecurityController::class, 'clearAttempts']);
+
+    Route::post('/chatbot/message', [ChatbotController::class, 'sendMessage']);
+    Route::post('/attendance/mark', [AttendanceController::class, 'markAttendance']);
+});
+
+>>>>>>> b4d232c60d77b7854e16fec7e5c1952fe59f2aee
 Route::middleware(['firebase.auth', 'activity.log'])->get('/protected', function (Request $request) {
     return response()->json([
         'message' => 'Authorized ✅',

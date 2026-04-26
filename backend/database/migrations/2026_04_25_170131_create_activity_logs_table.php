@@ -14,7 +14,8 @@ return new class extends Migration
             $table->string('user_email')->nullable();
             $table->string('user_role')->nullable();
 
-            $table->string('action');
+            $table->string('action')->nullable(); // الأفضل نخليها nullable
+
             $table->text('description')->nullable();
 
             $table->string('ip_address')->nullable();
