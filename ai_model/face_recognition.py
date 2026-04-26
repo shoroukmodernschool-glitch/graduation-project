@@ -8,6 +8,38 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 from insightface.app import FaceAnalysis
 from datetime import datetime
+import os
+from openpyxl import Workbook, load_workbook
+from datetime import datetime
+
+def save_attendance_to_excel(student_id, student_name):
+    file_path = "attendance_log.xlsx"
+
+    now = datetime.now()
+    today = now.strftime("%Y-%m-%d")
+    current_time = now.strftime("%H:%M:%S")
+
+    if not os.path.exists(file_path):
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = "Attendance"
+        sheet.append(["student_id", "student_name", "date", "time", "status"])
+        workbook.save(file_path)
+
+    workbook = load_workbook(file_path)
+    sheet = workbook["Attendance"]
+
+    for row in sheet.iter_rows(min_row=2, values_only=True):
+        if str(row[0]) == str(student_id) and str(row[2]) == today:
+            workbook.close()
+            return False
+
+    sheet.append([student_id, student_name, today, current_time, "Present"])
+    workbook.save(file_path)
+    workbook.close()
+
+    return True
+
 
 SIMILARITY_THRESHOLD = 0.66
 
@@ -517,6 +549,7 @@ def generate_frames():
 
                 if status == "inserted":
                     handled_students.add(student_id)
+                    save_attendance_to_excel(student_id, student_name)
                 elif status == "already_marked":
                     if student_id not in already_announced:
                         print(f"[ATTENDANCE] Already marked before: {student_name}")
