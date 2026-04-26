@@ -8,6 +8,8 @@ export default function AdminDashboard() {
   const [modal, setModal] = useState(null);
   const [toast, setToast] = useState("");
   const [dot, setDot] = useState(true);
+  const [isRunning, setIsRunning] = useState(false);
+  const [streamUrl, setStreamUrl] = useState("");
 
   const tabs = [
     "overview",
@@ -15,7 +17,7 @@ export default function AdminDashboard() {
     "teachers",
     "parents",
     "attendance",
-    "payments",
+    "ai-attendance",
     "reports",
     "messages",
   ];
@@ -36,6 +38,22 @@ export default function AdminDashboard() {
   const confirm = (msg) => {
     closeAll();
     showToast(msg);
+  };
+
+  const startCamera = () => {
+    if (isRunning) return;
+    setStreamUrl(`http://127.0.0.1:5000/video_feed?ts=${Date.now()}`);
+    setIsRunning(true);
+  };
+
+  const stopCamera = () => {
+    setIsRunning(false);
+    setStreamUrl("");
+  };
+
+  const formatTabName = (tab) => {
+    if (tab === "ai-attendance") return "AI Attendance";
+    return tab[0].toUpperCase() + tab.slice(1);
   };
 
   const renderModal = () => {
@@ -205,55 +223,6 @@ export default function AdminDashboard() {
       </div>
     );
 
-    if (type === "record-payment") return (
-      <div className="modal">
-        <div className="mtitle">Record payment — {d.name || "Student"}</div>
-        <input placeholder="Amount (EGP)" />
-        <select><option>Cash</option><option>Bank transfer</option><option>Card</option></select>
-        <input type="date" />
-        <input placeholder="Reference / receipt number" />
-        {footer("Payment recorded ✓", "Record payment")}
-      </div>
-    );
-
-    if (type === "payment-receipt") return (
-      <div className="modal">
-        <div className="mtitle">Payment receipt — {d.name || "Student"}</div>
-        <div className="pay-r"><span>Student</span><span>{d.name || "—"}</span></div>
-        <div className="pay-r"><span>Amount</span><span>EGP 4,500</span></div>
-        <div className="pay-r"><span>Date paid</span><span>April 1, 2026</span></div>
-        <div className="pay-r"><span>Method</span><span>Bank transfer</span></div>
-        <div className="pay-r"><span>Status</span><span className="pok">Paid</span></div>
-        <div className="mfooter">
-          <button className="mbtn" onClick={closeAll}>Close</button>
-          <button className="mbtn p" onClick={() => confirm("Receipt downloaded (PDF) ✓")}>Download PDF</button>
-        </div>
-      </div>
-    );
-
-    if (type === "send-reminders") return (
-      <div className="modal">
-        <div className="mtitle">Send payment reminders</div>
-        <select>
-          <option>All overdue (7 parents)</option>
-          <option>Overdue + partial (23 parents)</option>
-          <option>Grade 5 overdue only</option>
-          <option>Grade 6 overdue only</option>
-        </select>
-        <textarea placeholder="Custom message (optional — leave blank for default reminder)..." />
-        {footer("Reminders sent to 23 parents ✓", "Send reminders")}
-      </div>
-    );
-
-    if (type === "export-payments") return (
-      <div className="modal">
-        <div className="mtitle">Export financial report</div>
-        <select><option>This month</option><option>Last month</option><option>This semester</option><option>Full year</option></select>
-        <select><option>PDF</option><option>Excel</option><option>CSV</option></select>
-        {footer("Financial report downloaded ✓", "Download")}
-      </div>
-    );
-
     if (type === "export-report") return (
       <div className="modal">
         <div className="mtitle">Export report</div>
@@ -301,7 +270,6 @@ export default function AdminDashboard() {
           <div className="panel np show">
             <div className="pt">Notifications</div>
             <div className="ni">Sara Ahmed absent without excuse — Class 5B<span>10 min ago</span></div>
-            <div className="ni">Payment overdue: 3 students<span>1 hour ago</span></div>
             <div className="ni">New parent message from Mr. Karim<span>2 hours ago</span></div>
             <div className="ni">Monthly report ready to export<span>Today 8:00 AM</span></div>
           </div>
@@ -319,7 +287,7 @@ export default function AdminDashboard() {
         <div className="tabs">
           {tabs.map((t) => (
             <button key={t} className={`tab ${page === t ? "active" : ""}`} onClick={() => setPage(t)}>
-              {t[0].toUpperCase() + t.slice(1)}
+              {formatTabName(t)}
             </button>
           ))}
         </div>
@@ -330,7 +298,7 @@ export default function AdminDashboard() {
               <div className="mc"><div className="mc-l">Total students</div><div className="mc-v">842</div><div className="mc-s up">+14 this semester</div></div>
               <div className="mc"><div className="mc-l">Teaching staff</div><div className="mc-v">56</div><div className="mc-s muted">Across all grades</div></div>
               <div className="mc"><div className="mc-l">Today's attendance</div><div className="mc-v">91%</div><div className="mc-s dn">↓ 3% vs yesterday</div></div>
-              <div className="mc"><div className="mc-l">Pending payments</div><div className="mc-v">EGP 48k</div><div className="mc-s dn">23 overdue</div></div>
+              <div className="mc"><div className="mc-l">Parent messages</div><div className="mc-v">12</div><div className="mc-s muted">Need review</div></div>
             </div>
 
             <div className="grid2">
@@ -355,7 +323,6 @@ export default function AdminDashboard() {
                   ["#E24B4A", "3 students marked absent — Grade 5B", "20 min ago"],
                   ["#1D9E75", "Monthly report generated", "1 hour ago"],
                   ["#378ADD", "New teacher account created", "2 hours ago"],
-                  ["#EF9F27", "Payment reminder sent to 23 parents", "Today 9:00 AM"],
                   ["#7F77DD", "New parent message received", "Today 8:30 AM"],
                 ].map(([c, t, m]) => (
                   <div className="act-r" key={t}>
@@ -376,12 +343,11 @@ export default function AdminDashboard() {
                   })}
                 </div>
                 <div className="card">
-                  <div className="card-title">Payment summary</div>
-                  <div className="stat-row"><div className="stat-l">Collected</div><div className="stat-v" style={{ color: "#27500A" }}>EGP 312k</div></div>
-                  <div className="stat-row"><div className="stat-l">Pending</div><div className="stat-v" style={{ color: "#633806" }}>EGP 48k</div></div>
-                  <div className="stat-row"><div className="stat-l">Overdue</div><div className="stat-v" style={{ color: "#791F1F" }}>EGP 12k</div></div>
-                  <div className="stat-row"><div className="stat-l">Students paid</div><div className="stat-v">819 / 842</div></div>
-                  <div className="stat-row"><div className="stat-l">Collection rate</div><div className="stat-v">97%</div></div>
+                  <div className="card-title">School summary</div>
+                  <div className="stat-row"><div className="stat-l">Students</div><div className="stat-v">842</div></div>
+                  <div className="stat-row"><div className="stat-l">Teachers</div><div className="stat-v">56</div></div>
+                  <div className="stat-row"><div className="stat-l">Parents</div><div className="stat-v">631</div></div>
+                  <div className="stat-row"><div className="stat-l">Attendance rate</div><div className="stat-v">91%</div></div>
                 </div>
               </div>
 
@@ -391,7 +357,6 @@ export default function AdminDashboard() {
                 <button className="qb" onClick={() => openModal("add-teacher")}>Add new teacher</button>
                 <button className="qb" onClick={() => openModal("broadcast")}>Broadcast message</button>
                 <button className="qb" onClick={() => openModal("export-report")}>Export monthly report</button>
-                <button className="qb" onClick={() => openModal("send-reminders")}>Send payment reminders</button>
               </div>
             </div>
           </div>
@@ -474,13 +439,13 @@ export default function AdminDashboard() {
 
             <div className="card card-table">
               <table className="tbl">
-                <thead><tr><th>Parent name</th><th>Child(ren)</th><th>Contact</th><th>Payment status</th><th>Actions</th></tr></thead>
+                <thead><tr><th>Parent name</th><th>Child(ren)</th><th>Contact</th><th>Status</th><th>Actions</th></tr></thead>
                 <tbody>
                   {[
-                    ["Mr. Karim Ahmed", "Ahmed Karim (5A)", "01001234567", "bg", "Paid"],
-                    ["Mrs. Hana Hassan", "Sara Hassan (3B)", "01112345678", "ba", "Partial"],
-                    ["Mr. Tarek Nour", "Youssef (1A), Lina (3A)", "01223456789", "br", "Overdue"],
-                    ["Mrs. Rania Fawzi", "Lina Fawzi (6B)", "01334567890", "bg", "Paid"],
+                    ["Mr. Karim Ahmed", "Ahmed Karim (5A)", "01001234567", "bg", "Active"],
+                    ["Mrs. Hana Hassan", "Sara Hassan (3B)", "01112345678", "bg", "Active"],
+                    ["Mr. Tarek Nour", "Youssef (1A), Lina (3A)", "01223456789", "bg", "Active"],
+                    ["Mrs. Rania Fawzi", "Lina Fawzi (6B)", "01334567890", "bg", "Active"],
                   ].map(([name, child, contact, badge, status]) => (
                     <tr key={name}>
                       <td>{name}</td><td>{child}</td><td>{contact}</td><td><span className={`badge ${badge}`}>{status}</span></td>
@@ -534,43 +499,89 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {page === "payments" && (
-          <div className="page active">
-            <div className="page-header">
-              <div className="page-title">Payments & fees</div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button className="qb inline-btn" onClick={() => openModal("send-reminders")}>Send reminders</button>
-                <button className="qb inline-btn" onClick={() => openModal("export-payments")}>Export</button>
-              </div>
-            </div>
+        {page === "ai-attendance" && (
+  <div className="page active">
+    <div className="page-header">
+      <div className="page-title">AI Attendance</div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button className="qb inline-btn" onClick={startCamera}>
+          Start Camera
+        </button>
+        <button className="qb inline-btn" onClick={stopCamera}>
+          Stop Camera
+        </button>
+      </div>
+    </div>
 
-            <div className="metrics" style={{ marginBottom: 12 }}>
-              <div className="mc"><div className="mc-l">Total collected</div><div className="mc-v" style={{ color: "#27500A" }}>EGP 312k</div><div className="mc-s muted">This semester</div></div>
-              <div className="mc"><div className="mc-l">Pending</div><div className="mc-v" style={{ color: "#633806" }}>EGP 48k</div><div className="mc-s muted">23 students</div></div>
-              <div className="mc"><div className="mc-l">Overdue</div><div className="mc-v" style={{ color: "#791F1F" }}>EGP 12k</div><div className="mc-s dn">7 students</div></div>
-              <div className="mc"><div className="mc-l">Collection rate</div><div className="mc-v">97%</div><div className="mc-s up">+2% vs last month</div></div>
-            </div>
+    <div className="metrics" style={{ marginBottom: 12 }}>
+      <div className="mc">
+        <div className="mc-l">Camera status</div>
+        <div className="mc-v" style={{ color: isRunning ? "#27500A" : "#791F1F" }}>
+          {isRunning ? "Active" : "Inactive"}
+        </div>
+        <div className="mc-s muted">Face recognition model</div>
+      </div>
 
-            <div className="card card-table">
-              <table className="tbl">
-                <thead><tr><th>Student</th><th>Grade</th><th>Fee type</th><th>Amount</th><th>Due date</th><th>Status</th><th>Actions</th></tr></thead>
-                <tbody>
-                  {[
-                    ["Ahmed Karim", "5A", "Tuition", "EGP 4,500", "Apr 1", "bg", "Paid", "payment-receipt", "Receipt"],
-                    ["Sara Hassan", "3B", "Tuition", "EGP 4,500", "Apr 1", "ba", "Partial", "record-payment", "Record"],
-                    ["Lina Fawzi", "6B", "Tuition + Bus", "EGP 5,200", "Mar 15", "br", "Overdue", "record-payment", "Record"],
-                    ["Omar Tarek", "4A", "Activities", "EGP 800", "Apr 10", "bg", "Paid", "payment-receipt", "Receipt"],
-                  ].map(([name, grade, feeType, amount, due, badge, status, modalType, btn]) => (
-                    <tr key={name}>
-                      <td>{name}</td><td>{grade}</td><td>{feeType}</td><td>{amount}</td><td>{due}</td><td><span className={`badge ${badge}`}>{status}</span></td>
-                      <td><button className="mbtn sm" onClick={() => openModal(modalType, { name })}>{btn}</button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+      <div className="mc">
+        <div className="mc-l">Recognition</div>
+        <div className="mc-v">{isRunning ? "ON" : "OFF"}</div>
+        <div className="mc-s muted">Inside dashboard</div>
+      </div>
+    </div>
+
+    <div
+      className="card"
+      style={{
+        textAlign: "center",
+        minHeight: "620px",
+        padding: "28px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <div
+        style={{
+          width: "820px",
+          height: "520px",
+          maxWidth: "100%",
+          overflow: "hidden",
+          borderRadius: "15px",
+          border: "2px solid #ccc",
+          background: "#111",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {isRunning && streamUrl ? (
+          <img
+            src={streamUrl}
+            alt="AI Camera"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              color: "#fff",
+              fontSize: "22px",
+              fontWeight: "bold",
+              textAlign: "center",
+              padding: "20px",
+            }}
+          >
+            Click Start Camera to open Face Recognition
           </div>
         )}
+      </div>
+    </div>
+  </div>
+)}
 
         {page === "reports" && (
           <div className="page active">
@@ -596,7 +607,6 @@ export default function AdminDashboard() {
                 <div className="card-title">Export available reports</div>
                 <button className="qb" onClick={() => openModal("export-report")}>Monthly academic report</button>
                 <button className="qb" onClick={() => openModal("export-attendance")}>Attendance summary</button>
-                <button className="qb" onClick={() => openModal("export-payments")}>Financial report</button>
                 <button className="qb" onClick={() => openModal("export-report")}>Teacher performance report</button>
               </div>
             </div>
@@ -616,7 +626,7 @@ export default function AdminDashboard() {
                 <tbody>
                   {[
                     ["Mr. Karim Ahmed", "Question about Sara's grades", "Admin", "Today 10:30", "bb", "Unread", "Reply"],
-                    ["Admin", "Payment reminder — April fees", "All parents", "Today 9:00", "bg", "Sent", "View"],
+                    ["Admin", "General announcement", "All parents", "Today 9:00", "bg", "Sent", "View"],
                     ["Ms. Layla Omar", "Grade 3B performance update", "Admin", "Yesterday", "bg", "Read", "Reply"],
                     ["Admin", "Schedule change — Thursday", "All teachers", "Apr 20", "bg", "Sent", "View"],
                   ].map(([from, subj, to, date, badge, status, action]) => (
