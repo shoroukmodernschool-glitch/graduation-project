@@ -14,9 +14,16 @@ class ForgotPasswordController extends Controller
 {
     protected $auth;
 
+    private int $sendCooldownSeconds = 60;
+    private int $maxSendAttempts = 5;
+    private int $sendBlockMinutes = 15;
+
+    private int $maxVerifyAttempts = 5;
+    private int $verifyBlockMinutes = 15;
+
     public function __construct()
     {
-        $configured = env('FIREBASE_CREDENTIALS', 'storage/firebase/firebase.json');
+        $configured = env('FIREBASE_CREDENTIALS', 'storage/firebase.json');
         $credentialsPath = base_path($configured);
 
         if (!file_exists($credentialsPath)) {
@@ -35,6 +42,34 @@ class ForgotPasswordController extends Controller
 
         try {
             $email = strtolower(trim($request->email));
+            $emailHash = md5($email);
+
+            $sendCooldownKey = 'password_reset_send_cooldown_' . $emailHash;
+            $sendAttemptsKey = 'password_reset_send_attempts_' . $emailHash;
+            $sendBlockedKey = 'password_reset_send_blocked_' . $emailHash;
+
+            if (Cache::has($sendBlockedKey)) {
+                return response()->json([
+                    'message' => 'Too many requests. Please try again later.'
+                ], 429);
+            }
+
+            if (Cache::has($sendCooldownKey)) {
+                return response()->json([
+                    'message' => 'Please wait 60 seconds before requesting another code.'
+                ], 429);
+            }
+
+            $sendAttempts = Cache::get($sendAttemptsKey, 0);
+
+            if ($sendAttempts >= $this->maxSendAttempts) {
+                Cache::put($sendBlockedKey, true, now()->addMinutes($this->sendBlockMinutes));
+                Cache::forget($sendAttemptsKey);
+
+                return response()->json([
+                    'message' => 'Too many code requests. You are temporarily blocked for 15 minutes.'
+                ], 429);
+            }
 
             try {
                 $this->auth->getUserByEmail($email);
@@ -47,7 +82,7 @@ class ForgotPasswordController extends Controller
             $code = (string) random_int(100000, 999999);
 
             Cache::put(
-                'password_reset_code_' . md5($email),
+                'password_reset_code_' . $emailHash,
                 [
                     'email' => $email,
                     'code' => $code,
@@ -55,6 +90,9 @@ class ForgotPasswordController extends Controller
                 ],
                 now()->addMinutes(10)
             );
+
+            Cache::put($sendCooldownKey, true, now()->addSeconds($this->sendCooldownSeconds));
+            Cache::put($sendAttemptsKey, $sendAttempts + 1, now()->addMinutes($this->sendBlockMinutes));
 
             Mail::to($email)->send(new ForgotPasswordCodeMail($code));
 
@@ -80,8 +118,18 @@ class ForgotPasswordController extends Controller
         try {
             $email = strtolower(trim($request->email));
             $code = trim($request->code);
+            $emailHash = md5($email);
 
-            $cacheKey = 'password_reset_code_' . md5($email);
+            $cacheKey = 'password_reset_code_' . $emailHash;
+            $verifyAttemptsKey = 'password_reset_verify_attempts_' . $emailHash;
+            $verifyBlockedKey = 'password_reset_verify_blocked_' . $emailHash;
+
+            if (Cache::has($verifyBlockedKey)) {
+                return response()->json([
+                    'message' => 'Too many wrong attempts. Please try again later.'
+                ], 429);
+            }
+
             $data = Cache::get($cacheKey);
 
             if (!$data) {
@@ -97,6 +145,19 @@ class ForgotPasswordController extends Controller
             }
 
             if (($data['code'] ?? '') !== $code) {
+                $verifyAttempts = Cache::get($verifyAttemptsKey, 0) + 1;
+
+                if ($verifyAttempts >= $this->maxVerifyAttempts) {
+                    Cache::put($verifyBlockedKey, true, now()->addMinutes($this->verifyBlockMinutes));
+                    Cache::forget($verifyAttemptsKey);
+
+                    return response()->json([
+                        'message' => 'Too many wrong attempts. You are temporarily blocked for 15 minutes.'
+                    ], 429);
+                }
+
+                Cache::put($verifyAttemptsKey, $verifyAttempts, now()->addMinutes($this->verifyBlockMinutes));
+
                 return response()->json([
                     'message' => 'Invalid verification code'
                 ], 400);
@@ -104,6 +165,8 @@ class ForgotPasswordController extends Controller
 
             $data['used'] = true;
             Cache::put($cacheKey, $data, now()->addMinutes(10));
+            Cache::forget($verifyAttemptsKey);
+            Cache::forget($verifyBlockedKey);
 
             return response()->json([
                 'message' => 'Code verified successfully'

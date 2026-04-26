@@ -8,3 +8,5 @@ backend/storage/firebase/
 __pycache__/
 backend/storage/firebase/firebase_credentials.jsonai_model/firebase_key.json
 ai_model/firebase_key.json
+backend/storage/firebase.json
+firebase.json.backup

@@ -10,7 +10,7 @@ from insightface.app import FaceAnalysis
 from datetime import datetime
 import os
 from openpyxl import Workbook, load_workbook
-from datetime import datetime
+
 
 def save_attendance_to_excel(student_id, student_name):
     file_path = "attendance_log.xlsx"
@@ -62,6 +62,27 @@ BOX_SMOOTHING_ALPHA = 0.55
 REQUIRED_MATCH_FRAMES = 1
 TRACK_TTL_SEC = 0.9
 TRACK_MATCH_DISTANCE = 170
+
+BACKEND_ATTENDANCE_URL = "http://127.0.0.1:8000/api/attendance/mark"
+
+
+def send_attendance_to_backend(student_id):
+    try:
+        response = requests.post(
+            BACKEND_ATTENDANCE_URL,
+            json={"student_id": student_id},
+            timeout=2
+        )
+
+        if response.status_code == 200:
+            print(f"[API] Attendance sent for student_id={student_id}")
+        elif response.status_code == 409:
+            print(f"[API] Already recorded for student_id={student_id}")
+        else:
+            print(f"[API ERROR] status={response.status_code} response={response.text}")
+
+    except Exception as e:
+        print(f"[API FAILED] {e}")
 
 
 class VideoStream:
@@ -410,6 +431,13 @@ def mark_attendance(firestore_db, student_id, student_name):
         "method": "face_recognition"
     })
     print(f"[ATTENDANCE] Marked present: {student_name}")
+
+    threading.Thread(
+        target=send_attendance_to_backend,
+        args=(student_id,),
+        daemon=True
+    ).start()
+
     return "inserted"
 
 
@@ -549,7 +577,13 @@ def generate_frames():
 
                 if status == "inserted":
                     handled_students.add(student_id)
-                    save_attendance_to_excel(student_id, student_name)
+
+                    threading.Thread(
+                        target=save_attendance_to_excel,
+                        args=(student_id, student_name),
+                        daemon=True
+                    ).start()
+
                 elif status == "already_marked":
                     if student_id not in already_announced:
                         print(f"[ATTENDANCE] Already marked before: {student_name}")

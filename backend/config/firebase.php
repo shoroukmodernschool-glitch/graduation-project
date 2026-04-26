@@ -1,6 +1,5 @@
-
 <?php
 
 return [
-    'credentials' => storage_path('firebase/firebase_credentials.json'),
+    'credentials' => storage_path('firebase.json'),
 ];
