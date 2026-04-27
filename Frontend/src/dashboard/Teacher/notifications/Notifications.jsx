@@ -7,7 +7,20 @@ import Select from "@mui/material/Select";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import Chip from "@mui/material/Chip";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import { auth, db } from "../../../firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  updateDoc,
+  arrayUnion,
+} from "firebase/firestore";
 
 import MDBox from "../../../components/MDBox";
 import MDTypography from "../../../components/MDTypography";
@@ -21,51 +34,105 @@ import Footer from "../../examples/Footer";
 function Notifications() {
   const [selectedType, setSelectedType] = useState("All");
   const [search, setSearch] = useState("");
+  const [notifications, setNotifications] = useState([]);
+  const [studentInfo, setStudentInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const [notifications] = useState([
-    {
-      id: 1,
-      title: "New assignment submission",
-      message: "Ahmed Mohamed submitted the Mathematics homework for Grade 5.",
-      type: "Assignment",
-      date: "Today, 10:30 AM",
-      isNew: true,
-    },
-    {
-      id: 2,
-      title: "Exam reminder",
-      message: "Grade 6 mathematics quiz is scheduled for tomorrow.",
-      type: "Exam",
-      date: "Today, 08:15 AM",
-      isNew: true,
-    },
-    {
-      id: 3,
-      title: "Attendance update",
-      message: "Mariam Tarek was marked late in Grade 6 today.",
-      type: "Attendance",
-      date: "Yesterday, 12:40 PM",
-      isNew: false,
-    },
-    {
-      id: 4,
-      title: "PDF uploaded successfully",
-      message: "Your lesson PDF for Grade 5 has been uploaded.",
-      type: "Files",
-      date: "Yesterday, 09:20 AM",
-      isNew: false,
-    },
-    {
-      id: 5,
-      title: "New student added",
-      message: "A new student has been added to your Grade 5 class.",
-      type: "Students",
-      date: "2 days ago",
-      isNew: false,
-    },
-  ]);
+  const notificationTypes = ["All", "Assignment", "Exam", "Attendance", "Files", "Video", "PDF"];
 
-  const notificationTypes = ["All", "Assignment", "Exam", "Attendance", "Files", "Students"];
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setStudentInfo(null);
+        setNotifications([]);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+
+        const studentRef = doc(db, "student", user.uid);
+        const studentSnap = await getDoc(studentRef);
+
+        if (!studentSnap.exists()) {
+          setStudentInfo(null);
+          setNotifications([]);
+          setLoading(false);
+          return;
+        }
+
+        const studentData = studentSnap.data();
+        const studentGrade = String(studentData.grade || "").trim();
+
+        setStudentInfo({
+          id: user.uid,
+          email: user.email,
+          ...studentData,
+        });
+
+        const notificationsQuery = query(
+          collection(db, "notifications"),
+          where("targetRole", "==", "student"),
+          where("grade", "==", studentGrade)
+        );
+
+        const notificationsSnapshot = await getDocs(notificationsQuery);
+
+        const notificationsData = notificationsSnapshot.docs.map((docItem) => {
+          const data = docItem.data();
+          const readBy = data.readBy || [];
+
+          return {
+            id: docItem.id,
+            title: data.title || "Notification",
+            message: data.message || "",
+            type: normalizeType(data.type),
+            date: formatDate(data.createdAt),
+            isNew: !readBy.includes(user.uid),
+            readBy,
+            createdAt: data.createdAt,
+            ...data,
+          };
+        });
+
+        notificationsData.sort((a, b) => {
+          const dateA = a.createdAt?.seconds || 0;
+          const dateB = b.createdAt?.seconds || 0;
+          return dateB - dateA;
+        });
+
+        setNotifications(notificationsData);
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+        setNotifications([]);
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const normalizeType = (type) => {
+    const value = String(type || "").toLowerCase();
+
+    if (value === "exam") return "Exam";
+    if (value === "assignment") return "Assignment";
+    if (value === "attendance") return "Attendance";
+    if (value === "video") return "Video";
+    if (value === "pdf") return "PDF";
+    if (value === "file" || value === "files") return "Files";
+
+    return "Files";
+  };
+
+  const formatDate = (timestamp) => {
+    if (!timestamp?.seconds) return "Just now";
+
+    const date = new Date(timestamp.seconds * 1000);
+    return date.toLocaleString();
+  };
 
   const filteredNotifications = useMemo(() => {
     return notifications.filter((item) => {
@@ -82,6 +149,33 @@ function Notifications() {
   const newCount = notifications.filter((item) => item.isNew).length;
   const totalCount = notifications.length;
 
+  const markAllAsRead = async () => {
+    if (!studentInfo?.id) return;
+
+    try {
+      const unreadNotifications = notifications.filter((item) => item.isNew);
+
+      await Promise.all(
+        unreadNotifications.map((item) =>
+          updateDoc(doc(db, "notifications", item.id), {
+            readBy: arrayUnion(studentInfo.id),
+          })
+        )
+      );
+
+      setNotifications((prev) =>
+        prev.map((item) => ({
+          ...item,
+          isNew: false,
+          readBy: [...(item.readBy || []), studentInfo.id],
+        }))
+      );
+    } catch (error) {
+      console.error("Error marking notifications as read:", error);
+      alert("Error marking notifications as read.");
+    }
+  };
+
   const getTypeIcon = (type) => {
     switch (type) {
       case "Assignment":
@@ -90,10 +184,11 @@ function Notifications() {
         return "quiz";
       case "Attendance":
         return "fact_check";
+      case "Video":
+        return "smart_display";
+      case "PDF":
       case "Files":
         return "picture_as_pdf";
-      case "Students":
-        return "groups";
       default:
         return "notifications";
     }
@@ -107,10 +202,12 @@ function Notifications() {
         return <Chip label="Exam" color="warning" size="small" />;
       case "Attendance":
         return <Chip label="Attendance" color="success" size="small" />;
+      case "Video":
+        return <Chip label="Video" color="info" size="small" />;
+      case "PDF":
+        return <Chip label="PDF" color="secondary" size="small" />;
       case "Files":
         return <Chip label="Files" color="info" size="small" />;
-      case "Students":
-        return <Chip label="Students" color="secondary" size="small" />;
       default:
         return <Chip label={type} size="small" />;
     }
@@ -141,55 +238,36 @@ function Notifications() {
             </MDTypography>
 
             <MDTypography variant="button" color="white" opacity={0.8}>
-              Review the latest updates related to your classes, students, and subject content.
+              Review the latest updates related to your exams, lessons, and assignments.
             </MDTypography>
           </MDBox>
         </Card>
 
         <Grid container spacing={3} mb={4}>
           <Grid item xs={12} md={6}>
-            <Card
-              sx={{
-                p: 2.5,
-                borderRadius: "18px",
-                boxShadow: "0 8px 24px rgba(15,23,42,0.08)",
-              }}
-            >
+            <Card sx={{ p: 2.5, borderRadius: "18px", boxShadow: "0 8px 24px rgba(15,23,42,0.08)" }}>
               <MDTypography variant="button" color="text">
                 Total Notifications
               </MDTypography>
               <MDTypography variant="h3" fontWeight="bold">
-                {totalCount}
+                {loading ? "..." : totalCount}
               </MDTypography>
             </Card>
           </Grid>
 
           <Grid item xs={12} md={6}>
-            <Card
-              sx={{
-                p: 2.5,
-                borderRadius: "18px",
-                boxShadow: "0 8px 24px rgba(15,23,42,0.08)",
-              }}
-            >
+            <Card sx={{ p: 2.5, borderRadius: "18px", boxShadow: "0 8px 24px rgba(15,23,42,0.08)" }}>
               <MDTypography variant="button" color="text">
                 New Notifications
               </MDTypography>
               <MDTypography variant="h3" fontWeight="bold">
-                {newCount}
+                {loading ? "..." : newCount}
               </MDTypography>
             </Card>
           </Grid>
         </Grid>
 
-        <Card
-          sx={{
-            p: 3,
-            borderRadius: "18px",
-            boxShadow: "0 8px 24px rgba(15,23,42,0.08)",
-            mb: 4,
-          }}
-        >
+        <Card sx={{ p: 3, borderRadius: "18px", boxShadow: "0 8px 24px rgba(15,23,42,0.08)", mb: 4 }}>
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} md={7}>
               <MDInput
@@ -226,13 +304,7 @@ function Notifications() {
           </MDBox>
         </Card>
 
-        <Card
-          sx={{
-            p: 3,
-            borderRadius: "18px",
-            boxShadow: "0 8px 24px rgba(15,23,42,0.08)",
-          }}
-        >
+        <Card sx={{ p: 3, borderRadius: "18px", boxShadow: "0 8px 24px rgba(15,23,42,0.08)" }}>
           <MDBox mb={2}>
             <MDTypography variant="h5" fontWeight="bold">
               Latest Notifications
@@ -245,7 +317,13 @@ function Notifications() {
           <Divider />
 
           <MDBox mt={2}>
-            {filteredNotifications.length === 0 ? (
+            {loading ? (
+              <MDBox py={5} textAlign="center">
+                <MDTypography variant="h5" fontWeight="bold">
+                  Loading notifications...
+                </MDTypography>
+              </MDBox>
+            ) : filteredNotifications.length === 0 ? (
               <MDBox py={5} textAlign="center">
                 <MDBox
                   sx={{
@@ -266,7 +344,7 @@ function Notifications() {
                   No notifications found
                 </MDTypography>
                 <MDTypography variant="button" color="text">
-                  Try changing the search text or selected notification type.
+                  No updates have been added for your grade yet.
                 </MDTypography>
               </MDBox>
             ) : (
@@ -334,7 +412,7 @@ function Notifications() {
 
           {filteredNotifications.length > 0 && (
             <MDBox mt={3} display="flex" justifyContent="flex-end">
-              <MDButton variant="outlined" color="dark" size="small">
+              <MDButton variant="outlined" color="dark" size="small" onClick={markAllAsRead}>
                 Mark all as read
               </MDButton>
             </MDBox>

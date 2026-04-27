@@ -1,0 +1,118 @@
+.teacher-exams-page {
+  padding: 30px;
+  background: #f3f6fb;
+  min-height: 100vh;
+}
+
+.exam-header {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: white;
+  padding: 35px;
+  border-radius: 22px;
+  margin-bottom: 25px;
+}
+
+.exam-back-btn,
+.exam-add-btn,
+.exam-save-btn {
+  border: none;
+  cursor: pointer;
+  border-radius: 12px;
+  font-weight: 700;
+  padding: 11px 18px;
+}
+
+.exam-back-btn {
+  background: #e5e7eb;
+  color: #111827;
+  margin-bottom: 18px;
+}
+
+.exam-form-card,
+.question-card {
+  background: white;
+  border-radius: 20px;
+  padding: 25px;
+  margin-bottom: 22px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.exam-input {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 15px;
+  font-size: 15px;
+  outline: none;
+}
+
+.exam-input:focus {
+  border-color: #111827;
+}
+
+.question-title {
+  color: #1e2f50;
+  margin-bottom: 15px;
+}
+
+.option-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.correct-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #1e2f50;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.exam-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.exam-add-btn {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.exam-save-btn {
+  background: #111827;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .option-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+
+.question-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.exam-delete-btn {
+  border: none;
+  background: #ef4444;
+  color: white;
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.exam-delete-btn:hover {
+  background: #dc2626;
+}

@@ -9,6 +9,8 @@ import {
   where,
   doc,
   getDoc,
+  setDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import DashboardNavbar from "../../examples/Navbars/DashboardNavbar";
 import "./SubjectDetails.css";
@@ -35,11 +37,18 @@ export default function SubjectDetails() {
 
   const [activeTab, setActiveTab] = useState("lessons");
   const [firebaseSubject, setFirebaseSubject] = useState(null);
+  const [studentInfo, setStudentInfo] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [exams, setExams] = useState([]);
   const [teacherMaterials, setTeacherMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [activeExam, setActiveExam] = useState(null);
+  const [examAnswers, setExamAnswers] = useState({});
+  const [examScore, setExamScore] = useState(null);
+
+  const [submittedExams, setSubmittedExams] = useState({});
 
   const subjectName = decodeURIComponent(id || "");
 
@@ -47,10 +56,12 @@ export default function SubjectDetails() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         setFirebaseSubject(null);
+        setStudentInfo(null);
         setLessons([]);
         setAssignments([]);
         setExams([]);
         setTeacherMaterials([]);
+        setSubmittedExams({});
         setLoading(false);
         return;
       }
@@ -63,10 +74,12 @@ export default function SubjectDetails() {
 
         if (!studentSnap.exists()) {
           setFirebaseSubject(null);
+          setStudentInfo(null);
           setLessons([]);
           setAssignments([]);
           setExams([]);
           setTeacherMaterials([]);
+          setSubmittedExams({});
           setLoading(false);
           return;
         }
@@ -74,6 +87,12 @@ export default function SubjectDetails() {
         const studentData = studentSnap.data();
         const studentGrade = String(studentData.grade || "").trim();
         const studentStage = String(studentData.stage || "").toLowerCase().trim();
+
+        setStudentInfo({
+          id: user.uid,
+          email: user.email,
+          ...studentData,
+        });
 
         const snapshot = await getDocs(collection(db, "subject"));
 
@@ -101,17 +120,25 @@ export default function SubjectDetails() {
           setAssignments([]);
           setExams([]);
           setTeacherMaterials([]);
+          setSubmittedExams({});
           setLoading(false);
           return;
         }
 
         setFirebaseSubject(selectedSubject);
 
-        const lessonsSnapshot = await getDocs(collection(db, "subject", selectedSubject.id, "lessons"));
+        const expectedSubjectId =
+          selectedSubject.subjectId ||
+          selectedSubject.subject_id ||
+          `grade${studentGrade}_${subjectName.toLowerCase()}`;
+
+        const lessonsSnapshot = await getDocs(
+          collection(db, "subject", selectedSubject.id, "lessons")
+        );
+
         const assignmentsSnapshot = await getDocs(
           collection(db, "subject", selectedSubject.id, "assignments")
         );
-        const examsSnapshot = await getDocs(collection(db, "subject", selectedSubject.id, "exams"));
 
         setLessons(
           lessonsSnapshot.docs.map((docItem, index) => ({
@@ -129,19 +156,35 @@ export default function SubjectDetails() {
           }))
         );
 
-        setExams(
-          examsSnapshot.docs.map((docItem, index) => ({
-            id: index + 1,
-            firebaseId: docItem.id,
-            ...docItem.data(),
-          }))
+        const teacherExamsQuery = query(
+          collection(db, "teacher_exams"),
+          where("grade", "==", studentGrade),
+          where("subjectId", "==", expectedSubjectId)
         );
 
-        const expectedSubjectId =
-          selectedSubject.subjectId ||
-          selectedSubject.subject_id ||
-          selectedSubject.id ||
-          `grade${studentGrade}_${subjectName.toLowerCase()}`;
+        const teacherExamsSnapshot = await getDocs(teacherExamsQuery);
+
+        const examsData = teacherExamsSnapshot.docs.map((docItem, index) => ({
+          id: index + 1,
+          firebaseId: docItem.id,
+          ...docItem.data(),
+        }));
+
+        setExams(examsData);
+
+        const submittedMap = {};
+
+        for (const exam of examsData) {
+          const resultId = `${user.uid}_${exam.firebaseId}`;
+          const resultRef = doc(db, "exam_results", resultId);
+          const resultSnap = await getDoc(resultRef);
+
+          if (resultSnap.exists()) {
+            submittedMap[exam.firebaseId] = resultSnap.data();
+          }
+        }
+
+        setSubmittedExams(submittedMap);
 
         const materialsQuery = query(
           collection(db, "teacher_materials"),
@@ -165,6 +208,7 @@ export default function SubjectDetails() {
         setAssignments([]);
         setExams([]);
         setTeacherMaterials([]);
+        setSubmittedExams({});
       } finally {
         setLoading(false);
       }
@@ -199,6 +243,211 @@ export default function SubjectDetails() {
     if (!url) return;
     window.open(url, "_blank", "noopener,noreferrer");
   };
+
+  const startExam = async (exam) => {
+    const user = auth.currentUser;
+
+    if (!user) {
+      alert("Please login first.");
+      return;
+    }
+
+    const resultId = `${user.uid}_${exam.firebaseId}`;
+    const resultRef = doc(db, "exam_results", resultId);
+    const resultSnap = await getDoc(resultRef);
+
+    if (resultSnap.exists()) {
+      const savedResult = resultSnap.data();
+
+      setSubmittedExams((prev) => ({
+        ...prev,
+        [exam.firebaseId]: savedResult,
+      }));
+
+      alert("You already submitted this exam.");
+      return;
+    }
+
+    setActiveExam(exam);
+    setExamAnswers({});
+    setExamScore(null);
+  };
+
+  const chooseAnswer = (questionIndex, optionIndex) => {
+    if (examScore) return;
+
+    setExamAnswers((prev) => ({
+      ...prev,
+      [questionIndex]: optionIndex,
+    }));
+  };
+
+  const submitExam = async () => {
+    if (!activeExam) return;
+
+    const user = auth.currentUser;
+
+    if (!user) {
+      alert("Please login first.");
+      return;
+    }
+
+    const resultId = `${user.uid}_${activeExam.firebaseId}`;
+    const resultRef = doc(db, "exam_results", resultId);
+    const oldResultSnap = await getDoc(resultRef);
+
+    if (oldResultSnap.exists()) {
+      const savedResult = oldResultSnap.data();
+
+      setSubmittedExams((prev) => ({
+        ...prev,
+        [activeExam.firebaseId]: savedResult,
+      }));
+
+      setActiveExam(null);
+      alert("You already submitted this exam.");
+      return;
+    }
+
+    const totalQuestions = activeExam.questions?.length || 0;
+
+    if (Object.keys(examAnswers).length < totalQuestions) {
+      alert("Please answer all questions first.");
+      return;
+    }
+
+    let correctAnswers = 0;
+
+    activeExam.questions.forEach((question, index) => {
+      if (examAnswers[index] === question.correct) {
+        correctAnswers += 1;
+      }
+    });
+
+    const percentage = Math.round((correctAnswers / totalQuestions) * 100);
+
+    const resultData = {
+      examId: activeExam.firebaseId,
+      examTitle: activeExam.title,
+      subjectName,
+      subjectId: activeExam.subjectId,
+      grade: activeExam.grade,
+      studentId: studentInfo?.id || user.uid,
+      studentEmail: studentInfo?.email || user.email || "",
+      answers: examAnswers,
+      score: correctAnswers,
+      total: totalQuestions,
+      percentage,
+      submitted: true,
+      submittedAt: serverTimestamp(),
+    };
+
+    setExamScore({
+      correct: correctAnswers,
+      total: totalQuestions,
+      percentage,
+    });
+
+    try {
+      await setDoc(resultRef, resultData);
+
+      setSubmittedExams((prev) => ({
+        ...prev,
+        [activeExam.firebaseId]: {
+          ...resultData,
+          submittedAt: new Date(),
+        },
+      }));
+    } catch (error) {
+      console.error("Error saving exam result:", error);
+      alert("Error saving exam result.");
+    }
+  };
+
+  if (activeExam) {
+    return (
+      <div className={`subject-page ${subject.color}`}>
+        <DashboardNavbar />
+
+        <div className="subject-container">
+          <header className="subject-hero">
+            <button className="back-btn" onClick={() => setActiveExam(null)}>
+              <i className="fa-solid fa-arrow-left"></i>
+              <span>Back to Exams</span>
+            </button>
+
+            <div className="hero-center">
+              <p className="hero-subtitle">Exam</p>
+              <h1>{activeExam.title || "Untitled Exam"}</h1>
+              <p className="hero-subtitle">
+                Duration: {activeExam.duration || "-"} minutes
+              </p>
+            </div>
+          </header>
+
+          <section className="cards-grid">
+            {activeExam.questions?.map((question, qIndex) => (
+              <div className="content-card" key={qIndex}>
+                <div className="card-head">
+                  <div className="card-icon">
+                    <i className="fa-solid fa-circle-question"></i>
+                  </div>
+                  <div>
+                    <h3>Question {qIndex + 1}</h3>
+                    <h4>{question.question}</h4>
+                  </div>
+                </div>
+
+                <hr />
+
+                {question.options.map((option, optionIndex) => (
+                  <label
+                    key={optionIndex}
+                    style={{
+                      display: "block",
+                      margin: "12px 0",
+                      cursor: examScore ? "not-allowed" : "pointer",
+                      fontWeight: "600",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name={`question-${qIndex}`}
+                      checked={examAnswers[qIndex] === optionIndex}
+                      disabled={!!examScore}
+                      onChange={() => chooseAnswer(qIndex, optionIndex)}
+                      style={{ marginRight: "10px" }}
+                    />
+                    {option}
+                  </label>
+                ))}
+              </div>
+            ))}
+          </section>
+
+          <div style={{ marginTop: "25px", textAlign: "center" }}>
+            {!examScore && (
+              <button className="exam-btn" onClick={submitExam}>
+                Submit Exam
+              </button>
+            )}
+
+            {examScore && (
+              <div className="content-card" style={{ marginTop: "25px" }}>
+                <h2>
+                  Your Score: {examScore.correct} / {examScore.total}
+                </h2>
+                <h3>{examScore.percentage}%</h3>
+                <p style={{ marginTop: "10px", fontWeight: "600" }}>
+                  Exam submitted successfully. You cannot edit your answers now.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`subject-page ${subject.color}`}>
@@ -294,11 +543,6 @@ export default function SubjectDetails() {
 
                     <hr />
 
-                    <p className="meta-line">
-                      <i className="fa-regular fa-calendar"></i>{" "}
-                      {lesson.date || lesson.createdAt || "-"}
-                    </p>
-
                     <div className="btns">
                       <button
                         className="primary-btn"
@@ -332,11 +576,6 @@ export default function SubjectDetails() {
 
                     <hr />
 
-                    <p className="meta-line">
-                      <i className="fa-solid fa-chalkboard-user"></i>{" "}
-                      {video.subjectName || subjectName}
-                    </p>
-
                     <div className="btns">
                       <button
                         className="primary-btn"
@@ -362,11 +601,6 @@ export default function SubjectDetails() {
                     </div>
 
                     <hr />
-
-                    <p className="meta-line">
-                      <i className="fa-solid fa-chalkboard-user"></i>{" "}
-                      {pdf.subjectName || subjectName}
-                    </p>
 
                     <div className="btns">
                       <button
@@ -404,25 +638,6 @@ export default function SubjectDetails() {
                   <hr />
 
                   <p className="meta-line">Deadline: {assignment.deadline || "-"}</p>
-
-                  <div className="assignment-footer">
-                    <span
-                      className={
-                        assignment.status === "Submitted"
-                          ? "status-badge submitted"
-                          : "status-badge not-submitted"
-                      }
-                    >
-                      {assignment.status || "Not Submitted"}
-                    </span>
-
-                    <div className="btns small-btns">
-                      <button className="secondary-btn">
-                        <i className="fa-solid fa-file-arrow-up"></i> Upload
-                      </button>
-                      <button className="primary-btn">Submit</button>
-                    </div>
-                  </div>
                 </div>
               ))
             )}
@@ -434,26 +649,48 @@ export default function SubjectDetails() {
             {subject.exams.length === 0 ? (
               <div className="empty-card">No exams available.</div>
             ) : (
-              subject.exams.map((exam) => (
-                <div className="content-card" key={exam.firebaseId || exam.id}>
-                  <div className="card-head">
-                    <div className="card-icon">
-                      <i className="fa-solid fa-pen-to-square"></i>
-                    </div>
-                    <div>
-                      <h3>Quiz {exam.id}</h3>
-                      <h4>{exam.title || "Untitled Exam"}</h4>
-                    </div>
-                  </div>
+              subject.exams.map((exam) => {
+                const savedResult = submittedExams[exam.firebaseId];
 
-                  <hr />
+                return (
+                  <div className="content-card" key={exam.firebaseId || exam.id}>
+                    <div className="card-head">
+                      <div className="card-icon">
+                        <i className="fa-solid fa-pen-to-square"></i>
+                      </div>
+                      <div>
+                        <h3>Quiz {exam.id}</h3>
+                        <h4>{exam.title || "Untitled Exam"}</h4>
+                      </div>
+                    </div>
 
-                  <div className="exam-row">
-                    <p className="meta-line">Duration: {exam.duration || "-"}</p>
-                    <button className="exam-btn">Start Exam</button>
+                    <hr />
+
+                    <div className="exam-row">
+                      <p className="meta-line">
+                        Duration: {exam.duration || "-"} minutes
+                      </p>
+
+                      {savedResult ? (
+                        <button className="exam-btn" disabled>
+                          Submitted
+                        </button>
+                      ) : (
+                        <button className="exam-btn" onClick={() => startExam(exam)}>
+                          Start Exam
+                        </button>
+                      )}
+                    </div>
+
+                    {savedResult && (
+                      <div style={{ marginTop: "15px", fontWeight: "700" }}>
+                        Your Score: {savedResult.score} / {savedResult.total} -{" "}
+                        {savedResult.percentage}%
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </section>
         )}
