@@ -19,13 +19,16 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
-            \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api', // ✅ Rate Limiting
+            \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
     ];
 
     protected $routeMiddleware = [
-        'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class, // ✅ تقدر تستخدمه على Routes
+        'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'noBackHistory' => \App\Http\Middleware\NoBackHistory::class,
+
+        // ✅ إضافة اللوجينج هنا
+        'activity.log' => \App\Http\Middleware\ActivityLogMiddleware::class,
     ];
 }

@@ -6,47 +6,50 @@ import "./Parent.css";
 
 import { auth, db } from "../../../../firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  orderBy,
+} from "firebase/firestore";
 
 function ParentDashboard() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [overlayOpen, setOverlayOpen] = useState(false);
+  const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
   const [toast, setToast] = useState("");
   const [selectedChild, setSelectedChild] = useState(null);
   const [activeModal, setActiveModal] = useState(null);
 
   const [children, setChildren] = useState([]);
+  const [attendanceDetails, setAttendanceDetails] = useState([]);
   const [loadingChildren, setLoadingChildren] = useState(true);
   const [parentName, setParentName] = useState("Parent");
 
-  const notifications = useMemo(
-    () => [
-      { text: "New message from Mr. Hassan (Arabic)", time: "2 hours ago" },
-      { text: "Parent meeting reminder — today 4:00 PM", time: "This morning" },
-    ],
-    []
-  );
+  const [notifications, setNotifications] = useState([]);
+  const [subjectPerformance, setSubjectPerformance] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [pendingAssignments, setPendingAssignments] = useState(0);
+  const [attendanceWeek, setAttendanceWeek] = useState(0);
 
-  const subjectPerformance = useMemo(
-    () => [
-      { subject: "Math", value: 88, color: "#1D9E75" },
-      { subject: "Arabic", value: 75, color: "#378ADD" },
-      { subject: "Science", value: 92, color: "#1D9E75" },
-      { subject: "English", value: 61, color: "#EF9F27" },
-      { subject: "History", value: 80, color: "#378ADD" },
-    ],
-    []
-  );
+  const getThisWeekDates = () => {
+    const today = new Date();
+    const day = today.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
 
-  const activities = useMemo(
-    () => [
-      { color: "#1D9E75", text: "Homework submitted", time: "2 hours ago" },
-      { color: "#378ADD", text: "New message from teacher", time: "4 hours ago" },
-      { color: "#EF9F27", text: "Parent meeting reminder", time: "Today" },
-    ],
-    []
-  );
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + diffToMonday);
+
+    return Array.from({ length: 5 }, (_, index) => {
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + index);
+      return date.toISOString().split("T")[0];
+    });
+  };
 
   const schedule = useMemo(
     () => [
@@ -61,6 +64,12 @@ function ParentDashboard() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         setChildren([]);
+        setAttendanceDetails([]);
+        setNotifications([]);
+        setSubjectPerformance([]);
+        setActivities([]);
+        setAttendanceWeek(0);
+        setPendingAssignments(0);
         setLoadingChildren(false);
         return;
       }
@@ -68,24 +77,36 @@ function ParentDashboard() {
       try {
         setLoadingChildren(true);
 
-        const parentQuery = query(
-          collection(db, "parents"),
-          where("email", "==", user.email)
-        );
+        let parentData = null;
 
-        const parentSnap = await getDocs(parentQuery);
+        const parentDoc = await getDoc(doc(db, "parents", user.uid));
 
-        if (parentSnap.empty) {
+        if (parentDoc.exists()) {
+          parentData = parentDoc.data();
+        } else {
+          const parentQuery = query(
+            collection(db, "parents"),
+            where("email", "==", user.email)
+          );
+
+          const parentSnap = await getDocs(parentQuery);
+
+          if (!parentSnap.empty) {
+            parentData = parentSnap.docs[0].data();
+          }
+        }
+
+        if (!parentData) {
           setChildren([]);
+          setAttendanceDetails([]);
           setLoadingChildren(false);
           return;
         }
 
-        const parentData = parentSnap.docs[0].data();
-
         setParentName(
           `${parentData.firstName || ""} ${parentData.lastName || ""}`.trim() ||
             parentData.name ||
+            parentData.fullName ||
             "Parent"
         );
 
@@ -97,10 +118,12 @@ function ParentDashboard() {
 
         if (studentIds.length === 0) {
           setChildren([]);
+          setAttendanceDetails([]);
           setLoadingChildren(false);
           return;
         }
 
+        const weekDates = getThisWeekDates();
         const allStudents = [];
 
         for (const studentId of studentIds) {
@@ -127,9 +150,10 @@ function ParentDashboard() {
               student_id: data.student_id,
               name: fullName,
               grade: data.grade ? `Grade ${data.grade}` : "No grade",
+              rawGrade: data.grade || "",
               status: "Excellent",
-              avg: data.avg || 0,
-              attendance: data.attendance || 0,
+              avg: Number(data.avg || 0),
+              attendance: 0,
               avatarClass: "ava-g",
               initials: `${firstName?.[0] || fullName?.[0] || "S"}${
                 lastName?.[0] || ""
@@ -138,10 +162,179 @@ function ParentDashboard() {
           });
         }
 
-        setChildren(allStudents);
+        let totalPresent = 0;
+        const totalExpected = allStudents.length * weekDates.length;
+        const allAttendanceDetails = [];
+
+        const studentsWithAttendance = await Promise.all(
+          allStudents.map(async (student) => {
+            let presentDays = 0;
+            const presentDates = [];
+
+            const attendanceQuery = query(
+              collection(db, "attendance"),
+              where("studentId", "==", student.student_id)
+            );
+
+            const attendanceSnap = await getDocs(attendanceQuery);
+
+            attendanceSnap.forEach((attDoc) => {
+              const att = attDoc.data();
+
+              if (weekDates.includes(att.date)) {
+                presentDays += 1;
+                presentDates.push(att.date);
+              }
+            });
+
+            totalPresent += presentDays;
+
+            const days = weekDates.map((date) => ({
+              date,
+              status: presentDates.includes(date) ? "Present" : "Absent",
+            }));
+
+            allAttendanceDetails.push({
+              id: student.id,
+              name: student.name,
+              grade: student.grade,
+              days,
+            });
+
+            return {
+              ...student,
+              attendance: weekDates.length
+                ? Math.round((presentDays / weekDates.length) * 100)
+                : 0,
+            };
+          })
+        );
+
+        setChildren(studentsWithAttendance);
+        setAttendanceDetails(allAttendanceDetails);
+
+        setAttendanceWeek(
+          totalExpected ? Math.round((totalPresent / totalExpected) * 100) : 0
+        );
+
+        let notifSnap;
+
+        try {
+          const notifQuery = query(
+            collection(db, "notifications"),
+            orderBy("createdAt", "desc")
+          );
+          notifSnap = await getDocs(notifQuery);
+        } catch (error) {
+          notifSnap = await getDocs(collection(db, "notifications"));
+        }
+
+        const parentNotifications = notifSnap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter((n) => {
+            const target = n.target || n.to || n.targetRole || "";
+
+            const isDirectParent =
+              n.parentId === parentData.parentId ||
+              n.parentEmail === user.email ||
+              studentIds.includes(n.studentId) ||
+              n.targetRole === "parent";
+
+            const isBroadcastForParents =
+              target === "All parents" ||
+              target === "Everyone (parents + teachers)";
+
+            const isGradeBroadcast = studentsWithAttendance.some((student) => {
+              return target === `Grade ${student.rawGrade} parents only`;
+            });
+
+            return isDirectParent || isBroadcastForParents || isGradeBroadcast;
+          })
+          .slice(0, 10)
+          .map((n) => ({
+            id: n.id,
+            text: n.title || n.subject || n.message || "New notification",
+            message: n.message || n.body || "",
+            time: n.date || n.createdAt?.toDate?.().toLocaleString?.() || "Recently",
+          }));
+
+        setNotifications(parentNotifications);
+
+        const recentActivities = parentNotifications.map((item) => ({
+          color: "#378ADD",
+          text: item.text,
+          time: item.time,
+        }));
+
+        setActivities(recentActivities);
+
+        const assignmentsSnap = await getDocs(collection(db, "teacher_materials"));
+        const assignmentsCount = assignmentsSnap.docs
+          .map((d) => d.data())
+          .filter((item) => {
+            return (
+              item.type === "assignment" &&
+              studentsWithAttendance.some(
+                (student) => String(student.rawGrade) === String(item.grade)
+              )
+            );
+          }).length;
+
+        setPendingAssignments(assignmentsCount);
+
+       const examResultsSnap = await getDocs(collection(db, "exam_results"));
+
+const results = examResultsSnap.docs
+  .map((d) => d.data())
+  .filter((result) =>
+    // يطابق UID بتاع الطالب (اللي عندك في Firebase)
+    studentsWithAttendance.some(
+      (student) => student.id === result.studentId
+    )
+  );
+
+if (results.length > 0) {
+  const grouped = {};
+
+  results.forEach((result) => {
+    const subject =
+      result.examTitle || result.subjectName || result.subject || "Unknown";
+
+    const score = Number(result.percentage || result.score || 0);
+
+    if (!grouped[subject]) {
+      grouped[subject] = [];
+    }
+
+    grouped[subject].push(score);
+  });
+
+  const performance = Object.keys(grouped).map((subject) => {
+    const values = grouped[subject];
+
+    const avg =
+      values.reduce((sum, value) => sum + value, 0) / values.length;
+
+    return {
+      subject,
+      value: Math.round(avg),
+      color:
+        avg >= 85
+          ? "#1D9E75"
+          : avg >= 70
+          ? "#378ADD"
+          : "#EF9F27",
+    };
+  });
+
+  setSubjectPerformance(performance);
+} else {
+  setSubjectPerformance([]);
+}
       } catch (error) {
-        console.error("Error loading parent children:", error);
+        console.error("Error loading parent dashboard:", error);
         setChildren([]);
+        setAttendanceDetails([]);
       } finally {
         setLoadingChildren(false);
       }
@@ -160,6 +353,7 @@ function ParentDashboard() {
 
   const closeAll = () => {
     setOverlayOpen(false);
+    setAttendanceModalOpen(false);
     setNotifOpen(false);
     setProfileOpen(false);
     setSelectedChild(null);
@@ -239,13 +433,6 @@ function ParentDashboard() {
         <div className="modal" onClick={(e) => e.stopPropagation()}>
           <div className="modal-title">Message a teacher</div>
 
-          <select defaultValue="Mr. Hassan — Arabic">
-            <option>Mr. Hassan — Arabic</option>
-            <option>Ms. Layla — Math</option>
-            <option>Mr. Omar — Science</option>
-            <option>Ms. Nour — English</option>
-          </select>
-
           <input type="text" placeholder="Subject" />
           <textarea placeholder="Write your message..." />
 
@@ -267,152 +454,6 @@ function ParentDashboard() {
       );
     }
 
-    if (activeModal === "report") {
-      return (
-        <div className="modal" onClick={(e) => e.stopPropagation()}>
-          <div className="modal-title">Performance report</div>
-
-          <select defaultValue={children[0]?.name || "Student"}>
-            {children.length > 0 ? (
-              children.map((child) => (
-                <option key={child.id}>{child.name}</option>
-              ))
-            ) : (
-              <option>No student</option>
-            )}
-          </select>
-
-          <select defaultValue="This semester">
-            <option>This semester</option>
-            <option>Last semester</option>
-            <option>Full year</option>
-          </select>
-
-          <div className="modal-footer">
-            <button className="mbtn" onClick={closeAll}>
-              Cancel
-            </button>
-            <button
-              className="mbtn primary"
-              onClick={() => {
-                closeAll();
-                showToast("Report loaded ✓");
-              }}
-            >
-              View report
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    if (activeModal === "appointment") {
-      const today = new Date().toISOString().split("T")[0];
-
-      return (
-        <div className="modal" onClick={(e) => e.stopPropagation()}>
-          <div className="modal-title">Book an appointment</div>
-
-          <select defaultValue="Mr. Hassan — Arabic">
-            <option>Mr. Hassan — Arabic</option>
-            <option>Ms. Layla — Math</option>
-            <option>Mr. Omar — Science</option>
-            <option>Ms. Nour — English</option>
-          </select>
-
-          <input type="date" min={today} />
-          <select defaultValue="9:00 AM">
-            <option>9:00 AM</option>
-            <option>10:00 AM</option>
-            <option>11:00 AM</option>
-            <option>2:00 PM</option>
-            <option>3:00 PM</option>
-            <option>4:00 PM</option>
-          </select>
-
-          <input type="text" placeholder="Reason (optional)" />
-
-          <div className="modal-footer">
-            <button className="mbtn" onClick={closeAll}>
-              Cancel
-            </button>
-            <button
-              className="mbtn primary"
-              onClick={() => {
-                closeAll();
-                showToast("Appointment booked ✓");
-              }}
-            >
-              Confirm booking
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    if (activeModal === "payment") {
-      return (
-        <div className="modal" onClick={(e) => e.stopPropagation()}>
-          
-
-          <div className="modal-footer">
-            <button className="mbtn" onClick={closeAll}>
-              Close
-            </button>
-            <button
-              className="mbtn primary"
-              onClick={() => {
-                closeAll();
-                showToast("Redirecting to payment gateway...");
-              }}
-            >
-              Pay now
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    if (activeModal === "download") {
-      return (
-        <div className="modal" onClick={(e) => e.stopPropagation()}>
-          <div className="modal-title">Download reports</div>
-
-          <select defaultValue={children[0]?.name || "Student"}>
-            {children.length > 0 ? (
-              children.map((child) => (
-                <option key={child.id}>{child.name}</option>
-              ))
-            ) : (
-              <option>No student</option>
-            )}
-          </select>
-
-          <select defaultValue="Mid-year report card">
-            <option>Mid-year report card</option>
-            <option>Final report card</option>
-            <option>Attendance summary</option>
-            <option>Behavior report</option>
-          </select>
-
-          <div className="modal-footer">
-            <button className="mbtn" onClick={closeAll}>
-              Cancel
-            </button>
-            <button
-              className="mbtn primary"
-              onClick={() => {
-                closeAll();
-                showToast("Report downloaded (PDF) ✓");
-              }}
-            >
-              Download PDF
-            </button>
-          </div>
-        </div>
-      );
-    }
-
     return null;
   };
 
@@ -428,52 +469,23 @@ function ParentDashboard() {
         }}
       >
         <div className="wrap container">
-          <div className="topbar">
-            <div className="logo">ParentBoard</div>
-          </div>
+          
 
           {notifOpen && (
             <div className="notif-panel" onClick={(e) => e.stopPropagation()}>
-              <div className="panel-title">Notifications</div>
-              {notifications.map((item, index) => (
-                <div className="notif-item" key={index}>
-                  {item.text}
-                  <span>{item.time}</span>
-                </div>
-              ))}
-            </div>
-          )}
+              <div className="panel-title">Parent Notifications</div>
 
-          {profileOpen && (
-            <div className="profile-panel" onClick={(e) => e.stopPropagation()}>
-              <div className="p-item p-name">{parentName}</div>
-              <div
-                className="p-item"
-                onClick={() => {
-                  setProfileOpen(false);
-                  showToast("Settings panel — coming soon");
-                }}
-              >
-                Settings
-              </div>
-              <div
-                className="p-item"
-                onClick={() => {
-                  setProfileOpen(false);
-                  showToast("Help center — coming soon");
-                }}
-              >
-                Help & support
-              </div>
-              <div
-                className="p-item p-danger"
-                onClick={() => {
-                  setProfileOpen(false);
-                  showToast("Signed out successfully");
-                }}
-              >
-                Sign out
-              </div>
+              {notifications.length === 0 ? (
+                <div className="notif-item">No notifications yet</div>
+              ) : (
+                notifications.map((item) => (
+                  <div className="notif-item" key={item.id}>
+                    <strong>{item.text}</strong>
+                    {item.message && <p>{item.message}</p>}
+                    <span>{item.time}</span>
+                  </div>
+                ))
+              )}
             </div>
           )}
 
@@ -486,25 +498,39 @@ function ParentDashboard() {
               <div className="mcard-sub muted">Active accounts</div>
             </div>
 
-            <div className="mcard">
+            <div
+              className="mcard"
+              onClick={() => setAttendanceModalOpen(true)}
+              style={{ cursor: "pointer" }}
+            >
               <div className="mcard-label">Attendance this week</div>
-              <div className="mcard-val">
-                {children[0]?.attendance ? `${children[0].attendance}%` : "0%"}
+              <div className="mcard-val">{attendanceWeek}%</div>
+              <div className="mcard-sub up">
+                Click to view attendance details
               </div>
-              <div className="mcard-sub up">Linked from student data</div>
             </div>
 
             <div className="mcard">
               <div className="mcard-label">Pending assignments</div>
-              <div className="mcard-val">5</div>
-              <div className="mcard-sub down">3 due soon</div>
+              <div className="mcard-val">{pendingAssignments}</div>
+              <div className="mcard-sub down">From teacher materials</div>
             </div>
 
-            <div className="mcard">
-              <div className="mcard-label">New messages</div>
-              <div className="mcard-val">2</div>
-              <div className="mcard-sub muted">From teachers</div>
-            </div>
+            <div
+  className="mcard"
+  style={{ cursor: "pointer" }}
+  onClick={(e) => {
+    e.stopPropagation();
+    setNotifOpen(true);
+    setProfileOpen(false);
+  }}
+>
+  <div className="mcard-label">New messages</div>
+  <div className="mcard-val">{notifications.length}</div>
+  <div className="mcard-sub muted">
+    Click to view notifications
+  </div>
+</div>
           </div>
 
           <div className="mid">
@@ -534,18 +560,22 @@ function ParentDashboard() {
             <div className="raised">
               <div className="sec-label">Subject performance</div>
 
-              {subjectPerformance.map((item) => (
-                <div className="bar-row" key={item.subject}>
-                  <div className="bar-label">{item.subject}</div>
-                  <div className="bar-track">
-                    <div
-                      className="bar-fill"
-                      style={{ width: `${item.value}%`, background: item.color }}
-                    />
+              {subjectPerformance.length === 0 ? (
+                <div className="muted">No exam results yet</div>
+              ) : (
+                subjectPerformance.map((item) => (
+                  <div className="bar-row" key={item.subject}>
+                    <div className="bar-label">{item.subject}</div>
+                    <div className="bar-track">
+                      <div
+                        className="bar-fill"
+                        style={{ width: `${item.value}%`, background: item.color }}
+                      />
+                    </div>
+                    <div className="bar-pct">{item.value}%</div>
                   </div>
-                  <div className="bar-pct">{item.value}%</div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
@@ -554,15 +584,19 @@ function ParentDashboard() {
               <div className="raised">
                 <div className="sec-label">Recent activity</div>
 
-                {activities.map((item, index) => (
-                  <div className="act-row" key={index}>
-                    <div className="act-dot" style={{ background: item.color }} />
-                    <div>
-                      <div className="act-text">{item.text}</div>
-                      <div className="act-time">{item.time}</div>
+                {activities.length === 0 ? (
+                  <div className="muted">No recent activity</div>
+                ) : (
+                  activities.map((item, index) => (
+                    <div className="act-row" key={index}>
+                      <div className="act-dot" style={{ background: item.color }} />
+                      <div>
+                        <div className="act-text">{item.text}</div>
+                        <div className="act-time">{item.time}</div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
               <div className="raised">
@@ -588,19 +622,6 @@ function ParentDashboard() {
                 Message a teacher
               </button>
 
-              <button className="qbtn" onClick={() => openActionModal("report")}>
-                View performance report
-              </button>
-
-              <button className="qbtn" onClick={() => openActionModal("appointment")}>
-                Book an appointment
-              </button>
-
-              
-
-              <button className="qbtn" onClick={() => openActionModal("download")}>
-                Download reports
-              </button>
             </div>
           </div>
         </div>
@@ -608,6 +629,56 @@ function ParentDashboard() {
         {overlayOpen && (
           <div className="overlay show" onClick={closeAll}>
             <div className="modal-wrap">{renderModalContent()}</div>
+          </div>
+        )}
+
+        {attendanceModalOpen && (
+          <div className="overlay show" onClick={() => setAttendanceModalOpen(false)}>
+            <div className="modal-wrap">
+              <div className="modal" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-title">Attendance Details This Week</div>
+
+                {attendanceDetails.length === 0 ? (
+                  <div className="muted">No attendance records found</div>
+                ) : (
+                  attendanceDetails.map((child) => (
+                    <div key={child.id} style={{ marginBottom: 18 }}>
+                      <h4 style={{ marginBottom: 8 }}>
+                        {child.name} — {child.grade}
+                      </h4>
+
+                      {child.days.map((day) => (
+                        <div
+                          key={day.date}
+                          className="child-stat"
+                          style={{ marginBottom: 6 }}
+                        >
+                          <div className="child-stat-label">{day.date}</div>
+                          <div
+                            className="child-stat-val"
+                            style={{
+                              color: day.status === "Present" ? "#1D9E75" : "#d32f2f",
+                              fontSize: 16,
+                            }}
+                          >
+                            {day.status}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ))
+                )}
+
+                <div className="modal-footer">
+                  <button
+                    className="mbtn"
+                    onClick={() => setAttendanceModalOpen(false)}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

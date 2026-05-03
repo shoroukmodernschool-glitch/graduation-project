@@ -1,13 +1,19 @@
 import os
 from datetime import datetime
 from openpyxl import load_workbook
-from flask import Flask, Response
+from flask import Flask, Response, request, jsonify
 from flask_cors import CORS
 from face_recognition import generate_frames
-from flask import request, jsonify
 
 app = Flask(__name__)
 CORS(app)
+
+
+@app.route("/")
+def home():
+    return "Face API is running ✅"
+
+
 @app.route("/check-attendance", methods=["POST"])
 def check_attendance():
     data = request.get_json()
@@ -45,3 +51,16 @@ def check_attendance():
     return jsonify({
         "reply": "لا، حضورك مش متسجل للأسف."
     })
+
+
+@app.route("/video_feed")
+def video_feed():
+    return Response(
+        generate_frames(),
+        mimetype="multipart/x-mixed-replace; boundary=frame"
+    )
+
+
+if __name__ == "__main__":
+    print("🚀 Face API started on http://127.0.0.1:5000")
+    app.run(host="127.0.0.1", port=5000, debug=True)

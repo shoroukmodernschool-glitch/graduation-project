@@ -10,6 +10,8 @@ import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 
+import AIAttendance from "components/AI_Attendance/AI_Attendance";
+
 import { auth, db } from "../../../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
@@ -18,6 +20,7 @@ function Attendance() {
   const [studentData, setStudentData] = useState(null);
   const [attendanceData, setAttendanceData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [aiOpen, setAiOpen] = useState(false);
 
   const today = new Date();
   const currentYear = today.getFullYear();
@@ -276,14 +279,43 @@ function Attendance() {
                 mt: 4,
               }}
             >
-              <MDBox px={3} py={2.5} sx={{ borderBottom: "1px solid #edf2f7" }}>
-                <MDTypography variant="h5" fontWeight="bold">
-                  Monthly Attendance
-                </MDTypography>
+              <MDBox
+                px={3}
+                py={2.5}
+                sx={{
+                  borderBottom: "1px solid #edf2f7",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 2,
+                }}
+              >
+                <MDBox>
+                  <MDTypography variant="h5" fontWeight="bold">
+                    Monthly Attendance
+                  </MDTypography>
 
-                <MDTypography variant="button" color="text">
-                  Full attendance view for the current month
-                </MDTypography>
+                  <MDTypography variant="button" color="text">
+                    Full attendance view for the current month
+                  </MDTypography>
+                </MDBox>
+
+                <button
+                  type="button"
+                  onClick={() => setAiOpen(true)}
+                  style={{
+                    border: "none",
+                    background: "#061b9b",
+                    color: "white",
+                    padding: "10px 16px",
+                    borderRadius: "12px",
+                    cursor: "pointer",
+                    fontWeight: "700",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  🤖 AI Attendance
+                </button>
               </MDBox>
 
               <MDBox px={2} py={3}>
@@ -357,6 +389,8 @@ function Attendance() {
           </Grid>
         </Grid>
       </MDBox>
+
+      <AIAttendance open={aiOpen} onClose={() => setAiOpen(false)} />
 
       <Footer />
     </DashboardLayout>

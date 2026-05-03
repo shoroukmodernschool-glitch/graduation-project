@@ -36,6 +36,7 @@ function Subjects() {
   const [selectedGrade, setSelectedGrade] = useState("");
   const [teacher, setTeacher] = useState(null);
   const [materials, setMaterials] = useState([]);
+  const [exams, setExams] = useState([]);
   const [activeView, setActiveView] = useState("");
   const [uploading, setUploading] = useState(false);
 
@@ -70,6 +71,33 @@ function Subjects() {
     } catch (error) {
       console.error("Error fetching materials:", error);
       setMaterials([]);
+    }
+  };
+
+  const fetchExams = async (subject, grade) => {
+    if (!subject || !grade) return;
+
+    const gradeNumber = String(grade).replace("Grade ", "").trim();
+    const subjectId = getSubjectId(subject, grade);
+
+    try {
+      const examsQuery = query(
+        collection(db, "teacher_exams"),
+        where("subjectId", "==", subjectId),
+        where("grade", "==", gradeNumber)
+      );
+
+      const snapshot = await getDocs(examsQuery);
+
+      setExams(
+        snapshot.docs.map((docItem) => ({
+          id: docItem.id,
+          ...docItem.data(),
+        }))
+      );
+    } catch (error) {
+      console.error("Error fetching exams:", error);
+      setExams([]);
     }
   };
 
@@ -119,6 +147,7 @@ function Subjects() {
           setSelectedGrade(firstGrade);
 
           await fetchMaterials(firstSubject, firstGrade);
+          await fetchExams(firstSubject, firstGrade);
         }
       } catch (error) {
         console.error("Error fetching teacher subjects:", error);
@@ -155,10 +184,10 @@ function Subjects() {
       title: "Exams",
       type: "exam",
       icon: "quiz",
-      count: 0,
+      count: exams.length,
       description: "Create and organize quizzes and exams.",
       disabled: false,
-      uploadDisabled: true,
+      uploadDisabled: false,
     },
     {
       title: "Assignments",
@@ -183,6 +212,7 @@ function Subjects() {
       setSelectedSubject(subject);
       setActiveView("");
       await fetchMaterials(subject, grade);
+      await fetchExams(subject, grade);
     }
   };
 
@@ -248,7 +278,10 @@ function Subjects() {
     }
   };
 
-  const viewedMaterials = materials.filter((item) => item.type === activeView);
+  const viewedMaterials =
+    activeView === "exam"
+      ? exams
+      : materials.filter((item) => item.type === activeView);
 
   return (
     <DashboardLayout>
@@ -385,6 +418,18 @@ function Subjects() {
                   size="small"
                   fullWidth
                   disabled={item.disabled}
+                  onClick={() => setActiveView(item.type)}
+                >
+                  View
+                </MDButton>
+
+                <MDButton
+                  component={item.type === "exam" ? "button" : "label"}
+                  variant="outlined"
+                  color="dark"
+                  size="small"
+                  fullWidth
+                  disabled={item.disabled || uploading}
                   onClick={() => {
                     if (item.type === "exam") {
                       navigate("/teacher-exams", {
@@ -394,25 +439,12 @@ function Subjects() {
                           teacher: teacher,
                         },
                       });
-                    } else {
-                      setActiveView(item.type);
                     }
                   }}
                 >
-                  View
-                </MDButton>
+                  {item.type === "exam" ? "Create" : uploading ? "Uploading..." : "Upload"}
 
-                <MDButton
-                  component="label"
-                  variant="outlined"
-                  color="dark"
-                  size="small"
-                  fullWidth
-                  disabled={item.disabled || item.uploadDisabled || uploading}
-                >
-                  {uploading ? "Uploading..." : "Upload"}
-
-                  {!item.disabled && !item.uploadDisabled && (
+                  {!item.disabled && item.type !== "exam" && (
                     <input
                       type="file"
                       hidden
@@ -436,12 +468,16 @@ function Subjects() {
               }}
             >
               <MDTypography variant="h5" fontWeight="bold" mb={2}>
-                {activeView === "video" ? "Uploaded Videos" : "Uploaded PDF Files"}
+                {activeView === "video"
+                  ? "Uploaded Videos"
+                  : activeView === "pdf"
+                  ? "Uploaded PDF Files"
+                  : "Created Exams"}
               </MDTypography>
 
               {viewedMaterials.length === 0 ? (
                 <MDTypography variant="button" color="text">
-                  No files uploaded yet.
+                  No items found yet.
                 </MDTypography>
               ) : (
                 viewedMaterials.map((material) => (
@@ -454,11 +490,15 @@ function Subjects() {
                     >
                       <MDBox display="flex" alignItems="center" gap={1.5}>
                         <Icon sx={{ color: "#111827" }}>
-                          {material.type === "video" ? "smart_display" : "picture_as_pdf"}
+                          {activeView === "video"
+                            ? "smart_display"
+                            : activeView === "pdf"
+                            ? "picture_as_pdf"
+                            : "quiz"}
                         </Icon>
 
                         <MDTypography variant="button" fontWeight="bold">
-                          {material.title}
+                          {material.title || material.examTitle || "Untitled Exam"}
                         </MDTypography>
                       </MDBox>
 
@@ -466,7 +506,19 @@ function Subjects() {
                         variant="outlined"
                         color="dark"
                         size="small"
-                        onClick={() => window.open(material.fileUrl, "_blank")}
+                        onClick={() => {
+                          if (activeView === "exam") {
+                            navigate("/teacher-exams", {
+                              state: {
+                                subject: selectedSubject,
+                                grade: selectedGrade,
+                                teacher: teacher,
+                              },
+                            });
+                          } else {
+                            window.open(material.fileUrl, "_blank");
+                          }
+                        }}
                       >
                         Open
                       </MDButton>

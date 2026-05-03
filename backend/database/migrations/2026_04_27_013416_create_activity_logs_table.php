@@ -2,9 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\ActivityLog;
 use Closure;
 use Illuminate\Http\Request;
-use App\Models\ActivityLog;
 use Throwable;
 
 class ActivityLogMiddleware
@@ -16,14 +16,17 @@ class ActivityLogMiddleware
         try {
             ActivityLog::create([
                 'user_email' => $request->input('email') ?? $request->attributes->get('firebase_uid'),
-                'action' => $request->path(),
+                'action' => 'API_REQUEST',
                 'method' => $request->method(),
-                'url' => $request->fullUrl(),
+                'url' => $request->path(),
                 'ip' => $request->ip(),
-                'data' => json_encode($request->except(['password'])),
+                'data' => json_encode([
+                    'status' => $response->getStatusCode(),
+                    'user_agent' => $request->userAgent(),
+                ]),
             ]);
         } catch (Throwable $e) {
-            // متوقفش السيستم لو تسجيل النشاط فشل
+            // متوقفش السيستم لو اللوج فشل
         }
 
         return $response;

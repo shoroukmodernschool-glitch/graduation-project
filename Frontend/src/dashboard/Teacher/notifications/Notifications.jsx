@@ -16,8 +16,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  query,
-  where,
   updateDoc,
   arrayUnion,
 } from "firebase/firestore";
@@ -35,15 +33,42 @@ function Notifications() {
   const [selectedType, setSelectedType] = useState("All");
   const [search, setSearch] = useState("");
   const [notifications, setNotifications] = useState([]);
-  const [studentInfo, setStudentInfo] = useState(null);
+  const [teacherInfo, setTeacherInfo] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const notificationTypes = ["All", "Assignment", "Exam", "Attendance", "Files", "Video", "PDF"];
+  const notificationTypes = ["All", "Broadcast", "Assignment", "Exam", "Attendance", "Files", "Video", "PDF"];
+
+  const normalizeType = (type) => {
+    const value = String(type || "").toLowerCase();
+
+    if (value === "broadcast") return "Broadcast";
+    if (value === "exam") return "Exam";
+    if (value === "assignment") return "Assignment";
+    if (value === "attendance") return "Attendance";
+    if (value === "video") return "Video";
+    if (value === "pdf") return "PDF";
+    if (value === "file" || value === "files") return "Files";
+
+    return "Broadcast";
+  };
+
+  const formatDate = (timestamp) => {
+    if (timestamp?.seconds) {
+      const date = new Date(timestamp.seconds * 1000);
+      return date.toLocaleString();
+    }
+
+    if (timestamp?.toDate) {
+      return timestamp.toDate().toLocaleString();
+    }
+
+    return "Just now";
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        setStudentInfo(null);
+        setTeacherInfo(null);
         setNotifications([]);
         setLoading(false);
         return;
@@ -52,49 +77,58 @@ function Notifications() {
       try {
         setLoading(true);
 
-        const studentRef = doc(db, "student", user.uid);
-        const studentSnap = await getDoc(studentRef);
+        const teacherRef = doc(db, "teachers", user.uid);
+        const teacherSnap = await getDoc(teacherRef);
 
-        if (!studentSnap.exists()) {
-          setStudentInfo(null);
+        if (!teacherSnap.exists()) {
+          setTeacherInfo(null);
           setNotifications([]);
           setLoading(false);
           return;
         }
 
-        const studentData = studentSnap.data();
-        const studentGrade = String(studentData.grade || "").trim();
+        const teacherData = teacherSnap.data();
 
-        setStudentInfo({
+        setTeacherInfo({
           id: user.uid,
           email: user.email,
-          ...studentData,
+          ...teacherData,
         });
 
-        const notificationsQuery = query(
-          collection(db, "notifications"),
-          where("targetRole", "==", "student"),
-          where("grade", "==", studentGrade)
-        );
+        const notificationsSnapshot = await getDocs(collection(db, "notifications"));
 
-        const notificationsSnapshot = await getDocs(notificationsQuery);
+        const notificationsData = notificationsSnapshot.docs
+          .map((docItem) => {
+            const data = docItem.data();
+            const readBy = data.readBy || [];
+            const target = data.target || data.to || data.targetRole || data.receiverRole || "";
 
-        const notificationsData = notificationsSnapshot.docs.map((docItem) => {
-          const data = docItem.data();
-          const readBy = data.readBy || [];
-
-          return {
-            id: docItem.id,
-            title: data.title || "Notification",
-            message: data.message || "",
-            type: normalizeType(data.type),
-            date: formatDate(data.createdAt),
-            isNew: !readBy.includes(user.uid),
-            readBy,
-            createdAt: data.createdAt,
-            ...data,
-          };
-        });
+            return {
+              id: docItem.id,
+              title: data.title || data.subject || "Notification",
+              message: data.message || data.body || "",
+              type: normalizeType(data.type),
+              date: formatDate(data.createdAt),
+              isNew: !readBy.includes(user.uid),
+              readBy,
+              target,
+              teacherId: data.teacherId || "",
+              teacherEmail: data.teacherEmail || "",
+              targetRole: data.targetRole || "",
+              createdAt: data.createdAt,
+              ...data,
+            };
+          })
+          .filter((item) => {
+            return (
+              item.target === "All teachers" ||
+              item.target === "Everyone (parents + teachers)" ||
+              item.targetRole === "teacher" ||
+              item.receiverRole === "teacher" ||
+              item.teacherId === user.uid ||
+              item.teacherEmail === user.email
+            );
+          });
 
         notificationsData.sort((a, b) => {
           const dateA = a.createdAt?.seconds || 0;
@@ -104,7 +138,7 @@ function Notifications() {
 
         setNotifications(notificationsData);
       } catch (error) {
-        console.error("Error fetching notifications:", error);
+        console.error("Error fetching teacher notifications:", error);
         setNotifications([]);
       } finally {
         setLoading(false);
@@ -114,29 +148,10 @@ function Notifications() {
     return () => unsubscribe();
   }, []);
 
-  const normalizeType = (type) => {
-    const value = String(type || "").toLowerCase();
-
-    if (value === "exam") return "Exam";
-    if (value === "assignment") return "Assignment";
-    if (value === "attendance") return "Attendance";
-    if (value === "video") return "Video";
-    if (value === "pdf") return "PDF";
-    if (value === "file" || value === "files") return "Files";
-
-    return "Files";
-  };
-
-  const formatDate = (timestamp) => {
-    if (!timestamp?.seconds) return "Just now";
-
-    const date = new Date(timestamp.seconds * 1000);
-    return date.toLocaleString();
-  };
-
   const filteredNotifications = useMemo(() => {
     return notifications.filter((item) => {
       const matchType = selectedType === "All" || item.type === selectedType;
+
       const matchSearch =
         item.title.toLowerCase().includes(search.toLowerCase()) ||
         item.message.toLowerCase().includes(search.toLowerCase()) ||
@@ -150,7 +165,7 @@ function Notifications() {
   const totalCount = notifications.length;
 
   const markAllAsRead = async () => {
-    if (!studentInfo?.id) return;
+    if (!teacherInfo?.id) return;
 
     try {
       const unreadNotifications = notifications.filter((item) => item.isNew);
@@ -158,7 +173,7 @@ function Notifications() {
       await Promise.all(
         unreadNotifications.map((item) =>
           updateDoc(doc(db, "notifications", item.id), {
-            readBy: arrayUnion(studentInfo.id),
+            readBy: arrayUnion(teacherInfo.id),
           })
         )
       );
@@ -167,7 +182,7 @@ function Notifications() {
         prev.map((item) => ({
           ...item,
           isNew: false,
-          readBy: [...(item.readBy || []), studentInfo.id],
+          readBy: [...(item.readBy || []), teacherInfo.id],
         }))
       );
     } catch (error) {
@@ -178,6 +193,8 @@ function Notifications() {
 
   const getTypeIcon = (type) => {
     switch (type) {
+      case "Broadcast":
+        return "campaign";
       case "Assignment":
         return "assignment";
       case "Exam":
@@ -196,6 +213,8 @@ function Notifications() {
 
   const getTypeChip = (type) => {
     switch (type) {
+      case "Broadcast":
+        return <Chip label="Broadcast" color="primary" size="small" />;
       case "Assignment":
         return <Chip label="Assignment" color="primary" size="small" />;
       case "Exam":
@@ -344,7 +363,7 @@ function Notifications() {
                   No notifications found
                 </MDTypography>
                 <MDTypography variant="button" color="text">
-                  No updates have been added for your grade yet.
+                  No updates have been sent to teachers yet.
                 </MDTypography>
               </MDBox>
             ) : (

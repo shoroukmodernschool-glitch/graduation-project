@@ -11,6 +11,16 @@ export default function SignupParent() {
   const navigate = useNavigate();
   const [userType, setUserType] = useState("parent");
 
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [signupLoading, setSignupLoading] = useState(false);
+
+  const [verificationCode, setVerificationCode] = useState("");
+  const [isCodeSent, setIsCodeSent] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState("");
+  const [showCodePopup, setShowCodePopup] = useState(false);
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -23,10 +33,20 @@ export default function SignupParent() {
   });
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+
+    if (name === "email") {
+      setIsCodeSent(false);
+      setIsEmailVerified(false);
+      setVerificationCode("");
+      setVerificationMessage("");
+      setShowCodePopup(false);
+    }
   };
 
   const handleUserTypeChange = (value) => {
@@ -37,10 +57,103 @@ export default function SignupParent() {
     if (value === "admin") navigate("/signup-admin");
   };
 
+  const handleSendCode = async () => {
+    if (!formData.email.trim()) {
+      setVerificationMessage("Email is required");
+      return;
+    }
+
+    if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      setVerificationMessage("Invalid email");
+      return;
+    }
+
+    try {
+      setEmailLoading(true);
+      setVerificationMessage("");
+
+      const res = await fetch("http://127.0.0.1:8000/api/signup/send-otp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setVerificationMessage(data.error || data.message || "Failed to send code");
+        return;
+      }
+
+      setIsCodeSent(true);
+      setIsEmailVerified(false);
+      setShowCodePopup(true);
+      setVerificationMessage(data.message || "Verification code sent successfully ✅");
+    } catch (error) {
+      console.error("Send code error:", error);
+      setVerificationMessage("Server connection failed while sending code");
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    if (!verificationCode.trim()) {
+      setVerificationMessage("Please enter the verification code");
+      return;
+    }
+
+    try {
+      setVerifyLoading(true);
+      setVerificationMessage("");
+
+      const res = await fetch("http://127.0.0.1:8000/api/signup/verify-otp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          otp: verificationCode,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setIsEmailVerified(false);
+        setVerificationMessage(data.error || data.message || "Invalid verification code");
+        return;
+      }
+
+      setIsEmailVerified(true);
+      setShowCodePopup(false);
+      setVerificationMessage(data.message || "Email verified successfully ✅");
+    } catch (error) {
+      console.error("Verify code error:", error);
+      setVerificationMessage("Server connection failed while verifying code");
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!isEmailVerified) {
+      setVerificationMessage("Please verify your email first");
+      return;
+    }
+
     try {
+      setSignupLoading(true);
+
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         formData.email,
@@ -49,7 +162,6 @@ export default function SignupParent() {
 
       const user = userCredential.user;
 
-      // ✅ التعديل هنا (parents بدل parent)
       await setDoc(doc(db, "parents", user.uid), {
         uid: user.uid,
         firstName: formData.firstName,
@@ -63,14 +175,13 @@ export default function SignupParent() {
         createdAt: serverTimestamp(),
       });
 
-      console.log("🔥 Saved to Firestore in parents collection");
-
       alert("Parent Account Created ✅");
       navigate("/login-parent");
-
     } catch (error) {
       console.error(error);
       alert(error.message);
+    } finally {
+      setSignupLoading(false);
     }
   };
 
@@ -127,69 +238,189 @@ export default function SignupParent() {
 
           <div className="form-grid">
             <div className="form-group">
-              <label>First name</label>
-              <div className="input-icon">
-                <input name="firstName" onChange={handleChange} type="text" />
-              </div>
+              <input
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                type="text"
+                placeholder="First name"
+              />
             </div>
 
             <div className="form-group">
-              <label>Last name</label>
-              <div className="input-icon">
-                <input name="lastName" onChange={handleChange} type="text" />
-              </div>
+              <input
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                type="text"
+                placeholder="Last name"
+              />
             </div>
 
             <div className="form-group">
-              <label>Address</label>
-              <div className="input-icon">
-                <input name="address" onChange={handleChange} type="text" />
-              </div>
+              <input
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                type="text"
+                placeholder="Address"
+              />
             </div>
 
             <div className="form-group">
-              <label>Parent Id</label>
-              <div className="input-icon">
-                <input name="parentId" onChange={handleChange} type="text" />
-              </div>
+              <input
+                name="parentId"
+                value={formData.parentId}
+                onChange={handleChange}
+                type="text"
+                placeholder="Parent ID"
+              />
             </div>
 
             <div className="form-group">
-              <label>Phone</label>
-              <div className="input-icon">
-                <input name="phone" onChange={handleChange} type="text" />
-              </div>
+              <input
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                type="text"
+                placeholder="Phone"
+              />
             </div>
 
             <div className="form-group">
-              <label>Email</label>
-              <div className="input-icon">
-                <input name="email" onChange={handleChange} type="email" />
-              </div>
+              <input
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                type="email"
+                placeholder="Email"
+                disabled={isEmailVerified}
+              />
             </div>
 
             <div className="form-group">
-              <label>Password</label>
-              <div className="input-icon">
-                <input name="password" onChange={handleChange} type="password" />
-              </div>
+              <input
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                type="password"
+                placeholder="Password"
+              />
+            </div>
+
+            <div className="form-group"></div>
+
+            <div className="form-group">
+              <button
+                type="button"
+                className="confirm"
+                onClick={handleSendCode}
+                disabled={emailLoading || isEmailVerified}
+                style={{
+                  width: "100%",
+                  height: "49px",
+                  margin: 0,
+                  padding: 0,
+                }}
+              >
+                {emailLoading ? "Sending..." : isCodeSent ? "Resend Code" : "Send Code"}
+              </button>
+
+              {verificationMessage && (
+                <small
+                  style={{
+                    color: isEmailVerified ? "lightgreen" : "#ffcc00",
+                    display: "block",
+                    marginTop: "10px",
+                  }}
+                >
+                  {verificationMessage}
+                </small>
+              )}
             </div>
           </div>
 
-          <div className="Scholar-info">
-            <div className="section-title">
-              <span className="number">2</span>
-              <h3>Additional Parent Information</h3>
-            </div>
+         
 
-            <textarea name="notes" onChange={handleChange}></textarea>
-          </div>
-
-          <button className="confirm" type="submit">
-            Confirm
+          <button
+            className="confirm"
+            type="submit"
+            disabled={signupLoading}
+            style={{
+              opacity: signupLoading ? 0.7 : 1,
+              cursor: signupLoading ? "not-allowed" : "pointer",
+            }}
+          >
+            {signupLoading ? "Creating Account..." : "Confirm"}
           </button>
         </form>
       </div>
+
+      {showCodePopup && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            style={{
+              width: "90%",
+              maxWidth: "400px",
+              background: "#ffffff",
+              borderRadius: "16px",
+              padding: "25px",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
+              textAlign: "center",
+            }}
+          >
+            <h2 style={{ marginBottom: "15px", color: "#333" }}>
+              Enter Verification Code
+            </h2>
+
+            <input
+              type="text"
+              placeholder="Enter verification code"
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "12px",
+                borderRadius: "10px",
+                border: "1px solid #ccc",
+                outline: "none",
+                marginBottom: "15px",
+              }}
+            />
+
+            <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+              <button
+                type="button"
+                className="confirm"
+                onClick={handleVerifyCode}
+                disabled={verifyLoading}
+                style={{ margin: 0 }}
+              >
+                {verifyLoading ? "Verifying..." : "Verify Code"}
+              </button>
+
+              <button
+                type="button"
+                className="confirm"
+                onClick={() => setShowCodePopup(false)}
+                style={{ margin: 0 }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

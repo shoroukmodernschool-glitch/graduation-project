@@ -4,6 +4,11 @@ import Avatar from "@mui/material/Avatar";
 import Icon from "@mui/material/Icon";
 import Divider from "@mui/material/Divider";
 
+import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { auth, db } from "../../../firebase";
+
 import MDBox from "../../../components/MDBox";
 import MDTypography from "../../../components/MDTypography";
 import MDButton from "../../../components/MDButton";
@@ -13,16 +18,68 @@ import DashboardNavbar from "../../examples/Navbars/DashboardNavbar";
 import Footer from "../../examples/Footer";
 
 function Profile() {
-  const teacherData = {
-    name: "Mr. Ahmed Hassan",
-    email: "ahmed.hassan@school.com",
-    phone: "+20 100 123 4567",
-    subject: "Mathematics",
-    grades: ["Grade 5", "Grade 6"],
+  const [teacherData, setTeacherData] = useState({
+    name: "Loading...",
+    email: "",
+    phone: "-",
+    subject: "-",
+    grades: [],
     role: "Teacher",
     school: "Shorouq Smart School",
-    bio: "Passionate mathematics teacher focused on helping students understand concepts in a simple and practical way.",
-  };
+    bio: "-",
+  });
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) return;
+
+      try {
+        let teacherDoc = await getDoc(doc(db, "teachers", user.uid));
+        let data = null;
+
+        if (teacherDoc.exists()) {
+          data = teacherDoc.data();
+        } else {
+          const q = query(
+            collection(db, "teachers"),
+            where("email", "==", user.email)
+          );
+
+          const snapshot = await getDocs(q);
+
+          if (!snapshot.empty) {
+            data = snapshot.docs[0].data();
+          }
+        }
+
+        if (data) {
+          const fullName =
+            data.name ||
+            `${data.firstName || ""} ${data.lastName || ""}`.trim() ||
+            "Teacher";
+
+          setTeacherData({
+            name: fullName,
+            email: data.email || user.email || "-",
+            phone: data.phone || data.phoneNumber || "-",
+            subject: data.subject || "-",
+            grades: Array.isArray(data.grades)
+              ? data.grades
+              : data.grade
+              ? [data.grade]
+              : [],
+            role: data.role || "Teacher",
+            school: data.school || "Shorouq Smart School",
+            bio: data.bio || "-",
+          });
+        }
+      } catch (error) {
+        console.error("Error loading teacher profile:", error);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   return (
     <DashboardLayout>
@@ -121,14 +178,7 @@ function Profile() {
           </Grid>
 
           <Grid item xs={12} lg={8}>
-            <Card
-              sx={{
-                p: 3,
-                borderRadius: "18px",
-                boxShadow: "0 8px 24px rgba(15,23,42,0.08)",
-                mb: 3,
-              }}
-            >
+            <Card sx={{ p: 3, borderRadius: "18px", boxShadow: "0 8px 24px rgba(15,23,42,0.08)", mb: 3 }}>
               <MDTypography variant="h5" fontWeight="bold" mb={2}>
                 Personal Information
               </MDTypography>
@@ -138,136 +188,30 @@ function Profile() {
               <MDBox mt={2}>
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
-                    <MDBox py={1}>
-                      <MDTypography variant="button" color="text">
-                        Full Name
-                      </MDTypography>
-                      <MDTypography variant="h6" fontWeight="bold">
-                        {teacherData.name}
-                      </MDTypography>
-                    </MDBox>
+                    <MDTypography variant="button" color="text">Full Name</MDTypography>
+                    <MDTypography variant="h6" fontWeight="bold">{teacherData.name}</MDTypography>
                   </Grid>
 
                   <Grid item xs={12} md={6}>
-                    <MDBox py={1}>
-                      <MDTypography variant="button" color="text">
-                        Role
-                      </MDTypography>
-                      <MDTypography variant="h6" fontWeight="bold">
-                        {teacherData.role}
-                      </MDTypography>
-                    </MDBox>
+                    <MDTypography variant="button" color="text">Role</MDTypography>
+                    <MDTypography variant="h6" fontWeight="bold">{teacherData.role}</MDTypography>
                   </Grid>
 
                   <Grid item xs={12} md={6}>
-                    <MDBox py={1}>
-                      <MDTypography variant="button" color="text">
-                        Email Address
-                      </MDTypography>
-                      <MDTypography variant="h6" fontWeight="bold">
-                        {teacherData.email}
-                      </MDTypography>
-                    </MDBox>
+                    <MDTypography variant="button" color="text">Email Address</MDTypography>
+                    <MDTypography variant="h6" fontWeight="bold">{teacherData.email}</MDTypography>
                   </Grid>
 
                   <Grid item xs={12} md={6}>
-                    <MDBox py={1}>
-                      <MDTypography variant="button" color="text">
-                        Phone Number
-                      </MDTypography>
-                      <MDTypography variant="h6" fontWeight="bold">
-                        {teacherData.phone}
-                      </MDTypography>
-                    </MDBox>
+                    <MDTypography variant="button" color="text">Phone Number</MDTypography>
+                    <MDTypography variant="h6" fontWeight="bold">{teacherData.phone}</MDTypography>
                   </Grid>
                 </Grid>
               </MDBox>
             </Card>
 
-            <Card
-              sx={{
-                p: 3,
-                borderRadius: "18px",
-                boxShadow: "0 8px 24px rgba(15,23,42,0.08)",
-                mb: 3,
-              }}
-            >
-              <MDTypography variant="h5" fontWeight="bold" mb={2}>
-                Teaching Information
-              </MDTypography>
+            
 
-              <Divider />
-
-              <MDBox mt={2}>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
-                    <MDBox py={1}>
-                      <MDTypography variant="button" color="text">
-                        Subject
-                      </MDTypography>
-                      <MDTypography variant="h6" fontWeight="bold">
-                        {teacherData.subject}
-                      </MDTypography>
-                    </MDBox>
-                  </Grid>
-
-                  <Grid item xs={12} md={6}>
-                    <MDBox py={1}>
-                      <MDTypography variant="button" color="text">
-                        Assigned Grades
-                      </MDTypography>
-                      <MDTypography variant="h6" fontWeight="bold">
-                        {teacherData.grades.join(", ")}
-                      </MDTypography>
-                    </MDBox>
-                  </Grid>
-
-                  <Grid item xs={12}>
-                    <MDBox py={1}>
-                      <MDTypography variant="button" color="text">
-                        Bio
-                      </MDTypography>
-                      <MDTypography variant="h6" fontWeight="regular">
-                        {teacherData.bio}
-                      </MDTypography>
-                    </MDBox>
-                  </Grid>
-                </Grid>
-              </MDBox>
-            </Card>
-
-            <Card
-              sx={{
-                p: 3,
-                borderRadius: "18px",
-                boxShadow: "0 8px 24px rgba(15,23,42,0.08)",
-              }}
-            >
-              <MDTypography variant="h5" fontWeight="bold" mb={2}>
-                Quick Actions
-              </MDTypography>
-
-              <Divider />
-
-              <MDBox
-                mt={2}
-                display="flex"
-                flexWrap="wrap"
-                gap={1.5}
-              >
-                <MDButton variant="gradient" color="dark" size="small">
-                  Edit Information
-                </MDButton>
-
-                <MDButton variant="outlined" color="dark" size="small">
-                  Change Password
-                </MDButton>
-
-                <MDButton variant="outlined" color="dark" size="small">
-                  View Subjects
-                </MDButton>
-              </MDBox>
-            </Card>
           </Grid>
         </Grid>
       </MDBox>

@@ -52,14 +52,15 @@ import TeacherNotifications from "./dashboard/Teacher/notifications/Notification
 import TeacherProfile from "./dashboard/Teacher/profile/Profile";
 import TeacherExams from "./dashboard/Teacher/exams/TeacherExams";
 
+/* Admin Dashboard */
+import AdminDashboard from "./dashboard/admin/AdminDashboard";
+
 /* Subjects */
 import Subjects from "./dashboard/student/subjects/Subjects";
 import SubjectDetails from "./dashboard/student/subject-details/SubjectDetails";
 
 /* Chatbot */
 import ChatbotPage from "./pages/chatbot/chatbot";
-
-import AdminDashboard from "./dashboard/admin/AdminDashboard";
 
 function App() {
   const location = useLocation();
@@ -80,6 +81,7 @@ function App() {
     location.pathname.startsWith("/teacher-notifications") ||
     location.pathname.startsWith("/teacher-profile") ||
     location.pathname.startsWith("/teacher-exams") ||
+    location.pathname.startsWith("/admin-dashboard") ||
     location.pathname.startsWith("/admin") ||
     location.pathname.startsWith("/profile") ||
     location.pathname.startsWith("/tables") ||
@@ -155,6 +157,8 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route path="/admin" element={<AdminDashboard />} />
 
         <Route
           path="/student-dashboard"
@@ -237,7 +241,6 @@ function App() {
           }
         />
 
-        <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/subjects" element={<Subjects />} />
         <Route path="/subject/:id" element={<SubjectDetails />} />
 

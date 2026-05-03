@@ -30,10 +30,10 @@ import {
 } from "context";
 
 import { auth, db } from "../../../../firebase";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
-function DashboardNavbar({ absolute, light, isMini }) {
+function DashboardNavbar({ absolute, light, isMini, onToggleNotifications }) {
   const [navbarType, setNavbarType] = useState();
   const [controller, dispatch] = useMaterialUIController();
   const navigate = useNavigate();
@@ -49,6 +49,7 @@ function DashboardNavbar({ absolute, light, isMini }) {
 
   const [openMenu, setOpenMenu] = useState(false);
   const [userName, setUserName] = useState("");
+  const [userRole, setUserRole] = useState("");
 
   const route = location.pathname.split("/").slice(1);
 
@@ -80,6 +81,7 @@ function DashboardNavbar({ absolute, light, isMini }) {
             const data = teacherSnap.data();
             const fullName = `${data.firstName || ""} ${data.lastName || ""}`.trim();
             setUserName(fullName || "User");
+            setUserRole("teacher");
             return;
           }
 
@@ -90,6 +92,7 @@ function DashboardNavbar({ absolute, light, isMini }) {
             const data = studentSnap.data();
             const fullName = `${data.firstName || ""} ${data.lastName || ""}`.trim();
             setUserName(fullName || "User");
+            setUserRole("student");
             return;
           }
 
@@ -100,14 +103,20 @@ function DashboardNavbar({ absolute, light, isMini }) {
             const data = parentSnap.data();
             const fullName = `${data.firstName || ""} ${data.lastName || ""}`.trim();
             setUserName(fullName || data.name || data.fullName || "User");
+            setUserRole("parent");
             return;
           }
 
           setUserName("User");
+          setUserRole("");
         } catch (error) {
           console.error("Error:", error);
           setUserName("User");
+          setUserRole("");
         }
+      } else {
+        setUserName("");
+        setUserRole("");
       }
     });
 
@@ -123,14 +132,42 @@ function DashboardNavbar({ absolute, light, isMini }) {
     setDarkMode(dispatch, !darkMode);
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      localStorage.removeItem("token");
+      localStorage.removeItem("uid");
+      localStorage.removeItem("email");
+      localStorage.removeItem("role");
+      navigate("/login-parent", { replace: true });
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
   const handleNotificationClick = () => {
     handleCloseMenu();
+
+    if (onToggleNotifications) {
+      onToggleNotifications();
+      return;
+    }
 
     if (location.pathname.startsWith("/teacher")) {
       navigate("/teacher-notifications");
     } else {
       navigate("/notifications");
     }
+  };
+
+  const handleBellClick = (event) => {
+    if (onToggleNotifications) {
+      event.stopPropagation();
+      onToggleNotifications();
+      return;
+    }
+
+    handleOpenMenu(event);
   };
 
   const handleProfileClick = () => {
@@ -202,48 +239,62 @@ function DashboardNavbar({ absolute, light, isMini }) {
                 </Icon>
               </IconButton>
 
-              <IconButton
-                sx={navbarIconButton}
-                size="small"
-                disableRipple
-                onClick={handleProfileClick}
-              >
-                <Icon sx={iconsStyle}>account_circle</Icon>
-              </IconButton>
+              {userRole === "parent" ? (
+                <IconButton
+                  size="small"
+                  disableRipple
+                  color="inherit"
+                  sx={navbarIconButton}
+                  onClick={handleLogout}
+                >
+                  <Icon sx={iconsStyle}>logout</Icon>
+                </IconButton>
+              ) : (
+                <>
+                  <IconButton
+                    sx={navbarIconButton}
+                    size="small"
+                    disableRipple
+                    onClick={handleProfileClick}
+                  >
+                    <Icon sx={iconsStyle}>account_circle</Icon>
+                  </IconButton>
 
-              <IconButton
-                size="small"
-                disableRipple
-                color="inherit"
-                sx={navbarMobileMenu}
-                onClick={handleMiniSidenav}
-              >
-                <Icon sx={iconsStyle} fontSize="medium">
-                  {miniSidenav ? "menu_open" : "menu"}
-                </Icon>
-              </IconButton>
+                  <IconButton
+                    size="small"
+                    disableRipple
+                    color="inherit"
+                    sx={navbarMobileMenu}
+                    onClick={handleMiniSidenav}
+                  >
+                    <Icon sx={iconsStyle} fontSize="medium">
+                      {miniSidenav ? "menu_open" : "menu"}
+                    </Icon>
+                  </IconButton>
 
-              <IconButton
-                size="small"
-                disableRipple
-                color="inherit"
-                sx={navbarIconButton}
-                onClick={handleConfiguratorOpen}
-              >
-                <Icon sx={iconsStyle}>settings</Icon>
-              </IconButton>
+                  <IconButton
+                    size="small"
+                    disableRipple
+                    color="inherit"
+                    sx={navbarIconButton}
+                    onClick={handleConfiguratorOpen}
+                  >
+                    <Icon sx={iconsStyle}>settings</Icon>
+                  </IconButton>
 
-              <IconButton
-                size="small"
-                disableRipple
-                color="inherit"
-                sx={navbarIconButton}
-                onClick={handleOpenMenu}
-              >
-                <Icon sx={iconsStyle}>notifications</Icon>
-              </IconButton>
+                  <IconButton
+                    size="small"
+                    disableRipple
+                    color="inherit"
+                    sx={navbarIconButton}
+                    onClick={handleBellClick}
+                  >
+                    <Icon sx={iconsStyle}>notifications</Icon>
+                  </IconButton>
 
-              {renderMenu()}
+                  {renderMenu()}
+                </>
+              )}
             </MDBox>
           </MDBox>
         )}
@@ -256,12 +307,14 @@ DashboardNavbar.defaultProps = {
   absolute: false,
   light: false,
   isMini: false,
+  onToggleNotifications: null,
 };
 
 DashboardNavbar.propTypes = {
   absolute: PropTypes.bool,
   light: PropTypes.bool,
-  isMini: false,
+  isMini: PropTypes.bool,
+  onToggleNotifications: PropTypes.func,
 };
 
 export default DashboardNavbar;

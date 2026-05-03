@@ -8,9 +8,18 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 
 export default function SignupTeacher() {
-
   const navigate = useNavigate();
   const [userType, setUserType] = useState("teacher");
+
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [signupLoading, setSignupLoading] = useState(false);
+
+  const [verificationCode, setVerificationCode] = useState("");
+  const [isCodeSent, setIsCodeSent] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState("");
+  const [showCodePopup, setShowCodePopup] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -20,14 +29,24 @@ export default function SignupTeacher() {
     email: "",
     password: "",
     specialization: "",
-    notes: ""
+    notes: "",
   });
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value,
     });
+
+    if (name === "email") {
+      setIsCodeSent(false);
+      setIsEmailVerified(false);
+      setVerificationCode("");
+      setVerificationMessage("");
+      setShowCodePopup(false);
+    }
   };
 
   const handleUserTypeChange = (value) => {
@@ -38,10 +57,102 @@ export default function SignupTeacher() {
     if (value === "admin") navigate("/signup-admin");
   };
 
+  const handleSendCode = async () => {
+    if (!formData.email.trim()) {
+      setVerificationMessage("Email is required");
+      return;
+    }
+
+    if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      setVerificationMessage("Invalid email");
+      return;
+    }
+
+    try {
+      setEmailLoading(true);
+      setVerificationMessage("");
+
+      const res = await fetch("http://127.0.0.1:8000/api/signup/send-otp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setVerificationMessage(data.error || data.message || "Failed to send code");
+        return;
+      }
+
+      setIsCodeSent(true);
+      setIsEmailVerified(false);
+      setShowCodePopup(true);
+      setVerificationMessage(data.message || "Verification code sent successfully ✅");
+    } catch (error) {
+      console.error("Send code error:", error);
+      setVerificationMessage("Server connection failed while sending code");
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    if (!verificationCode.trim()) {
+      setVerificationMessage("Please enter the verification code");
+      return;
+    }
+
+    try {
+      setVerifyLoading(true);
+      setVerificationMessage("");
+
+      const res = await fetch("http://127.0.0.1:8000/api/signup/verify-otp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          otp: verificationCode,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setIsEmailVerified(false);
+        setVerificationMessage(data.error || data.message || "Invalid verification code");
+        return;
+      }
+
+      setIsEmailVerified(true);
+      setShowCodePopup(false);
+      setVerificationMessage(data.message || "Email verified successfully ✅");
+    } catch (error) {
+      console.error("Verify code error:", error);
+      setVerificationMessage("Server connection failed while verifying code");
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!isEmailVerified) {
+      setVerificationMessage("Please verify your email first");
+      return;
+    }
+
     try {
+      setSignupLoading(true);
 
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -60,16 +171,16 @@ export default function SignupTeacher() {
         specialization: formData.specialization,
         notes: formData.notes,
         role: "teacher",
-        createdAt: new Date()
+        createdAt: new Date(),
       });
 
       alert("Teacher registered successfully");
-
       navigate("/login");
-
     } catch (error) {
       console.log(error);
       alert(error.message);
+    } finally {
+      setSignupLoading(false);
     }
   };
 
@@ -83,10 +194,8 @@ export default function SignupTeacher() {
         <Navbar />
 
         <form className="student-form" onSubmit={handleSubmit}>
-
           <div className="user-type">
             <div className="role-tabs">
-
               <button
                 type="button"
                 className={`${userType === "student" ? "active" : ""}`}
@@ -117,7 +226,6 @@ export default function SignupTeacher() {
               >
                 Administration
               </button>
-
             </div>
           </div>
 
@@ -127,101 +235,192 @@ export default function SignupTeacher() {
           </div>
 
           <div className="form-grid">
-
             <div className="form-group">
-              <label>First name</label>
               <input
-              type="text"
-              name="firstName"
-              placeholder="First name"
-              onChange={handleChange}
-              required
+                type="text"
+                name="firstName"
+                value={formData.firstName}
+                placeholder="First name"
+                onChange={handleChange}
+                required
               />
             </div>
 
             <div className="form-group">
-              <label>Last name</label>
               <input
-              type="text"
-              name="lastName"
-              placeholder="Last name"
-              onChange={handleChange}
-              required
+                type="text"
+                name="lastName"
+                value={formData.lastName}
+                placeholder="Last name"
+                onChange={handleChange}
+                required
               />
             </div>
 
             <div className="form-group">
-              <label>Teacher ID</label>
               <input
-              type="text"
-              name="teacherId"
-              placeholder="Teacher ID"
-              onChange={handleChange}
+                type="text"
+                name="teacherId"
+                value={formData.teacherId}
+                placeholder="Teacher ID"
+                onChange={handleChange}
               />
             </div>
 
             <div className="form-group">
-              <label>Phone</label>
               <input
-              type="text"
-              name="phone"
-              placeholder="Phone"
-              onChange={handleChange}
+                type="text"
+                name="phone"
+                value={formData.phone}
+                placeholder="Phone"
+                onChange={handleChange}
               />
             </div>
 
             <div className="form-group">
-              <label>Email</label>
               <input
-              type="email"
-              name="email"
-              placeholder="Email"
-              onChange={handleChange}
-              required
+                type="email"
+                name="email"
+                value={formData.email}
+                placeholder="Email"
+                onChange={handleChange}
+                disabled={isEmailVerified}
+                required
               />
+
+              <div style={{ display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  className="confirm"
+                  onClick={handleSendCode}
+                  disabled={emailLoading || isEmailVerified}
+                  style={{ margin: 0 }}
+                >
+                  {emailLoading ? "Sending..." : isCodeSent ? "Resend Code" : "Send Code"}
+                </button>
+              </div>
+
+              {verificationMessage && (
+                <small
+                  style={{
+                    color: isEmailVerified ? "lightgreen" : "#ffcc00",
+                    display: "block",
+                    marginTop: "10px",
+                  }}
+                >
+                  {verificationMessage}
+                </small>
+              )}
             </div>
 
             <div className="form-group">
-              <label>Password</label>
               <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              onChange={handleChange}
-              required
+                type="password"
+                name="password"
+                value={formData.password}
+                placeholder="Password"
+                onChange={handleChange}
+                required
               />
             </div>
-
           </div>
 
-
           <div className="Scholar-info">
-
             <div className="section-title">
               <span className="number">2</span>
               <h3>Teacher Information</h3>
             </div>
 
             <div className="form-group">
-              <label>Specialization</label>
               <input
-              type="text"
-              name="specialization"
-              placeholder="Which specialization?"
-              onChange={handleChange}
+                type="text"
+                name="specialization"
+                value={formData.specialization}
+                placeholder="Which specialization?"
+                onChange={handleChange}
               />
             </div>
-
-            
-
           </div>
 
-          <button className="confirm" type="submit">
-            Confirm
+          <button
+            className="confirm"
+            type="submit"
+            disabled={signupLoading}
+            style={{
+              opacity: signupLoading ? 0.7 : 1,
+              cursor: signupLoading ? "not-allowed" : "pointer",
+            }}
+          >
+            {signupLoading ? "Creating Account..." : "Confirm"}
           </button>
-
         </form>
       </div>
+
+      {showCodePopup && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            style={{
+              width: "90%",
+              maxWidth: "400px",
+              background: "#ffffff",
+              borderRadius: "16px",
+              padding: "25px",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
+              textAlign: "center",
+            }}
+          >
+            <h2 style={{ marginBottom: "15px", color: "#333" }}>
+              Enter Verification Code
+            </h2>
+
+            <input
+              type="text"
+              placeholder="Enter verification code"
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "12px",
+                borderRadius: "10px",
+                border: "1px solid #ccc",
+                outline: "none",
+                marginBottom: "15px",
+              }}
+            />
+
+            <div style={{ display: "flex", gap: "10px", justifyContent: "center", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                className="confirm"
+                onClick={handleVerifyCode}
+                disabled={verifyLoading}
+                style={{ margin: 0 }}
+              >
+                {verifyLoading ? "Verifying..." : "Verify Code"}
+              </button>
+
+              <button
+                type="button"
+                className="confirm"
+                onClick={() => setShowCodePopup(false)}
+                style={{ margin: 0 }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
