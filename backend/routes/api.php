@@ -47,7 +47,7 @@ Route::middleware(['activity.log'])->group(function () {
     Route::post('/login/record-failed', [LoginSecurityController::class, 'recordFailed']);
     Route::post('/login/clear-attempts', [LoginSecurityController::class, 'clearAttempts']);
 
-    Route::post('/chatbot/message', [ChatbotController::class, 'sendMessage']);
+    Route::post('/chatbot/ask', [ChatbotController::class, 'ask']);
 
     Route::post('/check-attendance-excel', [AttendanceExcelController::class, 'check']);
 });

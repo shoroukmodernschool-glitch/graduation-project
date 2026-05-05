@@ -69,20 +69,18 @@ BACKEND_ATTENDANCE_URL = "http://127.0.0.1:8000/api/attendance/mark"
 def send_attendance_to_backend(student_id):
     try:
         response = requests.post(
-            BACKEND_ATTENDANCE_URL,
+            "http://127.0.0.1:8000/api/attendance/mark",
             json={"student_id": student_id},
-            timeout=2
+            timeout=3
         )
 
         if response.status_code == 200:
-            print(f"[API] Attendance sent for student_id={student_id}")
-        elif response.status_code == 409:
-            print(f"[API] Already recorded for student_id={student_id}")
+            print("[API SUCCESS] Attendance sent to Laravel")
         else:
-            print(f"[API ERROR] status={response.status_code} response={response.text}")
+            print("[API ERROR]", response.status_code, response.text)
 
-    except Exception as e:
-        print(f"[API FAILED] {e}")
+    except requests.exceptions.RequestException as e:
+        print("[API FAILED] Laravel not reachable:", e)
 
 
 class VideoStream:

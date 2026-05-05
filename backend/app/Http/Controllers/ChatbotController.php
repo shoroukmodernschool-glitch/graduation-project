@@ -3,31 +3,37 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 class ChatbotController extends Controller
 {
-    public function sendMessage(Request $request)
+    public function ask(Request $request)
     {
-        $message = strtolower($request->input('message'));
-
-        $responses = [
-            'غياب' => 'تم تسجيل غيابك اليوم 👍',
-            'درجات' => 'درجاتك ممتازة كمل كده 💯',
-            'جدول' => 'عندك رياضة وبعدها علوم النهارده 📚',
-            'امتحان' => 'الامتحان يوم الأحد الجاي 📝',
-            'واجب' => 'عندك واجب رياضيات لازم يتسلم بكرة ✏️'
-        ];
-
-        foreach ($responses as $key => $reply) {
-            if (str_contains($message, $key)) {
-                return response()->json([
-                    'reply' => $reply
-                ]);
-            }
-        }
-
-        return response()->json([
-            'reply' => 'ممكن تسأل عن الغياب أو الدرجات أو الجدول 😊'
+        $request->validate([
+            'student_id' => 'required|string',
+            'message' => 'required|string',
         ]);
+
+        try {
+            $response = Http::timeout(10)->post('http://127.0.0.1:5001/ask', [
+                'student_id' => $request->student_id,
+                'message' => $request->message,
+            ]);
+
+            if (!$response->successful()) {
+                return response()->json([
+                    'reply' => 'في مشكلة في سيرفر الـ AI.'
+                ], 500);
+            }
+
+            return response()->json([
+                'reply' => $response->json('reply')
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'reply' => 'الـ AI مش شغال دلوقتي. شغل Flask الأول.'
+            ], 500);
+        }
     }
 }

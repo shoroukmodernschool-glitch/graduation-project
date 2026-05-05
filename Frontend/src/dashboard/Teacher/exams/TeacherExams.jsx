@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { db } from "../../../firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, getDocs } from "firebase/firestore";
 import "./TeacherExams.css";
 
 function TeacherExams() {
@@ -15,32 +15,17 @@ function TeacherExams() {
   const [title, setTitle] = useState("");
   const [duration, setDuration] = useState("");
   const [questions, setQuestions] = useState([
-    {
-      question: "",
-      options: ["", "", "", ""],
-      correct: 0,
-    },
+    { question: "", options: ["", "", "", ""], correct: 0 },
   ]);
 
   const addQuestion = () => {
-    setQuestions([
-      ...questions,
-      {
-        question: "",
-        options: ["", "", "", ""],
-        correct: 0,
-      },
-    ]);
+    setQuestions([...questions, { question: "", options: ["", "", "", ""], correct: 0 }]);
   };
 
   const deleteQuestion = (index) => {
     if (questions.length === 1) return;
-
-    const confirmDelete = window.confirm("Delete this question?");
-    if (!confirmDelete) return;
-
-    const updated = questions.filter((_, i) => i !== index);
-    setQuestions(updated);
+    if (!window.confirm("Delete this question?")) return;
+    setQuestions(questions.filter((_, i) => i !== index));
   };
 
   const updateQuestion = (index, value) => {
@@ -61,14 +46,115 @@ function TeacherExams() {
     setQuestions(updated);
   };
 
+  const sendExamNotificationsToStudentsAndParents = async (gradeNumber, subjectId) => {
+    const studentsSnap = await getDocs(collection(db, "student"));
+
+    const targetStudents = studentsSnap.docs
+      .map((studentDoc) => ({
+        docId: studentDoc.id,
+        ...studentDoc.data(),
+      }))
+      .filter((student) => {
+        const studentGrade = String(student.grade || student.Grade || "")
+          .replace("Grade ", "")
+          .trim();
+
+        return studentGrade === String(gradeNumber);
+      });
+
+    console.log("TARGET STUDENTS:", targetStudents.length);
+
+    const notificationsPromises = targetStudents.flatMap((student) => {
+      const realStudentId = String(
+        student.student_id || student.studentId || student.id || student.docId
+      );
+
+      const parentId = student.parent_id || student.parentId || "";
+      const parentEmail = student.parent_email || student.parentEmail || "";
+
+      const studentNotification = addDoc(collection(db, "notifications"), {
+        student_id: realStudentId,
+        studentId: realStudentId,
+        userId: student.docId,
+
+        title: "New Exam Added",
+        message: `A new exam "${title}" has been added in ${subject?.name || "your subject"}.`,
+        type: "exam",
+        targetRole: "student",
+
+        subjectName: subject?.name || "",
+        subjectId,
+        grade: gradeNumber,
+
+        teacherId: teacher?.id || "",
+        teacherEmail: teacher?.email || "",
+
+        read: false,
+        is_read: false,
+        createdAt: serverTimestamp(),
+      });
+
+      const parentNotification = addDoc(collection(db, "notifications"), {
+        student_id: realStudentId,
+        studentId: realStudentId,
+        userId: parentId,
+        parent_id: parentId,
+        parent_email: parentEmail,
+
+        title: "New Exam Added",
+        message: `A new exam "${title}" has been added for your child in ${
+          subject?.name || "the subject"
+        }.`,
+        type: "exam",
+        targetRole: "parent",
+
+        subjectName: subject?.name || "",
+        subjectId,
+        grade: gradeNumber,
+
+        teacherId: teacher?.id || "",
+        teacherEmail: teacher?.email || "",
+
+        read: false,
+        is_read: false,
+        createdAt: serverTimestamp(),
+      });
+
+      return parentId || parentEmail
+        ? [studentNotification, parentNotification]
+        : [studentNotification];
+    });
+
+    await Promise.all(notificationsPromises);
+  };
+
   const saveExam = async () => {
-    if (!title || !duration || !subject || !grade) {
-      alert("Complete exam title, duration, subject and grade.");
+    console.log("SAVE EXAM CLICKED", { title, duration, subject, grade, teacher });
+
+    if (!title.trim()) {
+      alert("Enter exam title.");
+      return;
+    }
+
+    if (!duration) {
+      alert("Enter exam duration.");
+      return;
+    }
+
+    if (!subject?.name) {
+      alert("Subject is missing. Go back and open exams from teacher subjects again.");
+      console.log("MISSING SUBJECT:", subject);
+      return;
+    }
+
+    if (!grade) {
+      alert("Grade is missing. Go back and open exams from teacher subjects again.");
+      console.log("MISSING GRADE:", grade);
       return;
     }
 
     const hasEmpty = questions.some(
-      (q) => !q.question || q.options.some((opt) => !opt)
+      (q) => !q.question.trim() || q.options.some((opt) => !opt.trim())
     );
 
     if (hasEmpty) {
@@ -80,11 +166,13 @@ function TeacherExams() {
 
     const subjectId =
       subject?.subjectId ||
-      `grade${gradeNumber}_${String(subject?.name || "").toLowerCase()}`;
+      `grade${gradeNumber}_${String(subject?.name || "").toLowerCase().replace(/\s+/g, "_")}`;
 
     try {
-      await addDoc(collection(db, "teacher_exams"), {
-        title,
+      console.log("START SAVING EXAM...");
+
+      const examRef = await addDoc(collection(db, "teacher_exams"), {
+        title: title.trim(),
         duration: Number(duration),
         subjectName: subject.name,
         subjectId,
@@ -95,34 +183,18 @@ function TeacherExams() {
         createdAt: serverTimestamp(),
       });
 
-      await addDoc(collection(db, "notifications"), {
-        title: "New Exam Added",
-        message: `A new exam "${title}" has been added in ${subject.name}.`,
-        type: "exam",
-        subjectName: subject.name,
-        subjectId,
-        grade: gradeNumber,
-        targetRole: "student",
-        teacherId: teacher?.id || "",
-        teacherEmail: teacher?.email || "",
-        readBy: [],
-        createdAt: serverTimestamp(),
-      });
+      console.log("EXAM SAVED SUCCESSFULLY:", examRef.id);
 
-      alert("Exam saved successfully and notification sent.");
+      await sendExamNotificationsToStudentsAndParents(gradeNumber, subjectId);
+
+      alert("Exam saved successfully and notifications sent.");
 
       setTitle("");
       setDuration("");
-      setQuestions([
-        {
-          question: "",
-          options: ["", "", "", ""],
-          correct: 0,
-        },
-      ]);
+      setQuestions([{ question: "", options: ["", "", "", ""], correct: 0 }]);
     } catch (error) {
-      console.error("Error saving exam:", error);
-      alert("Error saving exam.");
+      console.error("ERROR SAVING EXAM:", error);
+      alert(error.message || "Error saving exam.");
     }
   };
 
@@ -166,10 +238,7 @@ function TeacherExams() {
             <h2 className="question-title">Question {qIndex + 1}</h2>
 
             {questions.length > 1 && (
-              <button
-                className="exam-delete-btn"
-                onClick={() => deleteQuestion(qIndex)}
-              >
+              <button className="exam-delete-btn" onClick={() => deleteQuestion(qIndex)}>
                 Delete
               </button>
             )}

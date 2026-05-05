@@ -6,27 +6,51 @@ export default function AIAttendance({ open, onClose }) {
   const [studentId, setStudentId] = useState("");
   const [sentStudentId, setSentStudentId] = useState("");
   const [showChatPopup, setShowChatPopup] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   if (!open) return null;
 
+  const getTime = () =>
+    new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
   const handleSend = () => {
     if (!question.trim()) return;
-    setAnswer("      ");
+    setAnswer("");
+    setStudentId("");
+    setSentStudentId("");
     setShowChatPopup(true);
   };
 
-  const handleStudentIdSend = () => {
-    if (!studentId.trim()) return;
-    setSentStudentId(studentId);
+  const handleStudentIdSend = async () => {
+    if (!studentId.trim() || !question.trim()) return;
+
+    const id = studentId.trim();
+    setSentStudentId(id);
     setStudentId("");
+    setLoading(true);
+    setAnswer("Checking...");
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/chatbot/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ student_id: id, message: question }),
+      });
+
+      const data = await res.json();
+      setAnswer(data.reply || "No answer returned.");
+    } catch (error) {
+      console.error(error);
+      setAnswer("Backend or AI server is not running.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const getTime = () => {
-    return new Date().toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  const quickQuestions = [
+    "Has my attendance been recorded ?",
+    "How many times was my attendance recorded",
+  ];
 
   return (
     <>
@@ -72,30 +96,16 @@ export default function AIAttendance({ open, onClose }) {
 
           <div style={{ textAlign: "center" }}>
             <div style={{ position: "relative", display: "inline-block" }}>
-              <img
-                src="./images/robot.png"
-                alt="AI"
-                style={{ width: 150, height: 150 }}
-              />
-
+              <img src="./images/robot.png" alt="AI" style={{ width: 150, height: 150 }} />
               <img
                 src="./images/massege.png"
                 alt="chat"
-                style={{
-                  width: 30,
-                  position: "absolute",
-                  top: -8,
-                  right: 17,
-                }}
+                style={{ width: 30, position: "absolute", top: -8, right: 17 }}
               />
             </div>
 
-            <h2 style={{ color: "#061b9b" }}>
-              Welcome to Shorouq Smart System
-            </h2>
-
+            <h2 style={{ color: "#061b9b" }}>Welcome to Shorouq Smart System</h2>
             <h3 style={{ color: "#061b9b" }}>How can I assist you today?</h3>
-
             <p>Choose from the options below</p>
 
             <div
@@ -107,12 +117,7 @@ export default function AIAttendance({ open, onClose }) {
                 margin: "20px auto",
               }}
             >
-              {[
-                "Was an absence recorded?",
-                "How many absences do I have?",
-                "What is my latest absence?",
-                "Do I have repeated absences?",
-              ].map((q) => (
+              {quickQuestions.map((q) => (
                 <button
                   key={q}
                   onClick={() => {
@@ -134,21 +139,6 @@ export default function AIAttendance({ open, onClose }) {
               ))}
             </div>
 
-            {answer && (
-              <div
-                style={{
-                  background: "white",
-                  maxWidth: 560,
-                  margin: "15px auto",
-                  padding: 12,
-                  borderRadius: 10,
-                  color: "#061b9b",
-                }}
-              >
-                {answer}
-              </div>
-            )}
-
             <div
               style={{
                 display: "flex",
@@ -164,12 +154,7 @@ export default function AIAttendance({ open, onClose }) {
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 placeholder="Type your question..."
-                style={{
-                  flex: 1,
-                  border: "none",
-                  outline: "none",
-                  padding: 10,
-                }}
+                style={{ flex: 1, border: "none", outline: "none", padding: 10 }}
               />
 
               <button
@@ -210,11 +195,12 @@ export default function AIAttendance({ open, onClose }) {
             style={{
               width: 820,
               maxWidth: "95%",
-              height: 560,
+              height: 650,
               background: "#f4f6ff",
               borderRadius: 18,
               padding: 25,
               position: "relative",
+              overflow: "hidden",
             }}
           >
             <button
@@ -234,114 +220,120 @@ export default function AIAttendance({ open, onClose }) {
 
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <img src="./images/head.png" alt="AI" style={{ width: 45 }} />
-
-              <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                <h3 style={{ margin: 0, marginLeft: 0, color: "#061b9b" }}>
-                  Ai Attendance
-                </h3>
-
-                <small style={{ color: "green", marginTop: -5 }}>
-                  ● online
-                </small>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <h3 style={{ margin: 0, color: "#061b9b" }}>Ai Attendance</h3>
+                <small style={{ color: "green", marginTop: -5 }}>● online</small>
               </div>
             </div>
 
             <hr />
 
-            <div style={{ textAlign: "center", margin: "15px 0" }}>
-              <span
-                style={{
-                  background: "white",
-                  padding: "6px 14px",
-                  borderRadius: 20,
-                  color: "#061b9b",
-                  fontSize: 12,
-                }}
-              >
-                Today
-              </span>
-            </div>
-
-            <div style={{ display: "flex", justifyContent: "flex-start", marginTop: 30 }}>
-              <div>
-                <div
-                  style={{
-                    background: "#061b9b",
-                    color: "white",
-                    padding: "12px 16px",
-                    borderRadius: 8,
-                    maxWidth: 300,
-                    fontSize: 13,
-                  }}
-                >
-                  {question}
-                </div>
-                <div style={{ fontSize: 11, color: "#777", marginTop: 4 }}>
-                  {getTime()}
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 25 }}>
-              <div>
-                <div
+            <div
+              style={{
+                height: 490,
+                overflowY: "auto",
+                padding: "10px 5px 90px",
+              }}
+            >
+              <div style={{ textAlign: "center", margin: "15px 0" }}>
+                <span
                   style={{
                     background: "white",
-                    color: "#333",
-                    padding: "12px 16px",
-                    borderRadius: 8,
-                    maxWidth: 360,
-                    fontSize: 13,
+                    padding: "6px 14px",
+                    borderRadius: 20,
+                    color: "#061b9b",
+                    fontSize: 12,
                   }}
                 >
-                  Hello! Please enter your student ID to check your attendance.
-                </div>
-                <div style={{ fontSize: 11, color: "#777", marginTop: 4, textAlign: "right" }}>
-                  {getTime()}
-                </div>
+                  Today
+                </span>
               </div>
-            </div>
 
-            {sentStudentId && (
-              <div style={{ display: "flex", justifyContent: "flex-start", marginTop: 25 }}>
+              <div style={{ display: "flex", justifyContent: "flex-start", marginTop: 30 }}>
                 <div>
                   <div
                     style={{
                       background: "#061b9b",
                       color: "white",
                       padding: "12px 16px",
-                      borderRadius: 8,
-                      maxWidth: 300,
+                      borderRadius: 12,
+                      maxWidth: 320,
                       fontSize: 13,
+                      lineHeight: "1.6",
                     }}
                   >
-                    {sentStudentId}
+                    {question}
                   </div>
-                  <div style={{ fontSize: 11, color: "#777", marginTop: 4 }}>
+                  <div style={{ fontSize: 11, color: "#777", marginTop: 4 }}>{getTime()}</div>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 25 }}>
+                <div>
+                  <div
+                    style={{
+                      background: "white",
+                      color: "#333",
+                      padding: "12px 16px",
+                      borderRadius: 12,
+                      maxWidth: 390,
+                      fontSize: 13,
+                      lineHeight: "1.7",
+                    }}
+                  >
+                    Hello! Please enter your student ID to check your attendance.
+                  </div>
+                  <div style={{ fontSize: 11, color: "#777", marginTop: 4, textAlign: "right" }}>
                     {getTime()}
                   </div>
                 </div>
               </div>
-            )}
 
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 25 }}>
-              <div>
-                <div
-                  style={{
-                    background: "white",
-                    color: "#333",
-                    padding: "12px 16px",
-                    borderRadius: 8,
-                    maxWidth: 360,
-                    fontSize: 13,
-                  }}
-                >
-                  {answer || "You have 2 absences so far"}
+              {sentStudentId && (
+                <div style={{ display: "flex", justifyContent: "flex-start", marginTop: 25 }}>
+                  <div>
+                    <div
+                      style={{
+                        background: "#061b9b",
+                        color: "white",
+                        padding: "12px 16px",
+                        borderRadius: 12,
+                        maxWidth: 300,
+                        fontSize: 13,
+                      }}
+                    >
+                      {sentStudentId}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#777", marginTop: 4 }}>{getTime()}</div>
+                  </div>
                 </div>
-                <div style={{ fontSize: 11, color: "#777", marginTop: 4, textAlign: "right" }}>
-                  {getTime()}
+              )}
+
+              {answer && (
+                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 25 }}>
+                  <div>
+                    <div
+                      style={{
+                        background: "white",
+                        color: "#222",
+                        padding: "14px 18px",
+                        borderRadius: 14,
+                        maxWidth: 520,
+                        fontSize: 14,
+                        lineHeight: "1.9",
+                        textAlign: "left",
+                        boxShadow: "0 4px 14px rgba(0,0,0,0.06)",
+                        whiteSpace: "pre-line",
+                      }}
+                    >
+                      {loading ? "Checking..." : answer}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#777", marginTop: 4, textAlign: "right" }}>
+                      {getTime()}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div
@@ -359,22 +351,18 @@ export default function AIAttendance({ open, onClose }) {
             >
               <input
                 value={studentId}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/[^0-9]/g, "");
-                  setStudentId(value);
+                onChange={(e) => setStudentId(e.target.value.replace(/[^0-9]/g, ""))}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleStudentIdSend();
                 }}
                 placeholder="Type your student ID..."
                 inputMode="numeric"
-                style={{
-                  flex: 1,
-                  border: "none",
-                  outline: "none",
-                  padding: 10,
-                }}
+                style={{ flex: 1, border: "none", outline: "none", padding: 10 }}
               />
 
               <button
                 onClick={handleStudentIdSend}
+                disabled={loading}
                 style={{
                   width: 38,
                   height: 38,
@@ -382,7 +370,8 @@ export default function AIAttendance({ open, onClose }) {
                   border: "none",
                   background: "#061b9b",
                   color: "white",
-                  cursor: "pointer",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  opacity: loading ? 0.7 : 1,
                 }}
               >
                 ➤

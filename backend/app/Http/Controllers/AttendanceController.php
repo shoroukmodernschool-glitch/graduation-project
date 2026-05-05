@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Kreait\Firebase\Factory;
+use Google\Cloud\Core\Timestamp;
 
 class AttendanceController extends Controller
 {
@@ -31,8 +32,8 @@ class AttendanceController extends Controller
 
         $studentId = trim($request->student_id);
         $today = Carbon::now()->format('Y-m-d');
+        $time = Carbon::now()->format('H:i:s');
 
-        // ✅ جلب الطالب عن طريق field اسمه student_id
         $students = $this->firestore
             ->collection('student')
             ->where('student_id', '=', $studentId)
@@ -59,7 +60,6 @@ class AttendanceController extends Controller
 
         $docId = $studentId . '_' . $today;
 
-        // ✅ منع تسجيل نفس الطالب مرتين في نفس اليوم
         $attendanceRef = $this->firestore
             ->collection('attendance')
             ->document($docId);
@@ -71,27 +71,28 @@ class AttendanceController extends Controller
             ], 409);
         }
 
-        // ✅ تسجيل الحضور
         $attendanceRef->set([
             'student_id' => $studentId,
             'student_doc_id' => $studentDocId,
             'date' => $today,
+            'time' => $time,
             'status' => 'present',
-            'created_at' => now()->toDateTimeString(),
+            'createdAt' => new Timestamp(new \DateTime()),
         ]);
 
-        // ✅ إنشاء notification للـ parent
+        $studentName = trim(($student['firstName'] ?? '') . ' ' . ($student['lastName'] ?? ''));
+
         $this->firestore->collection('notifications')->add([
             'student_id' => $studentId,
             'student_doc_id' => $studentDocId,
-            'student_name' => ($student['firstName'] ?? '') . ' ' . ($student['lastName'] ?? ''),
+            'student_name' => $studentName,
             'parent_id' => $student['parent_id'] ?? null,
             'parent_email' => $student['parent_email'] ?? null,
             'title' => 'Attendance Recorded',
-            'message' => 'Your child is present today',
+            'message' => "Your attendance was recorded today at $time.",
             'type' => 'attendance',
-            'is_read' => false,
-            'created_at' => now()->toDateTimeString(),
+            'read' => false,
+            'createdAt' => new Timestamp(new \DateTime()),
         ]);
 
         return response()->json([
