@@ -95,19 +95,6 @@ export default function SignUp() {
     return newErrors;
   };
 
-  const fileToBase64 = (file) =>
-    new Promise((resolve, reject) => {
-      if (!file) {
-        resolve("");
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = (error) => reject(error);
-    });
-
   const handleSendCode = async () => {
     if (!formData.email.trim()) {
       setErrors((prev) => ({
@@ -169,7 +156,7 @@ export default function SignUp() {
       setVerifyLoading(true);
       setVerificationMessage("");
 
-      const res = await fetch("http://127.0.0.1:8000/api/signup/verify-otp", {
+const res = await fetch("http://127.0.0.1:8000/api/signup/verify-otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -185,7 +172,8 @@ export default function SignUp() {
 
       if (!res.ok) {
         setIsEmailVerified(false);
-        setVerificationMessage(data.error || data.message || "Invalid verification code");
+        setVerificationMessage(data.error || data.message ||
+           "Invalid verification code");
         return;
       }
 
@@ -217,13 +205,10 @@ export default function SignUp() {
       setSignupLoading(true);
       setVerificationMessage("");
 
-      const imageBase64 = await fileToBase64(imageFile);
-
       localStorage.setItem(
         "pendingSignupData",
         JSON.stringify({
-          ...formData,
-          imageBase64
+          ...formData
         })
       );
 
@@ -245,7 +230,11 @@ export default function SignUp() {
         return;
       }
 
-      navigate("/verify-code");
+      navigate("/verify-code", {
+        state: {
+          imageFile
+        }
+      });
     } catch (error) {
       console.error("Signup error:", error);
       setVerificationMessage("Server connection failed while sending code");

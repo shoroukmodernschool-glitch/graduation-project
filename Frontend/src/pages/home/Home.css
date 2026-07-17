@@ -115,77 +115,185 @@ line-height: 1.7;
 /* ================= LEVELS ================= */
 
 .levels {
-padding: 60px 8%;
-background: #f5f5f5;
+padding: 80px 3% 110px;
+background: #f8fbff;
+overflow: visible;
 }
 
 .levels-title{
 text-align:center;
-margin-bottom:40px;
+margin-bottom:65px;
+}
+
+.levels-label {
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 16px;
+margin-bottom: 18px;
+}
+
+.levels-label span {
+width: 95px;
+height: 1px;
+background: #b8c7d9;
+}
+
+.levels-label p {
+margin: 0;
+color: #5c7fa8;
+font-size: 18px;
+font-weight: 600;
+letter-spacing: 1px;
 }
 
 .levels-title h2{
-font-size:34px;
-font-weight:700;
-color:#1f2937;
-margin-bottom:10px;
-position:relative;
-display:inline-block;
+font-size:42px;
+font-weight:800;
+color:#0b2945;
+margin-bottom:20px;
 }
 
 .levels-title h2::after{
-content:"";
-width:60%;
-height:3px;
-background:#3B82F6;
-position:absolute;
-left:20%;
-bottom:-8px;
+display: none;
 }
 
-.levels-title p{
-color:#6b7280;
-font-size:16px;
-margin-top:15px;
+.levels-desc{
+max-width: 720px;
+margin: auto;
+color:#5f6b7a;
+font-size:18px;
+line-height:1.6;
 }
 
 .levels-container {
 display: grid;
 grid-template-columns: repeat(4, 1fr);
-gap: 25px;
+gap: 24px;
+align-items: stretch;
 }
 
 .card {
 position: relative;
-height: 260px;
-overflow: hidden;
-border-radius: 10px;
+min-height: 520px;
+height: auto;
+overflow: visible;
+border-radius: 18px;
+text-decoration: none;
+background: white;
+box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+transition: 0.3s ease;
+display: flex;
+flex-direction: column;
+}
+
+.card:hover {
+transform: translateY(-8px);
+box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
 }
 
 .card img {
-width: 100%;
-height: 100%;
+width: calc(100% - 30px);
+height: 215px;
 object-fit: cover;
+margin: 15px auto 0;
+border-radius: 0;
 transition: 0.4s;
+flex-shrink: 0;
 }
 
 .card:hover img {
-transform: scale(1.1);
+transform: scale(1.03);
 }
 
 .card .overlay {
-position: absolute;
-inset: 0;
-background: rgba(0, 0, 0, 0.35);
+display: none;
 }
 
-.card h3 {
+.level-content {
+position: relative;
+flex: 1;
+padding: 70px 25px 35px;
+text-align: center;
+background: white;
+border-radius: 0 0 18px 18px;
+}
+
+.level-icon {
 position: absolute;
-bottom: 20px;
-left: 20px;
-color: white;
+top: -38px;
+left: 50%;
+transform: translateX(-50%);
+width: 76px;
+height: 76px;
+border-radius: 14px;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 34px;
+font-weight: 700;
+box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.level-content h3 {
+position: static;
+color: #0b2945;
 font-size: 20px;
-z-index: 2;
+font-weight: 800;
+margin-bottom: 14px;
+z-index: auto;
+}
+
+.level-content span {
+display: block;
+width: 48px;
+height: 3px;
+border-radius: 20px;
+margin: 0 auto 24px;
+}
+
+.level-content p {
+color: #5f6b7a;
+font-size: 16px;
+line-height: 1.6;
+margin: 0 auto;
+max-width: 230px;
+}
+
+.level-card-green .level-icon {
+background: #e8f8ed;
+color: #22c55e;
+}
+
+.level-card-green .level-content span {
+background: #22c55e;
+}
+
+.level-card-blue .level-icon {
+background: #e8f2ff;
+color: #3b82f6;
+}
+
+.level-card-blue .level-content span {
+background: #3b82f6;
+}
+
+.level-card-purple .level-icon {
+background: #f3e8ff;
+color: #a855f7;
+}
+
+.level-card-purple .level-content span {
+background: #a855f7;
+}
+
+.level-card-orange .level-icon {
+background: #fff0df;
+color: #f97316;
+}
+
+.level-card-orange .level-content span {
+background: #f97316;
 }
 
 /* ================= NEWS ================= */
@@ -357,7 +465,7 @@ overflow: hidden;
 @media (max-width:1200px){
 
 .levels-container{
-grid-template-columns:repeat(3,1fr);
+grid-template-columns:repeat(2,1fr);
 }
 
 }
@@ -366,10 +474,6 @@ grid-template-columns:repeat(3,1fr);
 
 .hero-content h1{
 font-size:48px;
-}
-
-.levels-container{
-grid-template-columns:repeat(2,1fr);
 }
 
 .slide img{
@@ -404,12 +508,28 @@ flex-direction:column;
 align-items:center;
 }
 
+.levels {
+padding: 60px 5% 90px;
+}
+
+.levels-title h2{
+font-size:32px;
+}
+
+.levels-label span {
+width: 55px;
+}
+
 .levels-container{
 grid-template-columns:1fr;
 }
 
 .card{
-height:220px;
+min-height: 500px;
+}
+
+.card img {
+height: 215px;
 }
 
 .slide img{
@@ -433,7 +553,7 @@ font-size:28px;
 }
 
 .card{
-height:200px;
+min-height: 480px;
 }
 
 .hero-btn2{

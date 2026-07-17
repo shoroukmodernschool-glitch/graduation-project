@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\User; // لو هتسجل بيانات في جدول users
+use App\Models\User; //  users
 
 class UserController extends Controller
 {
@@ -16,7 +16,7 @@ class UserController extends Controller
             'password' => 'required|min:8|confirmed',
         ]);
 
-        // حفظ البيانات في قاعدة البيانات
+        //
         User::create([
             'name' => $validatedData['name'],
             'email' => $validatedData['email'],

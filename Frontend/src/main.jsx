@@ -4,14 +4,14 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App.jsx";
 import "./index.css";
 
-// 🔥 مهمين
+//  
 import { MaterialUIControllerProvider, useMaterialUIController } from "./dashboard/context";
 import theme from "./dashboard/assets/theme";
-import darkTheme from "./dashboard/assets/theme-dark"; // 🔥 ده الجديد
+import darkTheme from "./dashboard/assets/theme-dark"; //   
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 
-// 🔥 لفينا ThemeProvider في كومبوننت عشان نستخدم الـ context
+// 
 function AppWrapper() {
   const [controller] = useMaterialUIController();
   const { darkMode } = controller;

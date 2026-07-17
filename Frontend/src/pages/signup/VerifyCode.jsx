@@ -1,6 +1,6 @@
 import "./sign_up.css";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import Navbar from "../../components/Navbar";
 import { createUserWithEmailAndPassword } from "firebase/auth";
@@ -9,6 +9,9 @@ import { auth, db } from "../../firebase";
 
 export default function VerifyCode() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const imageFile = location.state?.imageFile || null;
 
   const [verificationCode, setVerificationCode] = useState("");
   const [verifyLoading, setVerifyLoading] = useState(false);
@@ -27,23 +30,37 @@ export default function VerifyCode() {
     setPendingData(JSON.parse(storedData));
   }, [navigate]);
 
-  const uploadImageToCloudinary = async (base64Image) => {
-    if (!base64Image) return "";
+  const uploadStudentPhoto = async (file, user, studentData) => {
+    if (!file) {
+      return {
+        public_id: "",
+        format: "",
+        type: ""
+      };
+    }
 
-    const formDataUpload = new FormData();
-    formDataUpload.append("file", base64Image);
-    formDataUpload.append("upload_preset", "react_upload");
+    const token = await user.getIdToken(true);
 
-    const res = await fetch(
-      "https://api.cloudinary.com/v1_1/dzoppqvhy/image/upload",
-      {
-        method: "POST",
-        body: formDataUpload
-      }
-    );
+    const uploadData = new FormData();
+    uploadData.append("image", file);
+    uploadData.append("student_id", studentData.id || user.uid || studentData.email);
+
+    const res = await fetch("http://127.0.0.1:8000/api/cloudinary/student-photo/upload", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: uploadData
+    });
 
     const data = await res.json();
-    return data.secure_url || "";
+
+    if (!res.ok) {
+      throw new Error(data.message || data.error || "Failed to upload image");
+    }
+
+    return data;
   };
 
   const handleVerifyCode = async () => {
@@ -85,11 +102,7 @@ export default function VerifyCode() {
 
       const user = userCredential.user;
 
-      let imageURL = "";
-
-      if (pendingData.imageBase64) {
-        imageURL = await uploadImageToCloudinary(pendingData.imageBase64);
-      }
+      const uploadedImage = await uploadStudentPhoto(imageFile, user, pendingData);
 
       await setDoc(doc(db, "student", user.uid), {
         firstName: pendingData.firstName || "",
@@ -103,7 +116,10 @@ export default function VerifyCode() {
         grade: pendingData.grade || "",
         className: pendingData.className || "",
         notes: pendingData.notes || "",
-        faceImage: imageURL,
+        faceImage: uploadedImage.public_id || "",
+        imagePublicId: uploadedImage.public_id || "",
+        imageFormat: uploadedImage.format || "",
+        imageType: uploadedImage.type || "",
         role: "student",
         email_verified: true,
         createdAt: serverTimestamp()

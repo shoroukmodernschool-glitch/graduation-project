@@ -11,6 +11,7 @@ use App\Http\Controllers\Auth\AdminOtpController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AttendanceExcelController;
+use App\Http\Controllers\CloudinaryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,7 +26,7 @@ Route::get('/test', function (Request $request) {
     ]);
 });
 
-// 🔥 كل دول عليهم Logging تلقائي
+
 Route::middleware(['activity.log'])->group(function () {
 
     Route::post('/login', [AuthController::class, 'login']);
@@ -36,9 +37,15 @@ Route::middleware(['activity.log'])->group(function () {
     Route::post('/forgot-password/verify-code', [ForgotPasswordController::class, 'verifyCode']);
     Route::post('/forgot-password/reset-password', [ForgotPasswordController::class, 'resetPassword']);
 
-    Route::post('/signup/send-otp', [SignupOtpController::class, 'sendOtp']);
-    Route::post('/signup/resend-otp', [SignupOtpController::class, 'resendOtp']);
-    Route::post('/signup/verify-otp', [SignupOtpController::class, 'verifyOtp']);
+    Route::post('/signup/send-otp',
+     [SignupOtpController::
+     class, 'sendOtp']);
+    Route::post('/signup/resend-otp',
+     [SignupOtpController::
+     class, 'resendOtp']);
+    Route::post('/signup/verify-otp',
+     [SignupOtpController::
+     class, 'verifyOtp']);
 
     Route::post('/admin/send-login-otp', [AdminOtpController::class, 'sendOtp']);
     Route::post('/admin/verify-login-otp', [AdminOtpController::class, 'verifyOtp']);
@@ -54,6 +61,12 @@ Route::middleware(['activity.log'])->group(function () {
 
 // ✅ Attendance الحقيقي: AI Model هيبعت POST
 Route::post('/attendance/mark', [AttendanceController::class, 'markAttendance']);
+
+// 🔐 Cloudinary Routes محمية بالـ Firebase + Logging
+Route::middleware(['firebase.auth', 'activity.log'])->group(function () {
+    Route::post('/cloudinary/student-photo/upload', [CloudinaryController::class, 'uploadStudentPhoto']);
+    Route::post('/cloudinary/student-photo/url', [CloudinaryController::class, 'getStudentPhotoUrl']);
+});
 
 // 🔥 Route محمي بالـ Firebase + Logging
 Route::middleware(['firebase.auth', 'activity.log'])->get('/protected', function (Request $request) {

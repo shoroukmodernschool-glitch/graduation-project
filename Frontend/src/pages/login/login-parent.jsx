@@ -15,6 +15,9 @@ export default function LoginParent() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
   // Forgot Password Popup States
   const [showForgotPopup, setShowForgotPopup] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
@@ -198,6 +201,17 @@ export default function LoginParent() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setErrorMessage("");
+
+    const trimmedEmail = email.trim();
+    const gmailRegex = /^[^\s@]+@gmail\.com$/i;
+
+    if (!gmailRegex.test(trimmedEmail)) {
+      setErrorMessage("Email must be a Gmail address and end with @gmail.com.");
+      return;
+    }
+
+    setLoading(true);
 
     try {
       console.log("🔥 Start Parent Login...");
@@ -206,7 +220,7 @@ export default function LoginParent() {
 
       const userCredential = await signInWithEmailAndPassword(
         auth,
-        email,
+        trimmedEmail,
         password
       );
 
@@ -220,16 +234,18 @@ export default function LoginParent() {
 
       if (!parentSnap.exists()) {
         await signOut(auth);
-        alert("هذا الحساب ليس حساب Parent");
+        setErrorMessage("This account is not a parent.");
+        setLoading(false);
         return;
       }
 
       const parentData = parentSnap.data();
       console.log("📄 Parent Firestore Data:", parentData);
 
-      if (parentData.role !== "parent") {
+      if (!parentData.role || parentData.role.toLowerCase() !== "parent") {
         await signOut(auth);
-        alert("غير مسموح، هذا الحساب ليس Parent");
+        setErrorMessage("Access denied. Parents only.");
+        setLoading(false);
         return;
       }
 
@@ -251,16 +267,32 @@ export default function LoginParent() {
       console.log("🟣 Laravel Response:", data);
 
       if (!res.ok) {
-        alert("الباك رفض التوكن");
+        await signOut(auth);
+        setErrorMessage("Laravel verification failed.");
+        setLoading(false);
         return;
       }
-
-      alert("Login successful ✅");
 
       navigate("/parent-dashboard");
     } catch (error) {
       console.error("❌ Login Error:", error);
-      alert("Error حصل ❌ بص الـ console");
+
+      if (
+        error.code === "auth/wrong-password" ||
+        error.code === "auth/invalid-credential"
+      ) {
+        setErrorMessage("Incorrect password. Please try again or click 'Forgot Password?' to reset it.");
+      } else if (error.code === "auth/user-not-found") {
+        setErrorMessage("No account found with this email. Please check your email or sign up.");
+      } else if (error.code === "auth/invalid-email") {
+        setErrorMessage("Email must be a Gmail address and end with @gmail.com.");
+      } else if (error.message && error.message.toLowerCase().includes("network")) {
+        setErrorMessage("Network error. Please check your internet connection and try again.");
+      } else {
+        setErrorMessage("Login failed due to an unexpected error. Try again later or contact support.");
+      }
+
+      setLoading(false);
     }
   };
 
@@ -346,8 +378,26 @@ export default function LoginParent() {
             </button>
           </div>
 
-          <button className="submit-btn parent" type="submit">
-            Submit
+          {errorMessage && (
+  <div className="login-error parent-error" role="alert">
+    {errorMessage}
+  </div>
+)}
+
+          <button
+            className="submit-btn parent"
+            type="submit"
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="loading-content">
+                Logging in
+                <span className="loading-emoji">⏳</span>
+                <span className="loader"></span>
+              </span>
+            ) : (
+              "Submit"
+            )}
           </button>
         </form>
       </div>

@@ -287,7 +287,7 @@ function ParentDashboard() {
 const results = examResultsSnap.docs
   .map((d) => d.data())
   .filter((result) =>
-    // يطابق UID بتاع الطالب (اللي عندك في Firebase)
+    // )
     studentsWithAttendance.some(
       (student) => student.id === result.studentId
     )

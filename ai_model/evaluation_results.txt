@@ -1,0 +1,22 @@
+Classification Report:
+                  precision    recall  f1-score   support
+
+    Mohamed Adel   1.000000  1.000000  1.000000         2
+         Unknown   0.666667  1.000000  0.800000         2
+ahmed abdelhamed   1.000000  1.000000  1.000000         2
+      esraa ahdy   1.000000  1.000000  1.000000         2
+   habiba khaled   1.000000  0.500000  0.666667         2
+     malak essam   1.000000  1.000000  1.000000         2
+     malak ramzy   1.000000  1.000000  1.000000         2
+   ranem mohamed   1.000000  1.000000  1.000000         2
+      zeyad wael   1.000000  1.000000  1.000000         2
+
+        accuracy                       0.944444        18
+       macro avg   0.962963  0.944444  0.940741        18
+    weighted avg   0.962963  0.944444  0.940741        18
+
+Main Evaluation Metrics:
+Accuracy: 0.944444
+Precision: 0.962963
+Recall: 0.944444
+F1-score: 0.940741

@@ -201,6 +201,15 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMessage("");
+
+    const trimmedEmail = email.trim();
+    const gmailRegex = /^[^\s@]+@gmail\.com$/i;
+
+    if (!gmailRegex.test(trimmedEmail)) {
+      setErrorMessage("Email must be a Gmail address and end with @gmail.com.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -208,7 +217,7 @@ export default function Login() {
 
       const userCredential = await signInWithEmailAndPassword(
         auth,
-        email,
+        trimmedEmail,
         password
       );
 
@@ -272,14 +281,19 @@ export default function Login() {
     } catch (error) {
       console.error("❌ Login Error:", error);
 
-      if (error.code === "auth/wrong-password") {
-        setErrorMessage("Incorrect password.");
+      if (
+        error.code === "auth/wrong-password" ||
+        error.code === "auth/invalid-credential"
+      ) {
+        setErrorMessage("Incorrect password. Please try again or click 'Forgot Password?' to reset it.");
       } else if (error.code === "auth/user-not-found") {
-        setErrorMessage("User not found.");
-      } else if (error.code === "auth/invalid-credential") {
-        setErrorMessage("Invalid email or password.");
+        setErrorMessage("No account found with this email. Please check your email or sign up.");
+      } else if (error.code === "auth/invalid-email") {
+        setErrorMessage("Email must be a Gmail address and end with @gmail.com.");
+      } else if (error.message.includes("network")) {
+        setErrorMessage("Network error. Please check your internet connection and try again.");
       } else {
-        setErrorMessage("An error occurred during login.");
+        setErrorMessage("Login failed due to an unexpected error. Try again later or contact support.");
       }
 
       setLoading(false);
@@ -364,7 +378,9 @@ export default function Login() {
           </div>
 
           {errorMessage && (
-            <p className="login-error">{errorMessage}</p>
+            <div className="login-error" role="alert">
+              {errorMessage}
+            </div>
           )}
 
           <button
@@ -374,7 +390,8 @@ export default function Login() {
           >
             {loading ? (
               <span className="loading-content">
-                جاري الدخول
+                Logging in
+                <span className="loading-emoji">⏳</span>
                 <span className="loader"></span>
               </span>
             ) : (

@@ -23,7 +23,7 @@ def check_attendance_today(student_id):
     sheet = open_attendance_sheet()
 
     if sheet is None:
-        return "ملف الحضور مش موجود."
+        return "   ."
 
     for row in sheet.iter_rows(min_row=2, values_only=True):
         excel_student_id = str(row[0]).strip()

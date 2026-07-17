@@ -1,0 +1,17 @@
+image_path,actual,predicted,score,status,correct
+model_evaluation/test_photos/mohamed_test_1.jpg,Mohamed Adel,Mohamed Adel,0.8378,ok,1
+model_evaluation/test_photos/mohamed_test_2.jpg,Mohamed Adel,Mohamed Adel,0.8203,ok,1
+model_evaluation/test_photos/esraa_test_1.jpg,esraa ahdy,esraa ahdy,0.6861,ok,1
+model_evaluation/test_photos/esraa_test_2.jpg,esraa ahdy,esraa ahdy,0.6821,ok,1
+model_evaluation/test_photos/malak_test_1.jpg,malak essam,malak essam,0.9724,ok,1
+model_evaluation/test_photos/malak_test_2.jpg,malak essam,malak essam,0.7345,ok,1
+model_evaluation/test_photos/ahmed_test_1.jpg,ahmed abdelhamed,ahmed abdelhamed,0.8001,ok,1
+model_evaluation/test_photos/ahmed_test_2.jpg,ahmed abdelhamed,ahmed abdelhamed,0.7932,ok,1
+model_evaluation/test_photos/zeyad_test_1.jpg,zeyad wael,zeyad wael,0.8184,ok,1
+model_evaluation/test_photos/zeyad_test_2.jpg,zeyad wael,zeyad wael,0.8131,ok,1
+model_evaluation/test_photos/ranem_test_1.jpg,ranem mohamed,ranem mohamed,0.7868,ok,1
+model_evaluation/test_photos/ranem_test_2.jpg,ranem mohamed,ranem mohamed,0.7836,ok,1
+model_evaluation/test_photos/malak_ramzy_test_1.jpg,malak ramzy,malak ramzy,0.9526,ok,1
+model_evaluation/test_photos/malak_ramzy_test_2.jpg,malak ramzy,malak ramzy,0.7889,ok,1
+model_evaluation/test_photos/unknown_test_1.jpg,Unknown,Unknown,0.1698,ok,1
+model_evaluation/test_photos/unknown_test_2.jpg,Unknown,Unknown,0.2419,ok,1

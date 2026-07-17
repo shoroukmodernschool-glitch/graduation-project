@@ -10,6 +10,10 @@ import { doc, getDoc } from "firebase/firestore";
 export default function LoginAdmin() {
   const navigate = useNavigate();
 
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
+  const [adminGatePassword, setAdminGatePassword] = useState("");
+  const [adminGateError, setAdminGateError] = useState("");
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -33,6 +37,18 @@ export default function LoginAdmin() {
     const timer = setTimeout(() => setCooldown((prev) => prev - 1), 1000);
     return () => clearTimeout(timer);
   }, [cooldown]);
+
+  const handleAdminGateSubmit = (e) => {
+    e.preventDefault();
+    setAdminGateError("");
+
+    if (adminGatePassword.trim() === "227") {
+      setIsAdminUnlocked(true);
+      setAdminGatePassword("");
+    } else {
+      setAdminGateError("Wrong access password. Please try again.");
+    }
+  };
 
   const openForgotPopup = () => {
     setShowForgotPopup(true);
@@ -200,6 +216,15 @@ export default function LoginAdmin() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMessage("");
+
+    const trimmedEmail = email.trim();
+    const gmailRegex = /^[^\s@]+@gmail\.com$/i;
+
+    if (!gmailRegex.test(trimmedEmail)) {
+      setErrorMessage("Email must be a Gmail address and end with @gmail.com.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -207,7 +232,7 @@ export default function LoginAdmin() {
 
       const userCredential = await signInWithEmailAndPassword(
         auth,
-        email,
+        trimmedEmail,
         password
       );
 
@@ -242,7 +267,7 @@ export default function LoginAdmin() {
 
       localStorage.setItem("token", token);
 
-      console.log("🚀 قبل fetch");
+      console.log("🚀 قبل fetch")
 
       const res = await fetch("http://127.0.0.1:8000/api/test", {
         method: "GET",
@@ -268,18 +293,22 @@ export default function LoginAdmin() {
       }
 
       navigate("/admin-dashboard", { replace: true });
-
     } catch (error) {
       console.error("❌ Login Error:", error);
 
-      if (error.code === "auth/wrong-password") {
-        setErrorMessage("Incorrect password.");
+      if (
+        error.code === "auth/wrong-password" ||
+        error.code === "auth/invalid-credential"
+      ) {
+        setErrorMessage("Incorrect password. Please try again or click 'Forgot Password?' to reset it.");
       } else if (error.code === "auth/user-not-found") {
-        setErrorMessage("User not found.");
-      } else if (error.code === "auth/invalid-credential") {
-        setErrorMessage("Invalid email or password.");
+        setErrorMessage("No account found with this email. Please check your email or sign up.");
+      } else if (error.code === "auth/invalid-email") {
+        setErrorMessage("Email must be a Gmail address and end with @gmail.com.");
+      } else if (error.message && error.message.toLowerCase().includes("network")) {
+        setErrorMessage("Network error. Please check your internet connection and try again.");
       } else {
-        setErrorMessage("An error occurred during login.");
+        setErrorMessage("Login failed due to an unexpected error. Try again later or contact support.");
       }
 
       setLoading(false);
@@ -300,91 +329,127 @@ export default function LoginAdmin() {
         <source src={`${import.meta.env.BASE_URL}videos/bk.mp4`} />
       </video>
 
-      <div className="login-card admin">
-        <h2 className="h2login">Administration Login</h2>
+      {!isAdminUnlocked && (
+        <div className="admin-gate-overlay">
+          <div className="admin-gate-popup">
+            <div className="admin-gate-icon">🔐</div>
 
-        <div className="role-tabs">
-          <button onClick={() => navigate("/login")}>
-            Student
-          </button>
+            <h2>Admin Access</h2>
+            <p>Please enter the access password to continue.</p>
 
-          <button onClick={() => navigate("/login-parent")}>
-            Parent
-          </button>
+            <form onSubmit={handleAdminGateSubmit}>
+              <input
+                type="password"
+                placeholder="Enter access password"
+                value={adminGatePassword}
+                onChange={(e) => setAdminGatePassword(e.target.value)}
+                autoFocus
+              />
 
-          <button onClick={() => navigate("/login-teacher")}>
-            Teacher
-          </button>
+              {adminGateError && (
+                <div className="admin-gate-error">
+                  {adminGateError}
+                </div>
+              )}
 
-          <button className="active">
-            Administration
-          </button>
+              <button type="submit">
+                Unlock Admin Login
+              </button>
+            </form>
+          </div>
         </div>
+      )}
 
-        <form onSubmit={handleLogin}>
-          <div className="input-group">
-            <input
-              type="email"
-              placeholder="Administration Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <span className="icon">
-              <FaEnvelope />
-            </span>
-          </div>
+      {isAdminUnlocked && (
+        <div className="login-card admin">
+          <h2 className="h2login">Administration Login</h2>
 
-          <div className="input-group">
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <span
-              className="icon"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
-            </span>
-          </div>
+          <div className="role-tabs">
+            <button onClick={() => navigate("/login")}>
+              Student
+            </button>
 
-          <div className="options">
-            <label>
-              <input type="checkbox" /> Remember Me
-            </label>
+            <button onClick={() => navigate("/login-parent")}>
+              Parent
+            </button>
 
-            <button
-              type="button"
-              className="forgot-link-btn"
-              onClick={openForgotPopup}
-            >
-              Forgot Password?
+            <button onClick={() => navigate("/login-teacher")}>
+              Teacher
+            </button>
+
+            <button className="active">
+              Administration
             </button>
           </div>
 
-          {errorMessage && (
-            <p className="login-error">{errorMessage}</p>
-          )}
-
-          <button
-            type="submit"
-            className="submit-btn admin"
-            disabled={loading}
-          >
-            {loading ? (
-              <span className="loading-content">
-                Logging in..
-                <span className="loader"></span>
+          <form onSubmit={handleLogin}>
+            <div className="input-group">
+              <input
+                type="email"
+                placeholder="Administration Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <span className="icon">
+                <FaEnvelope />
               </span>
-            ) : (
-              "Submit"
+            </div>
+
+            <div className="input-group">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <span
+                className="icon"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </span>
+            </div>
+
+            <div className="options">
+              <label>
+                <input type="checkbox" /> Remember Me
+              </label>
+
+              <button
+                type="button"
+                className="forgot-link-btn"
+                onClick={openForgotPopup}
+              >
+                Forgot Password?
+              </button>
+            </div>
+
+            {errorMessage && (
+              <div className="login-error admin-error" role="alert">
+                {errorMessage}
+              </div>
             )}
-          </button>
-        </form>
-      </div>
+
+            <button
+              type="submit"
+              className="submit-btn admin"
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="loading-content">
+                  Logging in
+                  <span className="loading-emoji">⏳</span>
+                  <span className="loader"></span>
+                </span>
+              ) : (
+                "Submit"
+              )}
+            </button>
+          </form>
+        </div>
+      )}
 
       {showForgotPopup && (
         <div className="forgot-overlay">

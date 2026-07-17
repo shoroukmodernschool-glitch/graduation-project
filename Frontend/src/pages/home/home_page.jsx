@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import "./Home.css";
 import Footer from "../../components/Footer";
 import Navbar from "../../components/Navbar";
@@ -7,6 +8,30 @@ import Navbar from "../../components/Navbar";
 const Home = () => {
 
   const location = useLocation();
+
+  const fadeUp = {
+    hidden: {
+      opacity: 0,
+      y: 70,
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.8,
+        ease: "easeOut",
+      },
+    },
+  };
+
+  const staggerContainer = {
+    hidden: {},
+    visible: {
+      transition: {
+        staggerChildren: 0.18,
+      },
+    },
+  };
 
   useEffect(() => {
     if (location.hash) {
@@ -71,26 +96,36 @@ const Home = () => {
       <section className="hero2">
         <div className="overlay"></div>
 
-        <div className="hero-content">
+        <motion.div
+          className="hero-content"
+          initial="hidden"
+          animate="visible"
+          variants={fadeUp}
+        >
           <h1>Back To School</h1>
-
           <p>
             Welcome to Shorouk Modern School.
             A modern educational environment that prepares students
             for success and leadership.
           </p>
-
           <div className="hero-buttons">
             <Link to="/login" className="hero-btn2">Login</Link>
             <Link to="/signup" className="hero-btn2">Sign Up</Link>
           </div>
-        </div>
+        </motion.div>
       </section>
 
 
       {/* WELCOME */}
 
-      <section id="welcome" className="welcome">
+      <motion.section
+        id="welcome"
+        className="welcome"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: false, amount: 0.25 }}
+        variants={fadeUp}
+      >
 
         <div className="container">
 
@@ -116,50 +151,114 @@ const Home = () => {
 
         </div>
 
+      </motion.section>
+
+
+      <section className="levels">
+
+        <motion.div
+          className="levels-title"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: false, amount: 0.25 }}
+          variants={fadeUp}
+        >
+          <div className="levels-label">
+            <span></span>
+            <p>ACADEMIC LEVELS</p>
+            <span></span>
+          </div>
+
+          <h2>Explore Our Educational Stages</h2>
+
+          <p className="levels-desc">
+            From early childhood to upper school, we provide the right environment
+            for every stage of your child’s growth and success.
+          </p>
+        </motion.div>
+
+        <motion.div
+          className="levels-container"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: false, amount: 0.2 }}
+          variants={staggerContainer}
+        >
+
+          <motion.div variants={fadeUp}>
+            <Link to="/early-childhood" className="card level-card-green">
+              <img src="./images/EARLY-CHILDHOOD.jpeg" alt="" />
+
+              <div className="level-content">
+                <div className="level-icon">
+                  <i className="fa-solid fa-child-reaching"></i>
+                </div>
+                <h3>EARLY CHILDHOOD</h3>
+                <span></span>
+                <p>Building strong foundations for young learners.</p>
+              </div>
+            </Link>
+          </motion.div>
+
+          <motion.div variants={fadeUp}>
+            <Link to="/lower-school" className="card level-card-blue">
+              <img src="./images/LOWER-SCHOOL.jpeg" alt="" />
+
+              <div className="level-content">
+                <div className="level-icon">
+                  <i className="fa-solid fa-school"></i>
+                </div>
+                <h3>LOWER SCHOOL</h3>
+                <span></span>
+                <p>Encouraging curiosity, creativity, and confidence.</p>
+              </div>
+            </Link>
+          </motion.div>
+
+          <motion.div variants={fadeUp}>
+            <Link to="/middle-school" className="card level-card-purple">
+              <img src="./images/MIDDLE-SCHOOL.jpeg" alt="" />
+
+              <div className="level-content">
+                <div className="level-icon">
+                  <i className="fa-solid fa-book-open"></i>
+                </div>
+                <h3>MIDDLE SCHOOL</h3>
+                <span></span>
+                <p>Preparing students with knowledge and life skills.</p>
+              </div>
+            </Link>
+          </motion.div>
+
+          <motion.div variants={fadeUp}>
+            <Link to="/upper-school" className="card level-card-orange">
+              <img src="./images/UPPER-SCHOOL.jpeg" alt="" />
+
+              <div className="level-content">
+                <div className="level-icon">
+                  <i className="fa-solid fa-graduation-cap"></i>
+                </div>
+                <h3>UPPER SCHOOL</h3>
+                <span></span>
+                <p>Guiding students toward success and leadership.</p>
+              </div>
+            </Link>
+          </motion.div>
+
+        </motion.div>
+
       </section>
-
-
-    <section className="levels">
-
-  <div className="levels-title">
-    <h2>ACADEMIC LEVELS</h2>
-    <p>Explore Our Educational Stages</p>
-  </div>
-
-  <div className="levels-container">
-
-    <Link to="/early-childhood" className="card">
-      <img src="./images/EARLY-CHILDHOOD.jpeg" alt="" />
-      <div className="overlay"></div>
-      <h3>EARLY CHILDHOOD</h3>
-    </Link>
-
-    <Link to="/lower-school" className="card">
-      <img src="./images/LOWER-SCHOOL.jpeg" alt="" />
-      <div className="overlay"></div>
-      <h3>LOWER SCHOOL</h3>
-    </Link>
-
-    <Link to="/middle-school" className="card">
-      <img src="./images/MIDDLE-SCHOOL.jpeg" alt="" />
-      <div className="overlay"></div>
-      <h3>MIDDLE SCHOOL</h3>
-    </Link>
-
-    <Link to="/upper-school" className="card">
-      <img src="./images/UPPER-SCHOOL.jpeg" alt="" />
-      <div className="overlay"></div>
-      <h3>UPPER SCHOOL</h3>
-    </Link>
-
-  </div>
-
-</section>
 
 
       {/* NEWS */}
 
-      <section className="news-section">
+      <motion.section
+        className="news-section"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: false, amount: 0.2 }}
+        variants={fadeUp}
+      >
 
         <h2 className="section-title">
           <span>NEWS</span> & EVENTS
@@ -232,12 +331,12 @@ const Home = () => {
           {gridMode ? "Back to Slider" : "View All"}
         </button>
 
-      </section>
+      </motion.section>
 
       <Footer />
 
     </div>
   );
-};
+}
 
 export default Home;
